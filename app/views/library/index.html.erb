@@ -1,0 +1,20 @@
+<% content_for :title, "Library" %>
+
+<div class="mb-6">
+  <h1 class="text-3xl font-semibold tracking-tight">Library</h1>
+  <p class="text-stone-600 text-sm mt-1">Reading from <code class="bg-stone-100 px-1.5 py-0.5 rounded text-xs"><%= @library_path %></code></p>
+</div>
+
+<% if @files.empty? %>
+  <div class="bg-white border border-stone-200 rounded-lg p-8 text-center text-stone-600">
+    <p class="mb-2">No EPUB files found.</p>
+    <p class="text-sm">Drop some <code>.epub</code> files into <code class="bg-stone-100 px-1.5 py-0.5 rounded text-xs"><%= @library_path %></code> and refresh.</p>
+  </div>
+<% else %>
+  <div class="bg-white border border-stone-200 rounded-lg divide-y divide-stone-100">
+    <% @files.each do |path| %>
+      <div class="px-5 py-3 text-sm font-mono text-stone-700"><%= path %></div>
+    <% end %>
+  </div>
+  <p class="text-stone-500 text-sm mt-3"><%= pluralize(@files.count, "file") %></p>
+<% end %>

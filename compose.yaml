@@ -1,0 +1,29 @@
+# Tsundoku — Docker Compose
+#
+# Authentication: the app trusts Remote-User / Remote-Email / Remote-Name headers
+# injected by the upstream proxy (nginx-proxy-manager + Authelia forward-auth).
+# It MUST be reached only via the proxy. Do not expose port directly to clients.
+
+services:
+  tsundoku:
+    build:
+      context: https://github.com/CHANGE_ME/tsundoku.git#main
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    image: tsundoku:local
+    restart: unless-stopped
+    ports:
+      - "${HOST_PORT:-3000}:80"
+    volumes:
+      - ${LIBRARY_DIR:?LIBRARY_DIR must be set}:/library:rw
+      - ${INGEST_DIR:?INGEST_DIR must be set}:/ingest:rw
+      - ${CONFIG_DIR:?CONFIG_DIR must be set}:/rails/storage:rw
+    environment:
+      TZ: ${TZ:-UTC}
+      LIBRARY_PATH: /library
+      INGEST_PATH: /ingest
+      APP_URL: ${APP_URL:?APP_URL must be set, e.g. https://tsundoku.example.com}
+      AUTHELIA_LOGOUT_URL: ${AUTHELIA_LOGOUT_URL:-}
+      RAILS_MASTER_KEY: ${RAILS_MASTER_KEY:?RAILS_MASTER_KEY must be set}
+      RAILS_LOG_TO_STDOUT: "1"

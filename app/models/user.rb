@@ -1,0 +1,24 @@
+class User < ApplicationRecord
+  enum :role, { reader: 0, admin: 1 }
+
+  validates :username, presence: true, uniqueness: true
+
+  def self.find_or_provision_from_proxy(username:, email: nil, name: nil)
+    user = find_or_create_by!(username: username) do |u|
+      u.email = email
+      u.name  = name.presence || username.to_s.titleize
+      u.role  = User.none? ? :admin : :reader
+    end
+
+    updates = {}
+    updates[:email] = email if email.present? && user.email != email
+    updates[:name]  = name  if name.present?  && user.name  != name
+    user.update!(updates) if updates.any?
+
+    user
+  end
+
+  def display_name
+    name.presence || username
+  end
+end

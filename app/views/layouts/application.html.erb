@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= content_for(:title) || "Tsundoku" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Tsundoku">
+    <meta name="mobile-web-app-capable" content="yes">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%= yield :head %>
+
+    <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
+    <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
+
+    <link rel="icon" href="/icon.png" type="image/png">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/icon.png">
+
+    <%# Includes all stylesheet files in app/assets/stylesheets %>
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body class="bg-stone-50 text-stone-900 min-h-screen">
+    <header class="border-b border-stone-200 bg-white">
+      <div class="container mx-auto px-6 py-4 flex items-center justify-between">
+        <%= link_to "Tsundoku", root_path, class: "text-xl font-semibold tracking-tight" %>
+        <div class="text-sm text-stone-600 flex items-center gap-4">
+          <% if signed_in? %>
+            <span><%= current_user.display_name %><% if current_user.admin? %> <span class="text-xs uppercase tracking-wider text-amber-700 ml-1">admin</span><% end %></span>
+            <%= button_to "Sign out", sign_out_path, method: :delete, class: "text-stone-600 hover:text-stone-900 underline" %>
+          <% end %>
+        </div>
+      </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-8">
+      <% flash.each do |type, msg| %>
+        <div class="mb-4 px-4 py-2 rounded <%= type.to_s == "alert" ? "bg-red-50 text-red-800 border border-red-200" : "bg-emerald-50 text-emerald-800 border border-emerald-200" %>">
+          <%= msg %>
+        </div>
+      <% end %>
+      <%= yield %>
+    </main>
+  </body>
+</html>
