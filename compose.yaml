@@ -7,7 +7,7 @@
 services:
   tsundoku:
     build:
-      context: https://github.com/CHANGE_ME/tsundoku.git#main
+      context: https://github.com/mm53bar/tsundoku.git#main
       args:
         UID: ${UID:-1000}
         GID: ${GID:-1000}
