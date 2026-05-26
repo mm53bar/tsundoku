@@ -64,7 +64,15 @@ Goal: family can browse and search the existing 300-book library.
 
 ## Phase 2 — Ingest + metadata enrichment
 
-(Deferred detail until Phase 1 is shipping. Chat history has the design.)
+Detailed empirical research lives in [`docs/metadata-acquisition.md`](docs/metadata-acquisition.md) — source ranking, the Hardcover GraphQL recipe (including the `_ilike`-is-blocked / use-`_eq` quirk and the title-cleanup it forces), Wikidata SPARQL for awards & curated-list membership, identity-resolution heuristics, and why Google Books / Open Library mostly aren't worth the trouble.
+
+Headline takeaways to build to:
+
+- **Hardcover is the primary source.** `omniauth`-style env var: `HARDCOVER_APP_API_TOKEN`. ~80% match rate. Description, ISBN, release date, rating, cover.
+- **Wikidata is the only source for awards and curated-list membership.** Slow but the data exists nowhere else.
+- **Identity resolution is the work.** Bias toward no match over a wrong match — bad data is worse than a gap.
+- **One-book-at-a-time on ingest**, never bulk. Bulk runs are what trigger rate limits.
+- **Don't try to derive audience (kids/YA/adult) from an LLM.** Trust Hardcover's tags or mark for human review.
 
 ## Phase 3 — Discoverability
 
