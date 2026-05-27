@@ -51,6 +51,17 @@ RUN bundle install && \
 # Copy application code
 COPY . .
 
+# Capture the git commit SHA so the running app can show which build it's
+# serving. .git is removed afterwards so it doesn't ride along into the
+# final image (which only does COPY --from=build).
+RUN if [ -d .git ]; then \
+      git rev-parse HEAD > REVISION && \
+      git rev-parse --short HEAD > REVISION_SHORT; \
+    else \
+      echo "unknown" > REVISION && echo "unknown" > REVISION_SHORT; \
+    fi && \
+    rm -rf .git
+
 # Precompile bootsnap code for faster boot times.
 # -j 1 disable parallel compilation to avoid a QEMU bug: https://github.com/rails/bootsnap/issues/495
 RUN bundle exec bootsnap precompile -j 1 app/ lib/

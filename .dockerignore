@@ -1,7 +1,8 @@
 # See https://docs.docker.com/engine/reference/builder/#dockerignore-file for more about ignoring files.
 
-# Ignore git directory.
-/.git/
+# Keep .git in the build context so the Dockerfile can capture the commit
+# SHA into a REVISION file. The build stage removes .git before the final
+# image layer is copied out, so it doesn't bloat the runtime image.
 /.gitignore
 
 # Ignore bundler config.

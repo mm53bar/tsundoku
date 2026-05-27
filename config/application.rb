@@ -32,5 +32,10 @@ module Tsundoku
 
     config.x.library_path = ENV.fetch("LIBRARY_PATH") { Rails.root.join("storage/library_dev").to_s }
     config.x.ingest_path  = ENV.fetch("INGEST_PATH")  { Rails.root.join("storage/ingest_dev").to_s }
+
+    revision_file       = Rails.root.join("REVISION")
+    revision_short_file = Rails.root.join("REVISION_SHORT")
+    config.x.git_sha       = revision_file.exist?       ? revision_file.read.strip       : "dev"
+    config.x.git_sha_short = revision_short_file.exist? ? revision_short_file.read.strip : "dev"
   end
 end
