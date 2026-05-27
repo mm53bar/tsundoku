@@ -1,17 +1,15 @@
-# This Dockerfile is designed for production, not development. Use with Kamal or build'n'run by hand:
-# docker build -t tsundoku .
-# docker run -d -p 80:80 -e RAILS_MASTER_KEY=<value from config/master.key> --name tsundoku tsundoku
-
-# For a containerized dev environment, see Dev Containers: https://guides.rubyonrails.org/getting_started_with_devcontainer.html
+# Production image for Tsundoku.
+#
+# Built and published by .github/workflows/build.yml on every push to main:
+#   ghcr.io/mm53bar/tsundoku:latest         (moves with main)
+#   ghcr.io/mm53bar/tsundoku:<short-sha>    (immutable per commit)
+#
+# The image is host-agnostic — the runtime UID/GID comes from the
+# `user:` directive in compose.yaml so the same image can run on any
+# host whose bind-mounted dirs are owned by that UID/GID.
 
 # Make sure RUBY_VERSION matches the Ruby version in .ruby-version
 ARG RUBY_VERSION=3.4.7
-
-# UID/GID of the in-container "rails" user. Override these to match the owner of
-# bind-mounted host directories (library, ingest, config). Defaults work for a
-# typical Linux host; Synology with shared folders typically wants UID=1027 GID=100.
-ARG UID=1000
-ARG GID=1000
 
 FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
 
@@ -75,26 +73,20 @@ RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 # Final stage for app image
 FROM base
 
-ARG UID
-ARG GID
-
-# Create or reuse a non-root user matching the host's UID/GID for bind-mount access.
-# Handles the case where the target GID already exists in the base image (e.g.
-# GID 100 = "users" on debian-slim, which Synology shares typically use).
-RUN if ! getent group ${GID} > /dev/null; then groupadd --gid ${GID} app; fi && \
-    if ! getent passwd ${UID} > /dev/null; then \
-      useradd --uid ${UID} --gid ${GID} --create-home --shell /bin/bash app; \
-    fi && \
-    mkdir -p /home/app && chown ${UID}:${GID} /home/app
-USER ${UID}:${GID}
-
 # Copy built artifacts: gems, application
-COPY --chown=${UID}:${GID} --from=build "${BUNDLE_PATH}" "${BUNDLE_PATH}"
-COPY --chown=${UID}:${GID} --from=build /rails /rails
+COPY --from=build "${BUNDLE_PATH}" "${BUNDLE_PATH}"
+COPY --from=build /rails /rails
+
+# Make tmp/log world-writable so whichever UID the compose `user:` directive
+# selects can write pidfiles, sockets, and logs. Persistent data (the SQLite
+# DBs) lives in /rails/storage which is a bind mount owned by the host UID.
+RUN mkdir -p tmp/pids tmp/cache tmp/sockets log && \
+    chmod -R 0777 tmp log
 
 # Entrypoint prepares the database.
 ENTRYPOINT ["/rails/bin/docker-entrypoint"]
 
-# Start server via Thruster by default, this can be overwritten at runtime
-EXPOSE 80
+# Start server via Thruster by default, this can be overwritten at runtime.
+# Thruster's port is set via HTTP_PORT in compose; this EXPOSE is documentation.
+EXPOSE 8080
 CMD ["./bin/thrust", "./bin/rails", "server"]

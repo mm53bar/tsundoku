@@ -6,12 +6,16 @@
 
 services:
   tsundoku:
-    build:
-      context: https://github.com/mm53bar/tsundoku.git#main
-      args:
-        UID: ${UID:-1000}
-        GID: ${GID:-1000}
+    # Image is built by .github/workflows/build.yml on every push to main.
+    # Pin to a specific :sha tag if you want to lock to a known build instead
+    # of following main.
+    image: ghcr.io/mm53bar/tsundoku:latest
+    # The image is host-agnostic; set the runtime UID/GID here to match the
+    # owner of LIBRARY_DIR / INGEST_DIR / CONFIG_DIR on the host (Synology
+    # shared folders are typically 1027:100).
+    user: "${UID:-1000}:${GID:-1000}"
     restart: unless-stopped
+    pull_policy: always
     ports:
       - "${HOST_PORT:-3000}:8080"
     volumes:
