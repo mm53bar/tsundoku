@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_27_180000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_27_190000) do
   create_table "authors", force: :cascade do |t|
     t.integer "calibre_id"
     t.datetime "created_at", null: false
@@ -117,6 +117,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_180000) do
     t.integer "progress_current", default: 0, null: false
     t.integer "progress_total"
     t.json "result"
+    t.datetime "reviewed_at"
     t.datetime "started_at"
     t.integer "status", default: 0, null: false
     t.integer "subject_id"
@@ -124,6 +125,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_180000) do
     t.datetime "updated_at", null: false
     t.index ["finished_at"], name: "index_tasks_on_finished_at"
     t.index ["kind"], name: "index_tasks_on_kind"
+    t.index ["reviewed_at"], name: "index_tasks_on_reviewed_at"
     t.index ["status"], name: "index_tasks_on_status"
     t.index ["subject_type", "subject_id"], name: "index_tasks_on_subject"
   end

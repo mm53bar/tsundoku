@@ -10,7 +10,7 @@ Rails.application.routes.draw do
 
   post "/library/import", to: "library#import", as: :library_import
 
-  resources :books, only: [ :show ] do
+  resources :books, only: [ :show, :edit, :update ] do
     member do
       get  :cover
       post :enrich

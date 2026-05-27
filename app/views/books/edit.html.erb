@@ -1,0 +1,98 @@
+<% content_for :title, "Edit · #{@book.title}" %>
+
+<div class="mb-6">
+  <%= link_to @book, class: "inline-flex items-center gap-1 text-sm text-stone-600 hover:text-stone-900" do %>
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+    </svg>
+    <%= @book.title %>
+  <% end %>
+</div>
+
+<h1 class="text-2xl font-semibold tracking-tight text-stone-900 mb-1">Edit book</h1>
+<% if @task.present? %>
+  <p class="text-sm text-amber-700 mb-6">
+    Reviewing Hardcover enrichment suggestions. Use the "Use this" buttons to accept individual changes, then save.
+  </p>
+<% else %>
+  <p class="text-sm text-stone-500 mb-6">Manually edit any field. Submit to save.</p>
+<% end %>
+
+<%= form_with model: @book, url: book_path(@book), method: :patch, local: true, class: "space-y-6 max-w-3xl" do |f| %>
+  <% if @task.present? %>
+    <%= hidden_field_tag :task_id, @task.id %>
+  <% end %>
+
+  <%= render "books/field",
+        id: "book_title", name: "book[title]", label: "Title",
+        current: @book.title,
+        proposed: @proposal.dig("fields", "title"),
+        input_type: :text %>
+
+  <%= render "books/field",
+        id: "book_description", name: "book[description]", label: "Description",
+        current: @book.description,
+        proposed: @proposal.dig("fields", "description"),
+        input_type: :text_area %>
+
+  <%= render "books/field",
+        id: "book_pubdate", name: "book[pubdate]", label: "Published",
+        current: (@book.pubdate&.to_date&.iso8601),
+        proposed: @proposal.dig("fields", "pubdate"),
+        input_type: :date_field %>
+
+  <%= render "books/field",
+        id: "book_publisher_name", name: "book[publisher_name]", label: "Publisher",
+        current: @book.publisher&.name,
+        proposed: @proposal.dig("fields", "publisher_name"),
+        input_type: :text %>
+
+  <% if @proposal["identifiers"].is_a?(Array) && @proposal["identifiers"].any? %>
+    <div class="border-t border-stone-200 pt-6">
+      <h2 class="text-sm font-semibold uppercase tracking-wider text-stone-500 mb-3">New identifiers from Hardcover</h2>
+      <div class="space-y-2">
+        <% @proposal["identifiers"].each do |id| %>
+          <label class="flex items-center gap-2 text-sm">
+            <%= check_box_tag "accepted_identifiers[]", "#{id['kind']}|#{id['value']}", true, class: "rounded border-stone-300 text-amber-600 focus:ring-amber-600" %>
+            <span class="text-stone-700">
+              <span class="text-xs uppercase tracking-wider text-stone-500 font-medium"><%= id["kind"].humanize %></span>
+              <span class="font-mono text-stone-900 ml-2"><%= id["value"] %></span>
+            </span>
+          </label>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <% if @proposal["cover"].present? %>
+    <div class="border-t border-stone-200 pt-6">
+      <h2 class="text-sm font-semibold uppercase tracking-wider text-stone-500 mb-3">Cover</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg">
+        <label class="flex flex-col items-center gap-2 p-3 border-2 rounded-lg cursor-pointer border-stone-200 has-[:checked]:border-amber-600 has-[:checked]:bg-amber-50/40 transition">
+          <%= radio_button_tag :accept_cover, "0", true, class: "sr-only" %>
+          <div class="aspect-[2/3] w-32 bg-stone-100 rounded overflow-hidden ring-1 ring-stone-200/60">
+            <% if @book.cover_available? %>
+              <img src="<%= cover_book_path(@book) %>" class="w-full h-full object-cover">
+            <% end %>
+          </div>
+          <p class="text-sm font-medium">Keep current</p>
+        </label>
+        <label class="flex flex-col items-center gap-2 p-3 border-2 rounded-lg cursor-pointer border-stone-200 has-[:checked]:border-amber-600 has-[:checked]:bg-amber-50/40 transition">
+          <%= radio_button_tag :accept_cover, "1", false, class: "sr-only" %>
+          <div class="aspect-[2/3] w-32 bg-stone-100 rounded overflow-hidden ring-1 ring-stone-200/60">
+            <img src="<%= @proposal["cover"]["url"] %>" class="w-full h-full object-cover" loading="lazy" referrerpolicy="no-referrer">
+          </div>
+          <p class="text-sm font-medium">Use from Hardcover</p>
+          <% if @proposal["cover"]["width"].present? && @proposal["cover"]["height"].present? %>
+            <p class="text-xs text-stone-500"><%= @proposal["cover"]["width"] %> × <%= @proposal["cover"]["height"] %></p>
+          <% end %>
+        </label>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="flex items-center gap-3 border-t border-stone-200 pt-6">
+    <%= f.submit "Save", class: "inline-flex items-center px-4 py-2 bg-stone-900 text-white text-sm font-medium rounded-md hover:bg-stone-700 transition cursor-pointer" %>
+    <%= link_to "Cancel", @book, class: "text-sm text-stone-600 hover:text-stone-900" %>
+  </div>
+<% end %>

@@ -49,9 +49,25 @@ class HardcoverClient
           book {
             id
             title
+            subtitle
             slug
+            headline
             description
+            rating
+            pages
+            release_date
+            literary_type_id
             cached_image
+            default_cover_edition {
+              id
+              cached_image
+              images {
+                id
+                url
+                width
+                height
+              }
+            }
             contributions {
               contribution
               author { name }
