@@ -1,20 +1,67 @@
 <% content_for :title, "Library" %>
 
-<div class="mb-6">
-  <h1 class="text-3xl font-semibold tracking-tight">Library</h1>
-  <p class="text-stone-600 text-sm mt-1">Reading from <code class="bg-stone-100 px-1.5 py-0.5 rounded text-xs"><%= @library_path %></code></p>
+<div class="flex items-end justify-between gap-4 mb-8">
+  <div>
+    <h1 class="text-3xl font-semibold tracking-tight">Library</h1>
+    <p class="text-stone-600 text-sm mt-1">
+      <%= pluralize(@books.size, "book") %>
+    </p>
+  </div>
+
+  <% if @calibre_db_available && current_user&.admin? %>
+    <%= button_to library_import_path,
+          method: :post,
+          form: { data: { turbo_confirm: "Import / re-sync books from Calibre's metadata.db?" } },
+          class: "inline-flex items-center gap-2 px-4 py-2 bg-stone-900 text-white text-sm font-medium rounded-md hover:bg-stone-700 transition" do %>
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4"/>
+      </svg>
+      <%= @books.any? ? "Re-sync from Calibre" : "Import from Calibre" %>
+    <% end %>
+  <% end %>
 </div>
 
-<% if @files.empty? %>
-  <div class="bg-white border border-stone-200 rounded-lg p-8 text-center text-stone-600">
-    <p class="mb-2">No EPUB files found.</p>
-    <p class="text-sm">Drop some <code>.epub</code> files into <code class="bg-stone-100 px-1.5 py-0.5 rounded text-xs"><%= @library_path %></code> and refresh.</p>
-  </div>
-<% else %>
-  <div class="bg-white border border-stone-200 rounded-lg divide-y divide-stone-100">
-    <% @files.each do |path| %>
-      <div class="px-5 py-3 text-sm font-mono text-stone-700"><%= path %></div>
+<% if @books.empty? %>
+  <div class="bg-white border border-stone-200 rounded-lg p-12 text-center text-stone-600">
+    <% if @calibre_db_available %>
+      <p class="text-lg font-medium text-stone-800 mb-2">Ready to import.</p>
+      <p class="text-sm">A Calibre <code>metadata.db</code> was detected in your library directory.</p>
+      <% unless current_user&.admin? %>
+        <p class="text-sm mt-2">Ask an admin to run the import.</p>
+      <% end %>
+    <% else %>
+      <p class="text-lg font-medium text-stone-800 mb-2">No books yet.</p>
+      <p class="text-sm">Drop a Calibre library into the configured library directory to get started.</p>
     <% end %>
   </div>
-  <p class="text-stone-500 text-sm mt-3"><%= pluralize(@files.count, "file") %></p>
+<% else %>
+  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+    <% @books.each do |book| %>
+      <%= link_to book_path(book), class: "group block" do %>
+        <div class="aspect-[2/3] bg-stone-200 rounded-md overflow-hidden shadow-sm group-hover:shadow-xl transition-shadow ring-1 ring-stone-200/60 relative">
+          <% if book.cover_available? %>
+            <img src="<%= cover_book_path(book) %>"
+                 alt="<%= book.title %>"
+                 loading="lazy"
+                 class="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300">
+          <% else %>
+            <div class="w-full h-full flex items-center justify-center p-3 bg-gradient-to-br from-stone-100 to-stone-200">
+              <span class="text-center text-xs font-medium text-stone-700 line-clamp-6"><%= book.title %></span>
+            </div>
+          <% end %>
+        </div>
+        <div class="mt-2 px-0.5">
+          <p class="text-sm font-medium text-stone-900 leading-snug line-clamp-2 group-hover:text-stone-700"><%= book.title %></p>
+          <% if book.authors.any? %>
+            <p class="text-xs text-stone-500 mt-1 line-clamp-1"><%= book.author_names %></p>
+          <% end %>
+          <% if book.series.present? %>
+            <p class="text-xs text-stone-400 mt-1 italic line-clamp-1">
+              <%= book.series.name %><% if book.series_index.present? %> #<%= book.series_index.to_s.sub(/\.0+\z/, "") %><% end %>
+            </p>
+          <% end %>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
 <% end %>

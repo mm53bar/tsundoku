@@ -8,5 +8,13 @@ Rails.application.routes.draw do
 
   get "up" => "rails/health#show", as: :rails_health_check
 
+  post "/library/import", to: "library#import", as: :library_import
+
+  resources :books, only: [ :show ] do
+    member do
+      get :cover
+    end
+  end
+
   root "library#index"
 end
