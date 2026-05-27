@@ -22,6 +22,23 @@ export default class extends Controller {
 
   dismiss() {
     this.element.classList.add("opacity-0")
-    setTimeout(() => this.element.remove(), this.fadeMsValue)
+    setTimeout(() => {
+      this.element.remove()
+      this.collapseBannerIfEmpty()
+    }, this.fadeMsValue)
+  }
+
+  // Once a card is gone, check the active-tasks container. If no cards
+  // remain, clear the banner chrome (the amber wrapper, padding) so we
+  // don't leave a hollow stripe behind. The server-side `_active_list`
+  // partial does the same gating on initial render; this is the client
+  // equivalent after Stimulus removes the last card.
+  collapseBannerIfEmpty() {
+    const container = document.getElementById("active_tasks")
+    if (!container) return
+    const remaining = container.querySelectorAll('[data-controller~="task-card"]')
+    if (remaining.length === 0) {
+      container.innerHTML = ""
+    }
   }
 }
