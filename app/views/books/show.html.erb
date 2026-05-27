@@ -52,6 +52,12 @@
     <% end %>
 
     <dl class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm border-t border-stone-200 pt-6">
+      <% if @book.publisher.present? %>
+        <div>
+          <dt class="text-xs uppercase tracking-wide text-stone-500">Publisher</dt>
+          <dd class="text-stone-800 mt-0.5"><%= @book.publisher.name %></dd>
+        </div>
+      <% end %>
       <% if @book.pubdate.present? && @book.pubdate.year > 1 %>
         <div>
           <dt class="text-xs uppercase tracking-wide text-stone-500">Published</dt>
@@ -68,6 +74,12 @@
         <div>
           <dt class="text-xs uppercase tracking-wide text-stone-500">Format</dt>
           <dd class="text-stone-800 mt-0.5"><%= @book.file_format %></dd>
+        </div>
+      <% end %>
+      <% if @book.added_at.present? %>
+        <div>
+          <dt class="text-xs uppercase tracking-wide text-stone-500">Added</dt>
+          <dd class="text-stone-800 mt-0.5"><%= @book.added_at.to_date.to_fs(:long) %></dd>
         </div>
       <% end %>
       <% if @book.last_modified.present? %>

@@ -4,14 +4,19 @@ require "sqlite3"
 # Calibre's primary keys. Re-running picks up changes Calibre made since the
 # last run; nothing is deleted (Calibre stays the source of truth until we add
 # our own management UI).
+#
+# EPUB-only by design: books that don't have an EPUB format in Calibre are
+# skipped and counted. Mobi/PDF/etc. can be added to Calibre as EPUB versions
+# and re-imported if desired.
 class CalibreImporter
   class MissingDatabase < StandardError; end
 
   Stats = Struct.new(
-    :authors_seen, :authors_created,
-    :series_seen,  :series_created,
-    :tags_seen,    :tags_created,
-    :books_seen,   :books_created, :books_updated,
+    :authors_seen,    :authors_created,
+    :series_seen,     :series_created,
+    :tags_seen,       :tags_created,
+    :publishers_seen, :publishers_created,
+    :books_seen,      :books_created, :books_updated, :books_skipped_no_epub,
     keyword_init: true
   )
 
@@ -21,10 +26,11 @@ class CalibreImporter
     @library_path = library_path
     @db_path = File.join(library_path, "metadata.db")
     @stats = Stats.new(
-      authors_seen: 0, authors_created: 0,
-      series_seen: 0,  series_created: 0,
-      tags_seen: 0,    tags_created: 0,
-      books_seen: 0,   books_created: 0, books_updated: 0
+      authors_seen: 0,    authors_created: 0,
+      series_seen: 0,     series_created: 0,
+      tags_seen: 0,       tags_created: 0,
+      publishers_seen: 0, publishers_created: 0,
+      books_seen: 0,      books_created: 0, books_updated: 0, books_skipped_no_epub: 0
     )
   end
 
@@ -37,10 +43,11 @@ class CalibreImporter
 
     db = SQLite3::Database.new(db_path, readonly: true, results_as_hash: true)
     begin
-      author_id_map = import_authors(db)
-      series_id_map = import_series(db)
-      tag_id_map    = import_tags(db)
-      import_books(db, author_id_map, series_id_map, tag_id_map)
+      author_id_map    = import_authors(db)
+      series_id_map    = import_series(db)
+      tag_id_map       = import_tags(db)
+      publisher_id_map = import_publishers(db)
+      import_books(db, author_id_map, series_id_map, tag_id_map, publisher_id_map)
     ensure
       db.close
     end
@@ -93,13 +100,38 @@ class CalibreImporter
     map
   end
 
-  def import_books(db, author_id_map, series_id_map, tag_id_map)
+  def import_publishers(db)
+    map = {}
+    db.execute("SELECT id, name, sort FROM publishers").each do |row|
+      stats.publishers_seen += 1
+      publisher = Publisher.find_or_initialize_by(calibre_id: row["id"])
+      created = publisher.new_record?
+      publisher.name = row["name"]
+      publisher.sort_name = row["sort"]
+      publisher.save!
+      stats.publishers_created += 1 if created
+      map[row["id"]] = publisher.id
+    end
+    map
+  end
+
+  def import_books(db, author_id_map, series_id_map, tag_id_map, publisher_id_map)
     db.execute(<<~SQL).each do |row|
-      SELECT id, title, sort, pubdate, series_index, isbn, uuid, path, has_cover, last_modified
+      SELECT id, title, sort, timestamp, pubdate, series_index, uuid, path, has_cover, last_modified
       FROM books
     SQL
       stats.books_seen += 1
       calibre_id = row["id"]
+
+      data_row = db.execute(<<~SQL, calibre_id).first
+        SELECT format, name FROM data WHERE book = ? AND UPPER(format) = 'EPUB' LIMIT 1
+      SQL
+
+      unless data_row
+        stats.books_skipped_no_epub += 1
+        Rails.logger.info("CalibreImporter: skipping book ##{calibre_id} (#{row['title']}) — no EPUB format")
+        next
+      end
 
       authors_for_book = db.execute(<<~SQL, calibre_id).map { |r| author_id_map[r["author"]] }.compact
         SELECT author FROM books_authors_link WHERE book = ? ORDER BY id
@@ -114,16 +146,16 @@ class CalibreImporter
         SELECT tag FROM books_tags_link WHERE book = ?
       SQL
 
-      data_row = db.execute(<<~SQL, calibre_id).first
-        SELECT format, name FROM data WHERE book = ?
-        ORDER BY CASE format WHEN 'EPUB' THEN 0 ELSE 1 END, id
-        LIMIT 1
+      publisher_row = db.execute(<<~SQL, calibre_id).first
+        SELECT publisher FROM books_publishers_link WHERE book = ? LIMIT 1
+      SQL
+      publisher_rails_id = publisher_row && publisher_id_map[publisher_row["publisher"]]
+
+      identifiers_for_book = db.execute(<<~SQL, calibre_id).map { |r| [ r["type"], r["val"] ] }
+        SELECT type, val FROM identifiers WHERE book = ?
       SQL
 
       description = db.execute("SELECT text FROM comments WHERE book = ? LIMIT 1", calibre_id).first&.dig("text")
-
-      isbn = row["isbn"].presence ||
-             db.execute("SELECT val FROM identifiers WHERE book = ? AND type = 'isbn' LIMIT 1", calibre_id).first&.dig("val")
 
       book = Book.find_or_initialize_by(calibre_id: calibre_id)
       created = book.new_record?
@@ -133,14 +165,15 @@ class CalibreImporter
         sort_title: row["sort"],
         series_id: series_rails_id,
         series_index: row["series_index"],
+        publisher_id: publisher_rails_id,
+        added_at: parse_calibre_time(row["timestamp"]),
         pubdate: parse_calibre_time(row["pubdate"]),
-        isbn: isbn,
         uuid: row["uuid"],
         description: description,
         path: row["path"],
         cover_path: row["has_cover"].to_i == 1 ? File.join(row["path"], "cover.jpg") : nil,
-        file_name: data_row && data_row["name"],
-        file_format: data_row && data_row["format"],
+        file_name: data_row["name"],
+        file_format: data_row["format"],
         last_modified: parse_calibre_time(row["last_modified"]),
         imported_at: Time.current
       )
@@ -148,6 +181,7 @@ class CalibreImporter
 
       sync_book_authors(book, authors_for_book)
       sync_book_tags(book, tags_for_book)
+      sync_book_identifiers(book, identifiers_for_book)
 
       if created
         stats.books_created += 1
@@ -171,6 +205,17 @@ class CalibreImporter
     existing_ids = book.book_tags.pluck(:tag_id)
     (tag_ids - existing_ids).each { |tag_id| book.book_tags.create!(tag_id: tag_id) }
     (existing_ids - tag_ids).each { |tag_id| book.book_tags.where(tag_id: tag_id).destroy_all }
+  end
+
+  def sync_book_identifiers(book, identifiers)
+    existing = book.book_identifiers.index_by { |bi| [ bi.kind, bi.value ] }
+    identifiers.each do |kind, value|
+      next if kind.blank? || value.blank?
+      key = [ kind, value ]
+      next if existing.delete(key)
+      book.book_identifiers.create!(kind: kind, value: value)
+    end
+    existing.each_value(&:destroy)
   end
 
   def parse_calibre_time(value)
