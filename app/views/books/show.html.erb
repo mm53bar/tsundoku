@@ -28,18 +28,33 @@
     <div class="flex items-start justify-between gap-4">
       <h1 class="text-3xl font-semibold tracking-tight text-stone-900"><%= @book.title %></h1>
 
-      <% if current_user&.admin? && HardcoverClient.available? %>
+      <% if current_user&.admin? %>
+        <% pending_task    = Task.pending_review.where(kind: "metadata_enrichment", subject: @book).order(:created_at).last %>
         <% enrichment_running = Task.active.where(kind: "metadata_enrichment", subject: @book).exists? %>
-        <% unless enrichment_running %>
-          <%= button_to enrich_book_path(@book),
-                method: :post,
-                class: "shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 text-white text-sm font-medium rounded-md hover:bg-amber-700 transition" do %>
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
-            </svg>
-            <%= @book.enriched? ? "Re-enrich" : "Enrich" %>
+        <div class="shrink-0 flex items-center gap-2">
+          <% if pending_task %>
+            <%= link_to edit_book_path(@book, from_task: pending_task.id),
+                  class: "inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 text-white text-sm font-medium rounded-md hover:bg-amber-700 transition" do %>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              Review suggestions
+            <% end %>
+          <% elsif HardcoverClient.available? && !enrichment_running %>
+            <%= button_to enrich_book_path(@book),
+                  method: :post,
+                  class: "inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 text-white text-sm font-medium rounded-md hover:bg-amber-700 transition cursor-pointer" do %>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+              </svg>
+              <%= @book.enriched? ? "Re-enrich" : "Enrich" %>
+            <% end %>
           <% end %>
-        <% end %>
+          <%= link_to edit_book_path(@book),
+                class: "inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-stone-300 text-stone-700 text-sm font-medium rounded-md hover:bg-stone-50 transition" do %>
+            Edit
+          <% end %>
+        </div>
       <% end %>
     </div>
 

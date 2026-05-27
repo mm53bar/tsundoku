@@ -1,6 +1,9 @@
+<%
+  card_status = task.pending_review? ? "pending_review" : task.status
+%>
 <div id="<%= dom_id(task) %>"
      data-controller="task-card"
-     data-task-card-status-value="<%= task.status %>"
+     data-task-card-status-value="<%= card_status %>"
      class="flex items-start gap-3 transition-opacity duration-500">
 
   <div class="shrink-0 mt-0.5">
@@ -8,6 +11,10 @@
       <svg class="animate-spin w-5 h-5 text-amber-700" fill="none" viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+      </svg>
+    <% elsif task.pending_review? %>
+      <svg class="w-5 h-5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
       </svg>
     <% elsif task.succeeded? %>
       <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -23,7 +30,10 @@
   <div class="flex-1 min-w-0">
     <div class="flex items-center justify-between gap-2">
       <p class="text-sm font-medium text-stone-900 truncate"><%= task.friendly_title %></p>
-      <% if task.progress_total.present? && task.progress_total.positive? %>
+      <% if task.pending_review? && task.subject.is_a?(Book) %>
+        <%= link_to "Review", edit_book_path(task.subject, from_task: task.id),
+              class: "shrink-0 text-xs px-2.5 py-1 bg-amber-600 text-white rounded hover:bg-amber-700 cursor-pointer" %>
+      <% elsif task.progress_total.present? && task.progress_total.positive? %>
         <p class="text-xs text-stone-600 font-mono shrink-0">
           <%= task.progress_current %> / <%= task.progress_total %>
         </p>
@@ -37,7 +47,9 @@
       </div>
     <% end %>
 
-    <% if task.succeeded? && task.result.present? %>
+    <% if task.pending_review? %>
+      <p class="text-xs text-stone-600 mt-0.5">Hardcover suggestions ready.</p>
+    <% elsif task.succeeded? && task.result.present? %>
       <p class="text-xs text-stone-600 mt-0.5"><%= summarize_task_result(task) %></p>
     <% end %>
 

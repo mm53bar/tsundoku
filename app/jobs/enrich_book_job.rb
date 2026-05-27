@@ -18,10 +18,9 @@ class EnrichBookJob < ApplicationJob
     task.mark_running!
     task.update_progress!(0, 1)
 
-    enricher = BookEnricher.new(book)
-    enricher.enrich!
+    proposal = BookEnricher.new(book).build_proposal
 
     task.update_progress!(1, 1)
-    task.mark_succeeded!(result_data: enricher.stats.to_h)
+    task.mark_succeeded!(result_data: proposal)
   end
 end
