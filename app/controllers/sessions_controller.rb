@@ -1,5 +1,5 @@
 class SessionsController < ApplicationController
-  skip_before_action :require_authentication, only: [:destroy]
+  skip_before_action :require_authentication, only: [ :destroy ]
 
   def destroy
     reset_session
