@@ -32,6 +32,7 @@
       <p class="text-sm font-medium text-stone-900 truncate"><%= task.friendly_title %></p>
       <% if task.pending_review? && task.subject.is_a?(Book) %>
         <%= link_to "Review", edit_book_path(task.subject, from_task: task.id),
+              data: { turbo_prefetch: false },
               class: "shrink-0 text-xs px-2.5 py-1 bg-amber-600 text-white rounded hover:bg-amber-700 cursor-pointer" %>
       <% elsif task.progress_total.present? && task.progress_total.positive? %>
         <p class="text-xs text-stone-600 font-mono shrink-0">
