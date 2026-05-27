@@ -26,3 +26,5 @@ services:
       AUTHELIA_LOGOUT_URL: ${AUTHELIA_LOGOUT_URL:-}
       RAILS_MASTER_KEY: ${RAILS_MASTER_KEY:?RAILS_MASTER_KEY must be set}
       RAILS_LOG_TO_STDOUT: "1"
+      # Phase 2 metadata enrichment. Optional — unset means Hardcover lookups are skipped.
+      HARDCOVER_APP_API_TOKEN: ${HARDCOVER_APP_API_TOKEN:-}
