@@ -26,7 +26,10 @@
   <body class="bg-stone-50 text-stone-900 min-h-screen">
     <header class="border-b border-stone-200 bg-white">
       <div class="container mx-auto px-6 py-4 flex items-center justify-between">
-        <%= link_to "Tsundoku", root_path, class: "text-xl font-semibold tracking-tight" %>
+        <%= link_to root_path, class: "flex items-center gap-2.5 text-xl font-semibold tracking-tight" do %>
+          <%= image_tag "/favicon-96.png", alt: "", class: "w-8 h-8" %>
+          <span>Tsundoku</span>
+        <% end %>
         <div class="text-sm text-stone-600 flex items-center gap-4">
           <% if signed_in? %>
             <span><%= current_user.display_name %><% if current_user.admin? %> <span class="text-xs uppercase tracking-wider text-amber-700 ml-1">admin</span><% end %></span>
