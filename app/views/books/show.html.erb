@@ -34,6 +34,7 @@
         <div class="shrink-0 flex items-center gap-2">
           <% if pending_task %>
             <%= link_to edit_book_path(@book, from_task: pending_task.id),
+                  data: { turbo_prefetch: false },
                   class: "inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 text-white text-sm font-medium rounded-md hover:bg-amber-700 transition" do %>
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>

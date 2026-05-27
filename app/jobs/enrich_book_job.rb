@@ -22,5 +22,18 @@ class EnrichBookJob < ApplicationJob
 
     task.update_progress!(1, 1)
     task.mark_succeeded!(result_data: proposal)
+
+    # If there's nothing actionable in the proposal, the user has nothing to
+    # review — auto-mark reviewed so the banner card falls into the standard
+    # 30s fade instead of dangling with a Review button that leads to an empty
+    # edit form.
+    task.mark_reviewed! unless proposal_actionable?(proposal)
+  end
+
+  private
+
+  def proposal_actionable?(proposal)
+    return false unless proposal.is_a?(Hash) && proposal["matched"]
+    proposal["fields"].present? || proposal["identifiers"].present? || proposal["cover"].present?
   end
 end
