@@ -44,5 +44,18 @@
       <% end %>
       <%= yield %>
     </main>
+
+    <footer class="container mx-auto px-6 py-6 text-xs text-stone-400 text-center">
+      <% sha = Rails.configuration.x.git_sha %>
+      <% short = Rails.configuration.x.git_sha_short %>
+      <% if sha.present? && sha != "dev" && sha != "unknown" %>
+        <%= link_to short, "https://github.com/mm53bar/tsundoku/commit/#{sha}",
+              target: "_blank",
+              rel: "noopener",
+              class: "font-mono hover:text-stone-600" %>
+      <% else %>
+        <span class="font-mono"><%= short %></span>
+      <% end %>
+    </footer>
   </body>
 </html>
