@@ -27,13 +27,38 @@
     <header class="border-b border-stone-200 bg-white">
       <div class="container mx-auto px-6 py-4 flex items-center justify-between">
         <%= link_to root_path, class: "flex items-center gap-2.5 text-xl font-semibold tracking-tight" do %>
-          <%= image_tag "/favicon-96.png", alt: "", class: "w-8 h-8" %>
+          <%= image_tag "/favicon-96.png", alt: "", class: "w-10 h-10" %>
           <span>Tsundoku</span>
         <% end %>
         <div class="text-sm text-stone-600 flex items-center gap-4">
           <% if signed_in? %>
-            <span><%= current_user.display_name %><% if current_user.admin? %> <span class="text-xs uppercase tracking-wider text-amber-700 ml-1">admin</span><% end %></span>
-            <%= button_to "Sign out", sign_out_path, method: :delete, class: "text-stone-600 hover:text-stone-900 underline" %>
+            <div data-controller="dropdown" class="relative">
+              <button type="button"
+                      data-action="dropdown#toggle"
+                      class="flex items-center gap-1.5 text-stone-700 hover:text-stone-900 cursor-pointer">
+                <span><%= current_user.display_name %></span>
+                <svg class="w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              <div data-dropdown-target="menu"
+                   class="hidden absolute right-0 mt-2 w-56 bg-white border border-stone-200 rounded-md shadow-lg z-20 overflow-hidden">
+                <div class="px-3 py-2 border-b border-stone-100">
+                  <p class="text-sm font-medium text-stone-900"><%= current_user.display_name %></p>
+                  <% if current_user.email.present? %>
+                    <p class="text-xs text-stone-500 truncate"><%= current_user.email %></p>
+                  <% end %>
+                  <% if current_user.admin? %>
+                    <p class="mt-1.5 inline-block text-xs uppercase tracking-wider text-amber-700 font-semibold">Admin</p>
+                  <% end %>
+                </div>
+                <%= button_to sign_out_path, method: :delete,
+                      form: { class: "block" },
+                      class: "block w-full text-left px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 cursor-pointer" do %>
+                  Sign out
+                <% end %>
+              </div>
+            </div>
           <% end %>
         </div>
       </div>
