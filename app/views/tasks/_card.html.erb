@@ -1,0 +1,48 @@
+<div id="<%= dom_id(task) %>"
+     data-controller="task-card"
+     data-task-card-status-value="<%= task.status %>"
+     class="flex items-start gap-3 transition-opacity duration-500">
+
+  <div class="shrink-0 mt-0.5">
+    <% if task.running? || task.queued? %>
+      <svg class="animate-spin w-5 h-5 text-amber-700" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+      </svg>
+    <% elsif task.succeeded? %>
+      <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+      </svg>
+    <% elsif task.failed? %>
+      <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    <% end %>
+  </div>
+
+  <div class="flex-1 min-w-0">
+    <div class="flex items-center justify-between gap-2">
+      <p class="text-sm font-medium text-stone-900 truncate"><%= task.friendly_title %></p>
+      <% if task.progress_total.present? && task.progress_total.positive? %>
+        <p class="text-xs text-stone-600 font-mono shrink-0">
+          <%= task.progress_current %> / <%= task.progress_total %>
+        </p>
+      <% end %>
+    </div>
+
+    <% if task.running? && task.progress_total.present? && task.progress_total.positive? %>
+      <div class="mt-1.5 h-1.5 bg-stone-200/60 rounded-full overflow-hidden">
+        <div class="h-full bg-amber-600 transition-all duration-300"
+             style="width: <%= task.progress_percentage %>%;"></div>
+      </div>
+    <% end %>
+
+    <% if task.succeeded? && task.result.present? %>
+      <p class="text-xs text-stone-600 mt-0.5"><%= summarize_task_result(task) %></p>
+    <% end %>
+
+    <% if task.failed? && task.error_message.present? %>
+      <p class="text-xs text-red-700 mt-0.5"><%= task.error_message %></p>
+    <% end %>
+  </div>
+</div>

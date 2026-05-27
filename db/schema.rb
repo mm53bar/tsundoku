@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_27_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_27_170000) do
   create_table "authors", force: :cascade do |t|
     t.integer "calibre_id"
     t.datetime "created_at", null: false
@@ -103,6 +103,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_160000) do
     t.datetime "updated_at", null: false
     t.index ["calibre_id"], name: "index_tags_on_calibre_id", unique: true
     t.index ["name"], name: "index_tags_on_name", unique: true
+  end
+
+  create_table "tasks", force: :cascade do |t|
+    t.integer "attempts", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.text "error_message"
+    t.datetime "finished_at"
+    t.string "kind", null: false
+    t.integer "progress_current", default: 0, null: false
+    t.integer "progress_total"
+    t.json "result"
+    t.datetime "started_at"
+    t.integer "status", default: 0, null: false
+    t.integer "subject_id"
+    t.string "subject_type"
+    t.datetime "updated_at", null: false
+    t.index ["finished_at"], name: "index_tasks_on_finished_at"
+    t.index ["kind"], name: "index_tasks_on_kind"
+    t.index ["status"], name: "index_tasks_on_status"
+    t.index ["subject_type", "subject_id"], name: "index_tasks_on_subject"
   end
 
   create_table "users", force: :cascade do |t|

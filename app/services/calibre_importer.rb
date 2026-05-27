@@ -38,7 +38,10 @@ class CalibreImporter
     File.exist?(File.join(library_path, "metadata.db"))
   end
 
-  def import!
+  # Optionally yields (current, total) after each book is processed so the
+  # caller can update a progress indicator. Callers should throttle their
+  # block; the importer yields every book unconditionally.
+  def import!(&progress_block)
     raise MissingDatabase, "metadata.db not found at #{db_path}" unless File.exist?(db_path)
 
     db = SQLite3::Database.new(db_path, readonly: true, results_as_hash: true)
@@ -47,7 +50,7 @@ class CalibreImporter
       series_id_map    = import_series(db)
       tag_id_map       = import_tags(db)
       publisher_id_map = import_publishers(db)
-      import_books(db, author_id_map, series_id_map, tag_id_map, publisher_id_map)
+      import_books(db, author_id_map, series_id_map, tag_id_map, publisher_id_map, &progress_block)
     ensure
       db.close
     end
@@ -115,11 +118,14 @@ class CalibreImporter
     map
   end
 
-  def import_books(db, author_id_map, series_id_map, tag_id_map, publisher_id_map)
-    db.execute(<<~SQL).each do |row|
+  def import_books(db, author_id_map, series_id_map, tag_id_map, publisher_id_map, &progress_block)
+    rows = db.execute(<<~SQL).to_a
       SELECT id, title, sort, timestamp, pubdate, series_index, uuid, path, has_cover, last_modified
       FROM books
     SQL
+    total = rows.size
+
+    rows.each_with_index do |row, index|
       stats.books_seen += 1
       calibre_id = row["id"]
 
@@ -130,6 +136,7 @@ class CalibreImporter
       unless data_row
         stats.books_skipped_no_epub += 1
         Rails.logger.info("CalibreImporter: skipping book ##{calibre_id} (#{row['title']}) — no EPUB format")
+        progress_block&.call(index + 1, total)
         next
       end
 
@@ -188,6 +195,8 @@ class CalibreImporter
       else
         stats.books_updated += 1
       end
+
+      progress_block&.call(index + 1, total)
     end
   end
 
