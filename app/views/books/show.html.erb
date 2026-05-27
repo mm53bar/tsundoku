@@ -1,0 +1,81 @@
+<% content_for :title, @book.title %>
+
+<div class="mb-6">
+  <%= link_to root_path, class: "inline-flex items-center gap-1 text-sm text-stone-600 hover:text-stone-900" do %>
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+    </svg>
+    Library
+  <% end %>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-[16rem_1fr] lg:grid-cols-[20rem_1fr] gap-8 lg:gap-12 items-start">
+  <div>
+    <div class="aspect-[2/3] bg-stone-200 rounded-lg overflow-hidden shadow-md ring-1 ring-stone-200/60">
+      <% if @book.cover_available? %>
+        <img src="<%= cover_book_path(@book) %>"
+             alt="<%= @book.title %>"
+             class="w-full h-full object-cover">
+      <% else %>
+        <div class="w-full h-full flex items-center justify-center p-6 bg-gradient-to-br from-stone-100 to-stone-200">
+          <span class="text-center text-sm font-medium text-stone-700"><%= @book.title %></span>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div>
+    <h1 class="text-3xl font-semibold tracking-tight text-stone-900"><%= @book.title %></h1>
+
+    <% if @book.authors.any? %>
+      <p class="text-lg text-stone-700 mt-2"><%= @book.author_names %></p>
+    <% end %>
+
+    <% if @book.series.present? %>
+      <p class="text-sm text-stone-500 italic mt-1">
+        <%= @book.series.name %><% if @book.series_index.present? %>, book <%= @book.series_index.to_s.sub(/\.0+\z/, "") %><% end %>
+      </p>
+    <% end %>
+
+    <% if @book.tags.any? %>
+      <div class="flex flex-wrap gap-1.5 mt-4">
+        <% @book.tags.each do |tag| %>
+          <span class="px-2 py-0.5 bg-stone-100 text-stone-700 text-xs rounded-full border border-stone-200"><%= tag.name %></span>
+        <% end %>
+      </div>
+    <% end %>
+
+    <% if @book.description.present? %>
+      <div class="mt-6 text-stone-700 text-sm leading-relaxed space-y-3 [&_p]:mb-3 [&_a]:underline [&_a]:text-stone-900 [&_em]:italic [&_strong]:font-semibold">
+        <%= sanitize @book.description %>
+      </div>
+    <% end %>
+
+    <dl class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm border-t border-stone-200 pt-6">
+      <% if @book.pubdate.present? && @book.pubdate.year > 1 %>
+        <div>
+          <dt class="text-xs uppercase tracking-wide text-stone-500">Published</dt>
+          <dd class="text-stone-800 mt-0.5"><%= @book.pubdate.strftime("%B %Y") %></dd>
+        </div>
+      <% end %>
+      <% if @book.isbn.present? %>
+        <div>
+          <dt class="text-xs uppercase tracking-wide text-stone-500">ISBN</dt>
+          <dd class="text-stone-800 font-mono mt-0.5"><%= @book.isbn %></dd>
+        </div>
+      <% end %>
+      <% if @book.file_format.present? %>
+        <div>
+          <dt class="text-xs uppercase tracking-wide text-stone-500">Format</dt>
+          <dd class="text-stone-800 mt-0.5"><%= @book.file_format %></dd>
+        </div>
+      <% end %>
+      <% if @book.last_modified.present? %>
+        <div>
+          <dt class="text-xs uppercase tracking-wide text-stone-500">Last modified</dt>
+          <dd class="text-stone-800 mt-0.5"><%= @book.last_modified.to_date.to_fs(:long) %></dd>
+        </div>
+      <% end %>
+    </dl>
+  </div>
+</div>
