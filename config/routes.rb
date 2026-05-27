@@ -12,7 +12,8 @@ Rails.application.routes.draw do
 
   resources :books, only: [ :show ] do
     member do
-      get :cover
+      get  :cover
+      post :enrich
     end
   end
 

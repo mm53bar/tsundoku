@@ -25,12 +25,20 @@ class Book < ApplicationRecord
   end
 
   def cover_full_path
+    if enriched_cover_path.present?
+      enriched = Rails.root.join("storage", enriched_cover_path).to_s
+      return enriched if File.exist?(enriched)
+    end
     return nil unless cover_path.present?
     File.join(Rails.configuration.x.library_path, cover_path)
   end
 
   def cover_available?
     cover_full_path.present? && File.exist?(cover_full_path)
+  end
+
+  def enriched?
+    last_enriched_at.present?
   end
 
   def epub_full_path
