@@ -4,33 +4,46 @@
 # injected by the upstream proxy (nginx-proxy-manager + Authelia forward-auth).
 # It MUST be reached only via the proxy. Do not expose port directly to clients.
 
+x-tsundoku-common: &tsundoku-common
+  # Image is built by .github/workflows/build.yml on every push to main.
+  # Pin to a specific :sha tag if you want to lock to a known build instead
+  # of following main.
+  image: ghcr.io/mm53bar/tsundoku:latest
+  # The image is host-agnostic; set the runtime UID/GID here to match the
+  # owner of LIBRARY_DIR / INGEST_DIR / CONFIG_DIR on the host (Synology
+  # shared folders are typically 1027:100).
+  user: "${UID:-1000}:${GID:-1000}"
+  restart: unless-stopped
+  pull_policy: always
+  volumes:
+    - ${LIBRARY_DIR:?LIBRARY_DIR must be set}:/library:rw
+    - ${INGEST_DIR:?INGEST_DIR must be set}:/ingest:rw
+    - ${CONFIG_DIR:?CONFIG_DIR must be set}:/rails/storage:rw
+  environment: &tsundoku-env
+    TZ: ${TZ:-UTC}
+    LIBRARY_PATH: /library
+    INGEST_PATH: /ingest
+    APP_URL: ${APP_URL:?APP_URL must be set, e.g. https://tsundoku.example.com}
+    AUTHELIA_LOGOUT_URL: ${AUTHELIA_LOGOUT_URL:-}
+    RAILS_MASTER_KEY: ${RAILS_MASTER_KEY:?RAILS_MASTER_KEY must be set}
+    RAILS_LOG_TO_STDOUT: "1"
+    # Phase 2 metadata enrichment. Optional — unset means Hardcover lookups are skipped.
+    HARDCOVER_APP_API_TOKEN: ${HARDCOVER_APP_API_TOKEN:-}
+
 services:
   tsundoku:
-    # Image is built by .github/workflows/build.yml on every push to main.
-    # Pin to a specific :sha tag if you want to lock to a known build instead
-    # of following main.
-    image: ghcr.io/mm53bar/tsundoku:latest
-    # The image is host-agnostic; set the runtime UID/GID here to match the
-    # owner of LIBRARY_DIR / INGEST_DIR / CONFIG_DIR on the host (Synology
-    # shared folders are typically 1027:100).
-    user: "${UID:-1000}:${GID:-1000}"
-    restart: unless-stopped
-    pull_policy: always
+    <<: *tsundoku-common
     ports:
       - "${HOST_PORT:-3000}:8080"
-    volumes:
-      - ${LIBRARY_DIR:?LIBRARY_DIR must be set}:/library:rw
-      - ${INGEST_DIR:?INGEST_DIR must be set}:/ingest:rw
-      - ${CONFIG_DIR:?CONFIG_DIR must be set}:/rails/storage:rw
     environment:
-      TZ: ${TZ:-UTC}
+      <<: *tsundoku-env
       # Thruster listens here. Container runs as non-root, so it can't bind :80.
       HTTP_PORT: "8080"
-      LIBRARY_PATH: /library
-      INGEST_PATH: /ingest
-      APP_URL: ${APP_URL:?APP_URL must be set, e.g. https://tsundoku.example.com}
-      AUTHELIA_LOGOUT_URL: ${AUTHELIA_LOGOUT_URL:-}
-      RAILS_MASTER_KEY: ${RAILS_MASTER_KEY:?RAILS_MASTER_KEY must be set}
-      RAILS_LOG_TO_STDOUT: "1"
-      # Phase 2 metadata enrichment. Optional — unset means Hardcover lookups are skipped.
-      HARDCOVER_APP_API_TOKEN: ${HARDCOVER_APP_API_TOKEN:-}
+
+  worker:
+    <<: *tsundoku-common
+    # Runs background jobs (Calibre import, Phase 2 metadata enrichment) via
+    # Solid Queue. Same image, no web server, no port.
+    command: [ "bundle", "exec", "rake", "solid_queue:start" ]
+    depends_on:
+      - tsundoku

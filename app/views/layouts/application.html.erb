@@ -36,6 +36,9 @@
       </div>
     </header>
 
+    <%= turbo_stream_from "tasks:active" %>
+    <%= render "tasks/active_list", tasks: Task.visible.order(:created_at) %>
+
     <main class="container mx-auto px-6 py-8">
       <% flash.each do |type, msg| %>
         <div class="mb-4 px-4 py-2 rounded <%= type.to_s == "alert" ? "bg-red-50 text-red-800 border border-red-200" : "bg-emerald-50 text-emerald-800 border border-emerald-200" %>">

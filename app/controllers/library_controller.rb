@@ -4,16 +4,18 @@ class LibraryController < ApplicationController
   def index
     @books = Book.by_title.includes(:authors, :series)
     @calibre_db_available = CalibreImporter.available?
+    @calibre_import_in_progress = Task.active.where(kind: "calibre_import").exists?
   end
 
   def import
-    stats = CalibreImporter.new.import!
-    redirect_to root_path, notice: import_summary(stats)
-  rescue CalibreImporter::MissingDatabase => e
-    redirect_to root_path, alert: e.message
-  rescue => e
-    Rails.logger.error("Calibre import failed: #{e.class}: #{e.message}\n#{e.backtrace.first(10).join("\n")}")
-    redirect_to root_path, alert: "Import failed: #{e.message}"
+    if Task.active.where(kind: "calibre_import").exists?
+      redirect_to root_path, alert: "An import is already running."
+      return
+    end
+
+    task = Task.create!(kind: "calibre_import", status: :queued)
+    CalibreImportJob.perform_later(task.id)
+    redirect_to root_path, notice: "Import started — progress will appear in the banner above."
   end
 
   private
@@ -21,16 +23,5 @@ class LibraryController < ApplicationController
   def require_admin!
     return if current_user&.admin?
     redirect_to root_path, alert: "Admins only."
-  end
-
-  def import_summary(stats)
-    parts = []
-    parts << "#{stats.books_created} new, #{stats.books_updated} updated (#{stats.books_seen} total)"
-    parts << "#{stats.books_skipped_no_epub} skipped (no EPUB)" if stats.books_skipped_no_epub.positive?
-    parts << "#{stats.authors_created} new authors" if stats.authors_created.positive?
-    parts << "#{stats.series_created} new series" if stats.series_created.positive?
-    parts << "#{stats.publishers_created} new publishers" if stats.publishers_created.positive?
-    parts << "#{stats.tags_created} new tags" if stats.tags_created.positive?
-    "Imported from Calibre: #{parts.join(' · ')}."
   end
 end

@@ -8,7 +8,7 @@
     </p>
   </div>
 
-  <% if @calibre_db_available && current_user&.admin? %>
+  <% if @calibre_db_available && current_user&.admin? && !@calibre_import_in_progress %>
     <%= button_to library_import_path,
           method: :post,
           form: { data: { turbo_confirm: "Import / re-sync books from Calibre's metadata.db?" } },
