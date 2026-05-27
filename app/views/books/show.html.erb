@@ -105,5 +105,17 @@
         </div>
       <% end %>
     </dl>
+
+    <% other_identifiers = @book.book_identifiers.reject { |bi| BookIdentifier::ISBN_KINDS.include?(bi.kind) } %>
+    <% if other_identifiers.any? %>
+      <dl class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+        <% other_identifiers.sort_by(&:kind).each do |bi| %>
+          <div>
+            <dt class="text-xs uppercase tracking-wide text-stone-500"><%= bi.kind.humanize %></dt>
+            <dd class="text-stone-800 font-mono mt-0.5 truncate"><%= bi.value %></dd>
+          </div>
+        <% end %>
+      </dl>
+    <% end %>
   </div>
 </div>
