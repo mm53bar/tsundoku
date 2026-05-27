@@ -95,12 +95,6 @@
           <dd class="text-stone-800 mt-0.5"><%= @book.pubdate.strftime("%B %Y") %></dd>
         </div>
       <% end %>
-      <% if @book.isbn.present? %>
-        <div>
-          <dt class="text-xs uppercase tracking-wide text-stone-500">ISBN</dt>
-          <dd class="text-stone-800 font-mono mt-0.5"><%= @book.isbn %></dd>
-        </div>
-      <% end %>
       <% if @book.file_format.present? %>
         <div>
           <dt class="text-xs uppercase tracking-wide text-stone-500">Format</dt>
@@ -121,16 +115,25 @@
       <% end %>
     </dl>
 
-    <% other_identifiers = @book.book_identifiers.reject { |bi| BookIdentifier::ISBN_KINDS.include?(bi.kind) } %>
-    <% if other_identifiers.any? %>
-      <dl class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
-        <% other_identifiers.sort_by(&:kind).each do |bi| %>
-          <div>
-            <dt class="text-xs uppercase tracking-wide text-stone-500"><%= bi.kind.humanize %></dt>
-            <dd class="text-stone-800 font-mono mt-0.5 truncate"><%= bi.value %></dd>
-          </div>
-        <% end %>
-      </dl>
+    <% identifiers = sorted_book_identifiers(@book) %>
+    <% if identifiers.any? %>
+      <div class="mt-6">
+        <h2 class="text-xs uppercase tracking-wide text-stone-500 mb-2">Identifiers</h2>
+        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+          <% identifiers.each do |bi| %>
+            <div>
+              <dt class="text-xs text-stone-500"><%= book_identifier_label(bi.kind) %></dt>
+              <dd class="text-stone-800 font-mono mt-0.5 truncate">
+                <% if (url = book_identifier_url(bi)) %>
+                  <%= link_to bi.value, url, target: "_blank", rel: "noopener", class: "text-stone-900 hover:text-amber-700 underline decoration-stone-300 hover:decoration-amber-700" %>
+                <% else %>
+                  <%= bi.value %>
+                <% end %>
+              </dd>
+            </div>
+          <% end %>
+        </dl>
+      </div>
     <% end %>
   </div>
 </div>
