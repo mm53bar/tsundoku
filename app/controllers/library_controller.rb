@@ -26,8 +26,10 @@ class LibraryController < ApplicationController
   def import_summary(stats)
     parts = []
     parts << "#{stats.books_created} new, #{stats.books_updated} updated (#{stats.books_seen} total)"
+    parts << "#{stats.books_skipped_no_epub} skipped (no EPUB)" if stats.books_skipped_no_epub.positive?
     parts << "#{stats.authors_created} new authors" if stats.authors_created.positive?
     parts << "#{stats.series_created} new series" if stats.series_created.positive?
+    parts << "#{stats.publishers_created} new publishers" if stats.publishers_created.positive?
     parts << "#{stats.tags_created} new tags" if stats.tags_created.positive?
     "Imported from Calibre: #{parts.join(' · ')}."
   end
