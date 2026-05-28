@@ -108,11 +108,11 @@ class HardcoverClient
             }
             contributions {
               contribution
-              author { name }
+              author { id name slug }
             }
             book_series {
               position
-              series { name }
+              series { id name slug }
             }
           }
         }

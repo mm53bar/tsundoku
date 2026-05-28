@@ -1,0 +1,19 @@
+<% content_for :title, "Series" %>
+
+<div class="mb-6">
+  <h1 class="text-3xl font-semibold tracking-tight">Series</h1>
+  <p class="text-stone-600 text-sm mt-1"><%= pluralize(@series.size, "series") %></p>
+</div>
+
+<% if @series.empty? %>
+  <p class="text-stone-500 text-sm">No series yet — import a Calibre library to populate this list.</p>
+<% else %>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-0.5">
+    <% @series.each do |series| %>
+      <%= link_to series, class: "flex items-baseline justify-between gap-3 px-3 py-2 rounded hover:bg-stone-100/80 transition" do %>
+        <span class="font-medium text-stone-900 truncate"><%= series.name %></span>
+        <span class="shrink-0 text-xs text-stone-500 font-mono"><%= series.books_count %></span>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>

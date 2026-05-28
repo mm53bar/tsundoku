@@ -17,5 +17,8 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :authors, only: [ :index, :show ]
+  resources :series,  only: [ :index, :show ]
+
   root "library#index"
 end

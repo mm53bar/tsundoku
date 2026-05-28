@@ -38,6 +38,13 @@ class BookEnricher
     # title-matched record has the publisher's full cover.
     search_hits = client.search_books(search_query_string)
 
+    # Side effect: opportunistically stamp Hardcover slugs onto our local
+    # Author and Series records when we find them. These aren't user-facing
+    # review data, they're stable infrastructure handles (used to render
+    # "View on Hardcover" links and, later, to live-fetch other works by
+    # the same author/series).
+    stamp_hardcover_slugs(book_data)
+
     fields = {}
     fields["description"] = book_data["description"] if differs?(@book.description, book_data["description"])
     fields["headline"]    = book_data["headline"]    if book_data["headline"].present?
@@ -62,9 +69,48 @@ class BookEnricher
   HONORIFIC_TRAILING = /\s+(Ph\.?D\.?|M\.?D\.?|D\.?D\.?S\.?|Esq\.?|Jr\.?|Sr\.?|II|III|IV)\.?\s*\z/i
 
   def search_query_string
-    raw_author = @book.authors.first&.name.to_s.strip
-    cleaned_author = raw_author.gsub(HONORIFIC_TRAILING, "").gsub(/\s+/, " ").strip
+    cleaned_author = clean_author_name(@book.authors.first&.name)
     [ @book.title, cleaned_author ].compact.map(&:to_s).map(&:strip).reject(&:empty?).join(" ")
+  end
+
+  def clean_author_name(name)
+    name.to_s.strip.gsub(HONORIFIC_TRAILING, "").gsub(/\s+/, " ").strip
+  end
+
+  # Match Hardcover's authors/series back to our local records by cleaned
+  # name (case-insensitive) and stamp the slug if we don't already have
+  # one. Idempotent — re-running an enrichment doesn't overwrite existing
+  # slugs.
+  def stamp_hardcover_slugs(book_data)
+    return unless book_data.is_a?(Hash)
+    stamp_author_slugs(book_data["contributions"])
+    stamp_series_slug(book_data["book_series"])
+  end
+
+  def stamp_author_slugs(contributions)
+    return unless contributions.is_a?(Array)
+
+    local_by_cleaned_name = @book.authors.index_by { |a| clean_author_name(a.name).downcase }
+
+    contributions.each do |contribution|
+      hc_name = contribution.dig("author", "name")
+      hc_slug = contribution.dig("author", "slug")
+      next if hc_name.blank? || hc_slug.blank?
+
+      local = local_by_cleaned_name[clean_author_name(hc_name).downcase]
+      next unless local
+      next if local.hardcover_slug.present?
+      local.update!(hardcover_slug: hc_slug)
+    end
+  end
+
+  def stamp_series_slug(book_series)
+    return unless book_series.is_a?(Array) && @book.series.present?
+
+    hc_series = book_series.map { |bs| bs["series"] }.compact.find { |s| s["name"].to_s.casecmp(@book.series.name).zero? }
+    return unless hc_series && hc_series["slug"].present?
+    return if @book.series.hardcover_slug.present?
+    @book.series.update!(hardcover_slug: hc_series["slug"])
   end
 
   private
