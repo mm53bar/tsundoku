@@ -24,7 +24,7 @@ class IngestController < ApplicationController
       queued += 1
     end
 
-    redirect_to ingest_path_route, notice: "Queued #{pluralize(queued, "file")} for ingest. Watch the banner above for progress."
+    redirect_to ingest_path_route, notice: "Queued #{helpers.pluralize(queued, "file")} for ingest. Watch the banner above for progress."
   end
 
   private
