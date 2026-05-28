@@ -29,7 +29,9 @@ Rails.application.routes.draw do
     end
   end
 
-  resources :lists, only: [ :index, :show, :new, :create, :destroy ]
+  resources :lists, only: [ :index, :show, :new, :create, :edit, :update, :destroy ] do
+    resources :list_entries, only: [ :create, :destroy ], path: "entries"
+  end
 
   root "library#index"
 end
