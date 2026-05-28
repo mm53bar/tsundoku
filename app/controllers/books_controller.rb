@@ -9,7 +9,7 @@ class BooksController < ApplicationController
     path = safe_cover_path
     return head :not_found unless path
 
-    send_file path, type: "image/jpeg", disposition: "inline"
+    send_file path, type: cover_mime_type(path), disposition: "inline"
   end
 
   def edit
@@ -181,5 +181,14 @@ class BooksController < ApplicationController
     return nil unless candidate.to_s.start_with?(base.to_s + File::SEPARATOR)
     return nil unless candidate.file?
     candidate.to_s
+  end
+
+  def cover_mime_type(path)
+    case File.extname(path).downcase
+    when ".png"  then "image/png"
+    when ".gif"  then "image/gif"
+    when ".webp" then "image/webp"
+    else              "image/jpeg"
+    end
   end
 end
