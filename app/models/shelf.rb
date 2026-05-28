@@ -11,4 +11,10 @@ class Shelf < ApplicationRecord
   def to_param
     "#{id}-#{name.parameterize}"
   end
+
+  KOBO_UUID_NAMESPACE = Digest::UUID.uuid_v5(Digest::UUID::URL_NAMESPACE, "tsundoku-kobo-shelves").freeze
+
+  def kobo_uuid
+    Digest::UUID.uuid_v5(KOBO_UUID_NAMESPACE, id.to_s)
+  end
 end

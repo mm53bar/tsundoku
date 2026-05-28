@@ -8,15 +8,20 @@ module Kobo
   class SyncController < BaseController
     def sync
       books = syncable_books.includes(:authors, :publisher, :series).select(&:epub_downloadable?)
-
-      # Mark these books as synced for this user (idempotent). The
-      # created_at of the KoboSyncedBook row drives the Kobo's
-      # "recently added" sort — using book.added_at meant freshly-synced
-      # books slotted into the device list by their library-import date,
-      # which for Calibre-imported books is years ago.
       synced_at_by_book = ensure_synced_records(books)
 
-      render json: books.map { |book| new_entitlement(book, synced_at_by_book[book.id]) }
+      # Build the book entitlements first, then append Tag blocks for any
+      # shelves marked sync_to_kobo. Tag items are filtered to books that
+      # are themselves in the sync payload — sending a Tag.Items reference
+      # to a UUID the device doesn't have as an entitlement creates a
+      # dangling shelf entry on-device.
+      uuid_by_book_id = books.to_h { |b| [ b.id, b.kobo_uuid ] }
+      shelves         = @kobo_user.shelves.syncing.includes(shelf_entries: :book).by_name
+
+      payload  = books.map { |book| new_entitlement(book, synced_at_by_book[book.id]) }
+      payload += shelves.map { |shelf| new_tag(shelf, uuid_by_book_id) }
+
+      render json: payload
     end
 
     # GET /kobo/:handle/v1/library/:book_uuid/metadata
@@ -46,6 +51,26 @@ module Kobo
         existing[book.id] = record.created_at
       end
       existing
+    end
+
+    def new_tag(shelf, uuid_by_book_id)
+      items = shelf.shelf_entries.filter_map do |entry|
+        uuid = uuid_by_book_id[entry.book_id]
+        { "Type" => "ProductRevisionTagItem", "RevisionId" => uuid } if uuid
+      end
+
+      {
+        "NewTag" => {
+          "Tag" => {
+            "Created"      => shelf.created_at.iso8601,
+            "Id"           => shelf.kobo_uuid,
+            "Items"        => items,
+            "LastModified" => shelf.updated_at.iso8601,
+            "Name"         => shelf.name,
+            "Type"         => "UserTag"
+          }
+        }
+      }
     end
 
     def new_entitlement(book, synced_at)
