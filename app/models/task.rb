@@ -91,11 +91,22 @@ class Task < ApplicationRecord
   end
 
   def broadcast_update
+    visible_tasks = Task.visible.order(:created_at)
+
+    # Banner (sub-header strip) — only shown when tasks are visible
     Turbo::StreamsChannel.broadcast_replace_to(
       "tasks:active",
       target: "active_tasks",
       partial: "tasks/active_list",
-      locals: { tasks: Task.visible.order(:created_at) }
+      locals: { tasks: visible_tasks }
+    )
+
+    # Tray (navbar dropdown) — persistent UI surface
+    Turbo::StreamsChannel.broadcast_replace_to(
+      "tasks:active",
+      target: "tasks_tray",
+      partial: "tasks/tray",
+      locals: { tasks: visible_tasks }
     )
   end
 end
