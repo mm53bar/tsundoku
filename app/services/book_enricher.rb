@@ -55,8 +55,16 @@ class BookEnricher
     }
   end
 
+  # Trailing academic / generational honorifics — strip these before passing
+  # to Hardcover's Typesense search. The search tokenizes the query and
+  # requires non-trivial tokens to match book fields, so "PhD" would
+  # exclude any book record whose author isn't tagged with PhD.
+  HONORIFIC_TRAILING = /\s+(Ph\.?D\.?|M\.?D\.?|D\.?D\.?S\.?|Esq\.?|Jr\.?|Sr\.?|II|III|IV)\.?\s*\z/i
+
   def search_query_string
-    [ @book.title, @book.authors.first&.name ].compact.map(&:to_s).map(&:strip).reject(&:empty?).join(" ")
+    raw_author = @book.authors.first&.name.to_s.strip
+    cleaned_author = raw_author.gsub(HONORIFIC_TRAILING, "").gsub(/\s+/, " ").strip
+    [ @book.title, cleaned_author ].compact.map(&:to_s).map(&:strip).reject(&:empty?).join(" ")
   end
 
   private
