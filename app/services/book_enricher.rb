@@ -36,7 +36,14 @@ class BookEnricher
     # we can harvest cover candidates from them too. The ISBN-matched book
     # is sometimes a thumbnail-only "pending" record while the canonical
     # title-matched record has the publisher's full cover.
-    search_hits = client.search_books(search_query_string)
+    #
+    # Filter search hits to ones whose title actually matches our book —
+    # Typesense returns fuzzy matches and will include other books by the
+    # same author. Without this filter we'd happily pull a higher-res cover
+    # from the wrong book.
+    raw_hits = client.search_books(search_query_string)
+    search_hits = matching_search_hits(raw_hits)
+    Rails.logger.info("BookEnricher: book ##{@book.id} title-matched #{search_hits.size} of #{raw_hits.size} search hits")
 
     # Side effect: opportunistically stamp Hardcover slugs onto our local
     # Author and Series records when we find them. These aren't user-facing
@@ -75,6 +82,26 @@ class BookEnricher
 
   def clean_author_name(name)
     name.to_s.strip.gsub(HONORIFIC_TRAILING, "").gsub(/\s+/, " ").strip
+  end
+
+  # Bidirectional substring match: keep a hit if its title (or any of its
+  # alternative_titles) either contains the local book's title or is
+  # contained by it. Catches the "local says Accelerate / Hardcover has
+  # Accelerate: Building..." case and the reverse, while dropping
+  # same-author-different-book matches like "My Favourite Mistake" when
+  # we asked for "Again, Rachel".
+  def matching_search_hits(hits)
+    return [] if hits.blank? || @book.title.blank?
+    needle = @book.title.to_s.downcase.strip
+    return [] if needle.empty?
+
+    hits.select do |hit|
+      titles = [ hit["title"], *Array(hit["alternative_titles"]) ].compact
+      titles.any? do |t|
+        normalized = t.to_s.downcase.strip
+        normalized.present? && (normalized.include?(needle) || needle.include?(normalized))
+      end
+    end
   end
 
   # Match Hardcover's authors/series back to our local records by cleaned
