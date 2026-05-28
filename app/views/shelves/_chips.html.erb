@@ -1,0 +1,16 @@
+<%# Locals: book (required), user (required).
+    Just the chip cluster (no panel, no "+ Add" button). Wrapped in its
+    own turbo_frame so toggle responses can update the chips without
+    destroying the picker panel that wraps the form making the request. %>
+<%= turbo_frame_tag dom_id(book, :shelf_chips), class: "contents" do %>
+  <% book.shelves_for(user).by_name.each do |shelf| %>
+    <%= link_to shelf, class: "inline-flex items-center gap-1 px-2 py-1 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs rounded-full border border-stone-200 transition" do %>
+      <%= shelf.name %>
+      <% if shelf.sync_to_kobo %>
+        <svg class="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l3-3m0 0l3 3m-3-3v12M21 12l-3 3m0 0l-3-3m3 3V3"/>
+        </svg>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

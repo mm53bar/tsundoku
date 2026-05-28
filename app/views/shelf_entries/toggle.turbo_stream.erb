@@ -1,10 +1,12 @@
 <%# After a shelf-membership toggle, refresh two regions:
-    1. The chip row above (chip appears/disappears + sync indicator)
+    1. The chips inside the chip row (chip appears/disappears + sync indicator)
     2. The row inside the picker panel (checkbox flips state)
-    Both are turbo_frames anchored by dom_id, so this is a clean
-    surgical replacement with no flicker. %>
-<%= turbo_stream.replace dom_id(@book, :shelves) do %>
-  <%= render "shelves/chip_row", book: @book, user: current_user %>
+    Important: we replace the CHIPS sub-frame, not the whole chip_row.
+    Replacing the outer chip_row would destroy the picker panel — and
+    therefore the form's parent frame — while the form's response is
+    still in flight, causing Turbo to show "Content missing." %>
+<%= turbo_stream.replace dom_id(@book, :shelf_chips) do %>
+  <%= render "shelves/chips", book: @book, user: current_user %>
 <% end %>
 <%= turbo_stream.replace "membership_#{@shelf.id}_for_book_#{@book.id}" do %>
   <%= render "shelves/membership_row", book: @book, shelf: @shelf, on_shelf: @on_shelf %>
