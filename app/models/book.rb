@@ -18,9 +18,13 @@ class Book < ApplicationRecord
   has_many :shelf_entries, dependent: :destroy
   has_many :shelves, -> { distinct }, through: :shelf_entries
 
+  has_many :kobo_synced_books, dependent: :destroy
+
+  before_validation :set_kobo_uuid, on: :create
 
   validates :calibre_id, uniqueness: true, allow_nil: true
   validates :title, :path, :imported_at, presence: true
+  validates :kobo_uuid, presence: true, uniqueness: true
 
   scope :by_title, -> { order(Arel.sql("COALESCE(NULLIF(sort_title, ''), title) COLLATE NOCASE ASC")) }
   scope :recently_added, -> { order(added_at: :desc) }
@@ -67,11 +71,14 @@ class Book < ApplicationRecord
     shelves.where(user: user)
   end
 
-  KOBO_UUID_NAMESPACE = Digest::UUID.uuid_v5(Digest::UUID::URL_NAMESPACE, "tsundoku-kobo-books").freeze
+  private
 
-  # Deterministic v5 UUID derived from the integer id. Used as the Kobo
-  # entitlement/revision/work id across the sync payload.
-  def kobo_uuid
-    Digest::UUID.uuid_v5(KOBO_UUID_NAMESPACE, id.to_s)
+  # Random UUID set before validation so it's available for indexed lookup
+  # immediately. Old records were backfilled with deterministic v5(id)
+  # UUIDs by the migration to preserve the Kobo's cached entitlements;
+  # new records get random UUIDs because nothing depends on them being
+  # derivable from id anymore.
+  def set_kobo_uuid
+    self.kobo_uuid ||= SecureRandom.uuid
   end
 end
