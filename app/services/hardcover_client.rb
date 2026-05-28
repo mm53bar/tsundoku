@@ -58,19 +58,29 @@ class HardcoverClient
             release_date
             literary_type_id
             cached_image
+            images { id url width height }
             default_cover_edition {
               id
               cached_image
-              images {
-                id
-                url
-                width
-                height
-              }
+              images { id url width height }
             }
             editions(limit: 30) {
               id
               cached_image
+            }
+            canonical {
+              id
+              cached_image
+              images { id url width height }
+              default_cover_edition {
+                id
+                cached_image
+                images { id url width height }
+              }
+              editions(limit: 30) {
+                id
+                cached_image
+              }
             }
             contributions {
               contribution
