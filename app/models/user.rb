@@ -8,6 +8,17 @@ class User < ApplicationRecord
 
   validates :username, presence: true, uniqueness: true
 
+  KOBO_WORDLIST = File.readlines(Rails.root.join("lib/data/mnemonic_wordlist.txt")).map(&:strip).freeze
+
+  def regenerate_kobo_handle!
+    loop do
+      candidate = KOBO_WORDLIST.sample
+      next if User.where.not(id: id).exists?(kobo_handle: candidate)
+      update!(kobo_handle: candidate)
+      return candidate
+    end
+  end
+
   def self.find_or_provision_from_proxy(username:, email: nil, name: nil)
     user = find_or_create_by!(username: username) do |u|
       u.email = email

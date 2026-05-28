@@ -11,6 +11,10 @@
       <p class="mt-1.5 inline-block text-xs uppercase tracking-wider text-amber-700 font-semibold">Admin</p>
     <% end %>
   </div>
+  <%= link_to kobo_sync_path,
+        class: "block w-full text-left px-3 py-2 text-stone-700 hover:bg-stone-50" do %>
+    Sync with Kobo
+  <% end %>
   <%= button_to sign_out_path, method: :delete,
         form: { class: "block" },
         class: "block w-full text-left px-3 py-2 text-stone-700 hover:bg-stone-50 cursor-pointer" do %>
