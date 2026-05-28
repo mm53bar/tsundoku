@@ -68,6 +68,10 @@ class HardcoverClient
                 height
               }
             }
+            editions(limit: 30) {
+              id
+              cached_image
+            }
             contributions {
               contribution
               author { name }
