@@ -54,4 +54,11 @@ class Book < ApplicationRecord
     return nil unless file_name.present? && file_format.present?
     File.join(Rails.configuration.x.library_path, path, "#{file_name}.#{file_format.downcase}")
   end
+
+  # Shelves owned by the given user that contain this book. has_many :shelves
+  # is global (any user); this is the per-user filter we want in views.
+  def shelves_for(user)
+    return Shelf.none unless user
+    shelves.where(user: user)
+  end
 end

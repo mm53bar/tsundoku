@@ -1,0 +1,23 @@
+<%# Locals: book, shelf, on_shelf (boolean).
+    A single row in the picker panel. Form submits a Turbo POST to the
+    toggle endpoint; response replaces this frame AND the chip row above.
+    Wrapped in a turbo_frame so the row's checkbox state updates without
+    re-rendering the whole panel. %>
+<%= turbo_frame_tag "membership_#{shelf.id}_for_book_#{book.id}" do %>
+  <%= form_with url: toggle_shelf_book_path(book, shelf_id: shelf.id), method: :post, class: "block" do %>
+    <button type="submit"
+            class="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-stone-50 transition text-left cursor-pointer">
+      <span class="shrink-0 w-4 h-4 rounded border flex items-center justify-center <%= on_shelf ? "bg-amber-600 border-amber-600 text-white" : "bg-white border-stone-300" %>">
+        <% if on_shelf %>
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+          </svg>
+        <% end %>
+      </span>
+      <span class="flex-1 truncate text-stone-800"><%= shelf.name %></span>
+      <% if shelf.sync_to_kobo %>
+        <span class="shrink-0 text-[10px] text-blue-700 font-medium uppercase tracking-wide">syncs</span>
+      <% end %>
+    </button>
+  <% end %>
+<% end %>

@@ -28,7 +28,10 @@ class ShelvesController < ApplicationController
 
   def update
     if @shelf.update(shelf_params)
-      redirect_to @shelf, notice: "Updated."
+      respond_to do |format|
+        format.turbo_stream # used by the inline sync_to_kobo switch on shelves#show
+        format.html { redirect_to @shelf, notice: "Updated." }
+      end
     else
       flash.now[:alert] = @shelf.errors.full_messages.to_sentence
       render :edit, status: :unprocessable_content
@@ -49,6 +52,6 @@ class ShelvesController < ApplicationController
   end
 
   def shelf_params
-    params.require(:shelf).permit(:name, :description)
+    params.require(:shelf).permit(:name, :description, :sync_to_kobo)
   end
 end

@@ -1,0 +1,22 @@
+<%# Locals: book (required), user (required).
+    The dropdown panel content that lists all the user's shelves with
+    checkbox toggles. Each row is its own Turbo Stream form so toggling
+    one doesn't reload the others.
+
+    Lives inside the chip_row's container; it doesn't have its own
+    turbo_frame because we replace individual rows (via dom_id'd frames)
+    rather than the whole panel. %>
+<% all_shelves = user.shelves.by_name %>
+<div class="max-h-72 overflow-y-auto py-1">
+  <% if all_shelves.any? %>
+    <% member_ids = book.shelves_for(user).pluck(:id).to_set %>
+    <% all_shelves.each do |shelf| %>
+      <%= render "shelves/membership_row", book: book, shelf: shelf, on_shelf: member_ids.include?(shelf.id) %>
+    <% end %>
+  <% else %>
+    <p class="px-3 py-2 text-xs text-stone-500">No shelves yet.</p>
+  <% end %>
+</div>
+<div class="px-3 py-2 border-t border-stone-100">
+  <%= link_to "+ New shelf", new_shelf_path, class: "text-xs text-amber-700 hover:text-amber-800" %>
+</div>
