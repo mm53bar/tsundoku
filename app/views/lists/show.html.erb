@@ -14,6 +14,8 @@
 
   <% if current_user&.admin? %>
     <div class="shrink-0 flex items-center gap-2">
+      <%= link_to "Re-import", reimport_list_path(@list),
+            class: "inline-flex items-center px-3 py-1.5 bg-white border border-stone-300 text-stone-700 text-sm font-medium rounded-md hover:bg-stone-50 transition" %>
       <%= link_to "Edit", edit_list_path(@list),
             class: "inline-flex items-center px-3 py-1.5 bg-white border border-stone-300 text-stone-700 text-sm font-medium rounded-md hover:bg-stone-50 transition" %>
       <%= button_to @list,

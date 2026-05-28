@@ -30,6 +30,10 @@ Rails.application.routes.draw do
   end
 
   resources :lists, only: [ :index, :show, :new, :create, :edit, :update, :destroy ] do
+    member do
+      get  :reimport
+      post :reimport
+    end
     resources :list_entries, only: [ :create, :destroy ], path: "entries"
   end
 

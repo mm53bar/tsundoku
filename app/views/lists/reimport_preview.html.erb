@@ -1,0 +1,78 @@
+<% content_for :title, "Preview · #{@list.name}" %>
+
+<div class="mb-6">
+  <%= link_to @list, class: "inline-flex items-center gap-1 text-sm text-stone-600 hover:text-stone-900" do %>
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+    </svg>
+    <%= @list.name %>
+  <% end %>
+</div>
+
+<h1 class="text-2xl font-semibold tracking-tight text-stone-900 mb-1">Re-import preview</h1>
+<p class="text-sm text-stone-500 mb-6">
+  Comparing your paste against the <%= pluralize(@diff.total_existing, "current entry") %> in <em><%= @list.name %></em>. Nothing has been saved yet — confirm below to apply, or back out and try a different paste.
+</p>
+
+<div class="grid grid-cols-3 gap-4 mb-8 max-w-2xl">
+  <div class="rounded-lg border border-emerald-200 bg-emerald-50/50 p-4 text-center">
+    <p class="text-2xl font-semibold text-emerald-700"><%= @diff.added.size %></p>
+    <p class="text-xs uppercase tracking-wider text-emerald-700">Added</p>
+  </div>
+  <div class="rounded-lg border border-red-200 bg-red-50/50 p-4 text-center">
+    <p class="text-2xl font-semibold text-red-700"><%= @diff.removed.size %></p>
+    <p class="text-xs uppercase tracking-wider text-red-700">Removed</p>
+  </div>
+  <div class="rounded-lg border border-stone-200 bg-stone-50 p-4 text-center">
+    <p class="text-2xl font-semibold text-stone-700"><%= @diff.unchanged_count %></p>
+    <p class="text-xs uppercase tracking-wider text-stone-500">Unchanged</p>
+  </div>
+</div>
+
+<% if @diff.added.any? %>
+  <section class="mb-6">
+    <h2 class="text-sm font-semibold uppercase tracking-wider text-emerald-700 mb-2">+ Added</h2>
+    <ul class="space-y-0.5 text-sm">
+      <% @diff.added.each do |entry| %>
+        <li class="px-3 py-1.5 rounded bg-emerald-50/40">
+          <span class="text-stone-900"><%= entry[:title] %></span>
+          <% if entry[:author].present? %>
+            <span class="text-stone-500"> — <%= entry[:author] %></span>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  </section>
+<% end %>
+
+<% if @diff.removed.any? %>
+  <section class="mb-6">
+    <h2 class="text-sm font-semibold uppercase tracking-wider text-red-700 mb-2">− Removed</h2>
+    <ul class="space-y-0.5 text-sm">
+      <% @diff.removed.each do |entry| %>
+        <li class="px-3 py-1.5 rounded bg-red-50/40">
+          <span class="text-stone-900"><%= entry.title %></span>
+          <% if entry.author_name.present? %>
+            <span class="text-stone-500"> — <%= entry.author_name %></span>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  </section>
+<% end %>
+
+<% if @diff.empty? %>
+  <p class="text-sm text-stone-500 mb-6 italic">No changes — the new paste matches the current list. Applying would just re-run book matching.</p>
+<% end %>
+
+<%= form_with url: reimport_list_path(@list), method: :post, local: true do %>
+  <%= hidden_field_tag "list[entries_text]", @entries_text %>
+  <%= hidden_field_tag :confirm, "1" %>
+  <div class="flex items-center gap-3 border-t border-stone-200 pt-5">
+    <%= submit_tag (@diff.empty? ? "Apply anyway" : "Apply changes"),
+          data: { turbo_confirm: "Apply this re-import to '#{@list.name}'? Existing entries will be replaced." },
+          class: "inline-flex items-center px-4 py-2 bg-stone-900 text-white text-sm font-medium rounded-md hover:bg-stone-700 transition cursor-pointer" %>
+    <%= link_to "Back", reimport_list_path(@list), class: "text-sm text-stone-600 hover:text-stone-900" %>
+    <%= link_to "Cancel", @list, class: "text-sm text-stone-600 hover:text-stone-900" %>
+  </div>
+<% end %>

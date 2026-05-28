@@ -1,6 +1,6 @@
 class ListsController < ApplicationController
-  before_action :require_admin!, only: [ :new, :create, :edit, :update, :destroy ]
-  before_action :set_list, only: [ :show, :edit, :update, :destroy ]
+  before_action :require_admin!, only: [ :new, :create, :edit, :update, :reimport, :destroy ]
+  before_action :set_list, only: [ :show, :edit, :update, :reimport, :destroy ]
 
   def index
     @lists = List.by_name
@@ -58,6 +58,32 @@ class ListsController < ApplicationController
     end
   end
 
+  # GET: shows the paste form. POST without confirm: parse + preview the
+  # diff. POST with confirm=1: rebuild entries from the paste (delete all
+  # existing + recreate from the new parse with fresh book-matching).
+  def reimport
+    if request.post?
+      @entries_text = params.dig(:list, :entries_text).to_s
+      @parsed = ListEntryParser.parse(@entries_text)
+
+      if @parsed.empty?
+        flash.now[:alert] = "No entries could be parsed from that input."
+        render :reimport, status: :unprocessable_content
+        return
+      end
+
+      @diff = ListReimportDiff.new(@list, @parsed)
+
+      if params[:confirm] == "1"
+        apply_reimport!(@parsed)
+        redirect_to @list, notice: "Re-imported '#{@list.name}' — +#{@diff.added.size} added, -#{@diff.removed.size} removed, #{@diff.unchanged_count} unchanged."
+        return
+      end
+
+      render :reimport_preview
+    end
+  end
+
   def destroy
     @list.destroy
     redirect_to lists_path, notice: "Deleted '#{@list.name}'."
@@ -76,5 +102,27 @@ class ListsController < ApplicationController
 
   def list_params
     params.require(:list).permit(:name, :description, :source_url)
+  end
+
+  # Rebuild this list's entries from a parsed array. Deletes existing
+  # entries and recreates them in the order of the parsed input, running
+  # BookMatcher on each to attempt local-library matching. Simpler than
+  # preserving entries across the re-import — there's no per-entry data
+  # worth saving today (no notes, no manual overrides). If we ever add
+  # local edits per entry, switch to update-in-place.
+  def apply_reimport!(parsed)
+    List.transaction do
+      @list.list_entries.destroy_all
+      parsed.each_with_index do |entry, i|
+        book = BookMatcher.match(title: entry[:title], author: entry[:author])
+        @list.list_entries.create!(
+          position: i,
+          title: entry[:title],
+          author_name: entry[:author],
+          book: book
+        )
+      end
+      @list.touch
+    end
   end
 end
