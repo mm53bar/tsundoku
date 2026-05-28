@@ -1,0 +1,11 @@
+<%# Inline sync_to_kobo toggle: replace just the toggle frame so the
+    switch reflects new state + badge in/out, no page reload. %>
+<%= turbo_stream.replace dom_id(@shelf, :sync_toggle) do %>
+  <%= render "shelves/sync_toggle", shelf: @shelf %>
+<% end %>
+
+<%# Also update the "Syncs to Kobo" badge in the page header — that's
+    not in a turbo_frame today but we can swap the header heading via a
+    morphed-replace approach if it becomes an issue. For now the
+    refresh-this-page once after toggling is acceptable; the toggle's
+    own state is the canonical signal. %>

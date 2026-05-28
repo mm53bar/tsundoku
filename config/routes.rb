@@ -15,6 +15,10 @@ Rails.application.routes.draw do
       get  :cover
       get  :download
       post :enrich
+      # Toggle a book's membership in one of the current user's shelves.
+      # Single endpoint that creates the ShelfEntry if missing or destroys
+      # it if present — symmetric with the way the UI's checkbox works.
+      post "shelves/:shelf_id/toggle", to: "shelf_entries#toggle", as: :toggle_shelf
     end
     resource :reading, only: [ :update ]
   end
