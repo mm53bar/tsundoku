@@ -49,10 +49,12 @@
                   variant: "transparent",
                   show_mobile_menu: false,
                   items: [
-                    { label: current_user.display_name, dropdown: true, content_id: "user-menu", align: "end" }
+                    { label: render("tasks/tray_trigger_label"), dropdown: true, content_id: "tasks-tray", align: "end" },
+                    { label: current_user.display_name,         dropdown: true, content_id: "user-menu",   align: "end" }
                   ],
                   dropdown_contents: [
-                    { id: "user-menu", width: "w-56", content: capture { render "layouts/user_menu_content" } }
+                    { id: "tasks-tray", width: "w-80", content: capture { render "tasks/tray", tasks: Task.visible.order(:created_at) } },
+                    { id: "user-menu",  width: "w-56", content: capture { render "layouts/user_menu_content" } }
                   ] %>
           <% end %>
         </div>
