@@ -1,5 +1,5 @@
 class ShelvesController < ApplicationController
-  before_action :set_shelf, only: [ :show, :edit, :update, :destroy ]
+  before_action :set_shelf, only: [ :show, :edit, :update, :destroy, :remove_book ]
 
   def index
     @shelves = current_user.shelves.by_name.includes(:shelf_entries)
@@ -41,6 +41,16 @@ class ShelvesController < ApplicationController
   def destroy
     @shelf.destroy
     redirect_to shelves_path, notice: "Deleted '#{@shelf.name}'."
+  end
+
+  # DELETE /shelves/:id/books/:book_id
+  # Used by the X button on shelves#show. Separate from the picker's
+  # toggle endpoint (which returns turbo-stream for the picker UI) —
+  # this one just removes and redirects back to the shelf.
+  def remove_book
+    book = Book.find(params[:book_id])
+    @shelf.shelf_entries.where(book: book).destroy_all
+    redirect_to @shelf, notice: "Removed '#{book.title}' from this shelf."
   end
 
   private

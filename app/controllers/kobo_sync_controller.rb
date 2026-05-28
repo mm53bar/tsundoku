@@ -1,7 +1,8 @@
 class KoboSyncController < ApplicationController
   def show
     current_user.regenerate_kobo_handle! if current_user.kobo_handle.blank?
-    @url = kobo_sync_url_for(current_user)
+    @url     = kobo_sync_url_for(current_user)
+    @devices = current_user.kobo_devices.recently_seen
   end
 
   def regenerate

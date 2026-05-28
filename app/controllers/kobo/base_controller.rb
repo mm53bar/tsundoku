@@ -7,6 +7,7 @@ module Kobo
     skip_before_action :require_authentication
     skip_forgery_protection
     before_action :set_kobo_user
+    after_action  :capture_device_info, if: -> { @kobo_user.present? }
 
     # GET /kobo/:handle
     # Top-level connectivity ping. The real Kobo store returns an empty
@@ -41,6 +42,15 @@ module Kobo
       via_reading = @kobo_user.readings.where(status: Reading::SYNCABLE_STATUSES).select(:book_id)
       via_shelves = ShelfEntry.joins(:shelf).where(shelves: { user: @kobo_user, sync_to_kobo: true }).select(:book_id)
       Book.where(id: via_reading).or(Book.where(id: via_shelves))
+    end
+
+    # Opportunistically pulls device telemetry out of request params and
+    # upserts a KoboDevice row. Failures are swallowed — capturing device
+    # info must never break a sync response.
+    def capture_device_info
+      KoboDevice.upsert_from_request(user: @kobo_user, params: params)
+    rescue StandardError => e
+      Rails.logger.warn("KoboDevice capture failed: #{e.class}: #{e.message}")
     end
   end
 end

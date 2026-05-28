@@ -8,7 +8,15 @@ module Kobo
   class SyncController < BaseController
     def sync
       books = syncable_books.includes(:authors, :publisher, :series).select(&:epub_downloadable?)
-      render json: books.map { |book| new_entitlement(book) }
+
+      # Mark these books as synced for this user (idempotent). The
+      # created_at of the KoboSyncedBook row drives the Kobo's
+      # "recently added" sort — using book.added_at meant freshly-synced
+      # books slotted into the device list by their library-import date,
+      # which for Calibre-imported books is years ago.
+      synced_at_by_book = ensure_synced_records(books)
+
+      render json: books.map { |book| new_entitlement(book, synced_at_by_book[book.id]) }
     end
 
     # GET /kobo/:handle/v1/library/:book_uuid/metadata
@@ -27,9 +35,22 @@ module Kobo
 
     private
 
-    def new_entitlement(book)
+    # Make sure every syncable book has a KoboSyncedBook row for the
+    # current user, creating new ones with Time.current. Returns a
+    # {book_id => synced_at} map for use in entitlement Created fields.
+    def ensure_synced_records(books)
+      existing = @kobo_user.kobo_synced_books.where(book_id: books.map(&:id)).pluck(:book_id, :created_at).to_h
+      books.each do |book|
+        next if existing[book.id]
+        record = @kobo_user.kobo_synced_books.create!(book: book)
+        existing[book.id] = record.created_at
+      end
+      existing
+    end
+
+    def new_entitlement(book, synced_at)
       uuid     = book.kobo_uuid
-      created  = (book.added_at || book.created_at).iso8601
+      created  = (synced_at || Time.current).iso8601
       modified = (book.last_modified || book.updated_at).iso8601
 
       {
