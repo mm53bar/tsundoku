@@ -37,5 +37,8 @@ Rails.application.routes.draw do
     resources :list_entries, only: [ :create, :destroy ], path: "entries"
   end
 
+  get  "/ingest",      to: "ingest#index", as: :ingest_index
+  post "/ingest/scan", to: "ingest#scan",  as: :ingest_scan
+
   root "library#index"
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_28_050000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_28_100000) do
   create_table "authors", force: :cascade do |t|
     t.integer "calibre_id"
     t.datetime "created_at", null: false
@@ -53,7 +53,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_050000) do
 
   create_table "books", force: :cascade do |t|
     t.datetime "added_at"
-    t.integer "calibre_id", null: false
+    t.integer "calibre_id"
     t.string "cover_path"
     t.datetime "created_at", null: false
     t.text "description"

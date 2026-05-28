@@ -49,6 +49,12 @@ class Task < ApplicationRecord
       else
         "Enriching #{subject.title}"
       end
+    when "book_ingest"
+      if subject.present?
+        "Ingested #{subject.title}"
+      else
+        "Ingesting new book"
+      end
     else
       kind.humanize
     end

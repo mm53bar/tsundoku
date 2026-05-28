@@ -13,7 +13,7 @@ class Book < ApplicationRecord
   has_many :list_entries, dependent: :nullify, inverse_of: :book
   has_many :lists, -> { distinct }, through: :list_entries
 
-  validates :calibre_id, presence: true, uniqueness: true
+  validates :calibre_id, uniqueness: true, allow_nil: true
   validates :title, :path, :imported_at, presence: true
 
   scope :by_title, -> { order(Arel.sql("COALESCE(NULLIF(sort_title, ''), title) COLLATE NOCASE ASC")) }
