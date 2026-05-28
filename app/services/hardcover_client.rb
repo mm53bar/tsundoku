@@ -22,6 +22,30 @@ class HardcoverClient
     @token = token
   end
 
+  # Hardcover's Typesense-backed search. Required for finding sibling book
+  # records (e.g. different ISBNs of the same title) — the regular where
+  # clauses don't support _ilike on this server, so naive title matching
+  # is exact-only. The search hits are full Typesense documents with the
+  # cover `image` already populated.
+  def search_books(query, per_page: 10)
+    return [] unless @token.present? && query.present?
+
+    gql = <<~GQL
+      query SearchBooks($query: String!, $per_page: Int!) {
+        search(query: $query, query_type: "Book", per_page: $per_page) {
+          results
+        }
+      }
+    GQL
+
+    response = post(query: gql, variables: { query: query, per_page: per_page })
+    return [] unless response
+
+    hits = Array(response.dig("data", "search", "results", "hits"))
+    Rails.logger.info("HardcoverClient: search returned #{hits.size} hit(s) for #{query.inspect}")
+    hits.map { |hit| hit["document"] }.compact
+  end
+
   # Look up an edition by ISBN-13 (or ISBN-10 — the editions table indexes
   # both columns). Returns the first matching edition hash, or nil.
   def find_edition_by_isbn(isbn)

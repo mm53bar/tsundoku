@@ -26,10 +26,17 @@ class BookEnricher
   def build_proposal
     return base_proposal(matched: false) unless HardcoverClient.available? && @book.isbn.present?
 
-    edition = HardcoverClient.new.find_edition_by_isbn(@book.isbn)
+    client = HardcoverClient.new
+    edition = client.find_edition_by_isbn(@book.isbn)
     return base_proposal(matched: false) unless edition
 
     book_data = edition["book"] || {}
+
+    # Search for sibling book records (different ISBNs of the same title) so
+    # we can harvest cover candidates from them too. The ISBN-matched book
+    # is sometimes a thumbnail-only "pending" record while the canonical
+    # title-matched record has the publisher's full cover.
+    search_hits = client.search_books(search_query_string)
 
     fields = {}
     fields["description"] = book_data["description"] if differs?(@book.description, book_data["description"])
@@ -44,8 +51,12 @@ class BookEnricher
       "matched"     => true,
       "fields"      => fields,
       "identifiers" => proposed_identifiers(edition),
-      "cover"       => proposed_cover(edition, book_data)
+      "cover"       => proposed_cover(edition, book_data, search_hits)
     }
+  end
+
+  def search_query_string
+    [ @book.title, @book.authors.first&.name ].compact.map(&:to_s).map(&:strip).reject(&:empty?).join(" ")
   end
 
   private
@@ -87,11 +98,12 @@ class BookEnricher
   BOOK_RATIO_MIN = 1.35
   BOOK_RATIO_MAX = 1.75
 
-  def proposed_cover(edition, book_data)
+  def proposed_cover(edition, book_data, search_hits = [])
     candidates = []
     add_cover_candidate(candidates, edition["cached_image"])
     harvest_book_covers(candidates, book_data)
     harvest_book_covers(candidates, book_data["canonical"]) if book_data["canonical"].present?
+    Array(search_hits).each { |hit| add_cover_candidate(candidates, hit["image"]) }
 
     candidates.uniq! { |c| c["url"] }
 
