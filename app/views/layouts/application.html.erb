@@ -25,11 +25,20 @@
 
   <body class="bg-stone-50 text-stone-900 min-h-screen">
     <header class="border-b border-stone-200 bg-white">
-      <div class="container mx-auto px-6 py-4 flex items-center justify-between">
-        <%= link_to root_path, class: "flex items-center gap-2.5 text-xl font-semibold tracking-tight" do %>
-          <%= image_tag "/favicon-96.png", alt: "", class: "w-10 h-10" %>
-          <span>Tsundoku</span>
-        <% end %>
+      <div class="container mx-auto px-6 py-4 flex items-center justify-between gap-6">
+        <div class="flex items-center gap-8">
+          <%= link_to root_path, class: "flex items-center gap-2.5 text-xl font-semibold tracking-tight" do %>
+            <%= image_tag "/favicon-96.png", alt: "", class: "w-10 h-10" %>
+            <span>Tsundoku</span>
+          <% end %>
+          <% if signed_in? %>
+            <nav class="hidden sm:flex items-center gap-5 text-sm text-stone-600">
+              <%= link_to "Library", root_path, class: "hover:text-stone-900 #{"text-stone-900 font-medium" if controller_name == "library"}" %>
+              <%= link_to "Authors", authors_path, class: "hover:text-stone-900 #{"text-stone-900 font-medium" if controller_name == "authors"}" %>
+              <%= link_to "Series",  series_index_path, class: "hover:text-stone-900 #{"text-stone-900 font-medium" if controller_name == "series"}" %>
+            </nav>
+          <% end %>
+        </div>
         <div class="text-sm text-stone-600 flex items-center gap-4">
           <% if signed_in? %>
             <div data-controller="dropdown" class="relative">

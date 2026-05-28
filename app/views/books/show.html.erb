@@ -60,12 +60,12 @@
     </div>
 
     <% if @book.authors.any? %>
-      <p class="text-lg text-stone-700 mt-2"><%= @book.author_names %></p>
+      <p class="text-lg text-stone-700 mt-2"><%= author_links(@book.authors, class_name: "hover:text-amber-700 hover:underline") %></p>
     <% end %>
 
     <% if @book.series.present? %>
       <p class="text-sm text-stone-500 italic mt-1">
-        <%= @book.series.name %><% if @book.series_index.present? %>, book <%= @book.series_index.to_s.sub(/\.0+\z/, "") %><% end %>
+        <%= render "series/link", series: @book.series, class_name: "italic hover:text-amber-700 hover:underline" %><% if @book.series_index.present? %>, book <%= @book.series_index.to_s.sub(/\.0+\z/, "") %><% end %>
       </p>
     <% end %>
 

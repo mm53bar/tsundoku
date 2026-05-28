@@ -1,0 +1,22 @@
+{
+  "ignored_warnings": [
+    {
+      "fingerprint": "47ba6d49fec8f4a28c4c8d2f7d33b3ef37c6dc06f3bbfd310f1ec4601b796c08",
+      "check_name": "LinkToHref",
+      "message": "Potentially unsafe model attribute in `link_to` href",
+      "file": "app/views/series/show.html.erb",
+      "line": 19,
+      "note": "Series#hardcover_url is built from a literal Hardcover.app URL prefix plus a URL-encoded hardcover_slug. The slug is set only by BookEnricher from Hardcover's GraphQL response (not user input) and is URL-encoded via ERB::Util.url_encode in the model accessor."
+    },
+    {
+      "fingerprint": "a769d3e75f7d49e9901a461ac5eac6a4d36de76613d220384d644a4ec8bae559",
+      "check_name": "LinkToHref",
+      "message": "Potentially unsafe model attribute in `link_to` href",
+      "file": "app/views/authors/show.html.erb",
+      "line": 19,
+      "note": "Author#hardcover_url is built from a literal Hardcover.app URL prefix plus a URL-encoded hardcover_slug. The slug is set only by BookEnricher from Hardcover's GraphQL response (not user input) and is URL-encoded via ERB::Util.url_encode in the model accessor."
+    }
+  ],
+  "updated": "2026-05-27T18:00:00Z",
+  "brakeman_version": "8.0.4"
+}

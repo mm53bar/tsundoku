@@ -1,0 +1,2 @@
+<%# Locals: series (required), class_name (optional override) %>
+<%= link_to series.name, series, class: (local_assigns[:class_name].presence || "hover:text-amber-700 hover:underline") %>

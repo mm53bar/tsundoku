@@ -10,14 +10,16 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_27_190000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_27_200000) do
   create_table "authors", force: :cascade do |t|
     t.integer "calibre_id"
     t.datetime "created_at", null: false
+    t.string "hardcover_slug"
     t.string "name", null: false
     t.string "sort_name"
     t.datetime "updated_at", null: false
     t.index ["calibre_id"], name: "index_authors_on_calibre_id", unique: true
+    t.index ["hardcover_slug"], name: "index_authors_on_hardcover_slug"
     t.index ["name"], name: "index_authors_on_name"
   end
 
@@ -92,10 +94,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_190000) do
   create_table "series", force: :cascade do |t|
     t.integer "calibre_id"
     t.datetime "created_at", null: false
+    t.string "hardcover_slug"
     t.string "name", null: false
     t.string "sort_name"
     t.datetime "updated_at", null: false
     t.index ["calibre_id"], name: "index_series_on_calibre_id", unique: true
+    t.index ["hardcover_slug"], name: "index_series_on_hardcover_slug"
     t.index ["name"], name: "index_series_on_name"
   end
 

@@ -37,31 +37,7 @@
 <% else %>
   <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
     <% @books.each do |book| %>
-      <%= link_to book_path(book), class: "group block" do %>
-        <div class="aspect-[2/3] bg-stone-200 rounded-md overflow-hidden shadow-sm group-hover:shadow-xl transition-shadow ring-1 ring-stone-200/60 relative">
-          <% if book.cover_available? %>
-            <img src="<%= cover_book_path(book, v: book.updated_at.to_i) %>"
-                 alt="<%= book.title %>"
-                 loading="lazy"
-                 class="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300">
-          <% else %>
-            <div class="w-full h-full flex items-center justify-center p-3 bg-gradient-to-br from-stone-100 to-stone-200">
-              <span class="text-center text-xs font-medium text-stone-700 line-clamp-6"><%= book.title %></span>
-            </div>
-          <% end %>
-        </div>
-        <div class="mt-2 px-0.5">
-          <p class="text-sm font-medium text-stone-900 leading-snug line-clamp-2 group-hover:text-stone-700"><%= book.title %></p>
-          <% if book.authors.any? %>
-            <p class="text-xs text-stone-500 mt-1 line-clamp-1"><%= book.author_names %></p>
-          <% end %>
-          <% if book.series.present? %>
-            <p class="text-xs text-stone-400 mt-1 italic line-clamp-1">
-              <%= book.series.name %><% if book.series_index.present? %> #<%= book.series_index.to_s.sub(/\.0+\z/, "") %><% end %>
-            </p>
-          <% end %>
-        </div>
-      <% end %>
+      <%= render "books/card", book: book %>
     <% end %>
   </div>
 <% end %>
