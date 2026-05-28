@@ -58,6 +58,11 @@ Rails.application.routes.draw do
   scope "/kobo/:handle", module: "kobo", as: :kobo do
     get "/", to: "base#root"
 
+    # Initialization — tells the device where to find every other
+    # endpoint. Must be served (not fall through to {} fallback)
+    # or newer firmware fails the sync.
+    get "v1/initialization", to: "initialization#show", as: :initialization
+
     # Phase B: library sync, cover serving, EPUB download.
     get "v1/library/sync", to: "sync#sync", as: :library_sync
 
