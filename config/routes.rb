@@ -95,6 +95,14 @@ Rails.application.routes.draw do
         as:          :download,
         constraints: { book_id: /\d+/, format: /EPUB3?|KEPUB/ }
 
+    # Phase C: device-side shelf management.
+    uuid_re = /\h{8}-\h{4}-\h{4}-\h{4}-\h{12}/
+    post   "v1/library/tags",                       to: "tags#create",       as: :tags
+    put    "v1/library/tags/:tag_id",               to: "tags#update",       as: :tag,         constraints: { tag_id: uuid_re }
+    delete "v1/library/tags/:tag_id",               to: "tags#destroy",                        constraints: { tag_id: uuid_re }
+    post   "v1/library/tags/:tag_id/items",         to: "tags#add_items",    as: :tag_items,   constraints: { tag_id: uuid_re }
+    post   "v1/library/tags/:tag_id/items/delete",  to: "tags#remove_items",                   constraints: { tag_id: uuid_re }
+
     # Catch-all — MUST stay last.
     match "*path", to: "base#fallback", via: :all
   end
