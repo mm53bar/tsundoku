@@ -15,6 +15,10 @@ class Book < ApplicationRecord
 
   has_many :readings, dependent: :destroy
 
+  has_many :shelf_entries, dependent: :destroy
+  has_many :shelves, -> { distinct }, through: :shelf_entries
+
+
   validates :calibre_id, uniqueness: true, allow_nil: true
   validates :title, :path, :imported_at, presence: true
 

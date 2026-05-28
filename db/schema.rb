@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_28_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_28_210000) do
   create_table "authors", force: :cascade do |t|
     t.integer "calibre_id"
     t.datetime "created_at", null: false
@@ -139,6 +139,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_200000) do
     t.index ["name"], name: "index_series_on_name"
   end
 
+  create_table "shelf_entries", force: :cascade do |t|
+    t.integer "book_id", null: false
+    t.datetime "created_at", null: false
+    t.integer "position", default: 0, null: false
+    t.integer "shelf_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["book_id"], name: "index_shelf_entries_on_book_id"
+    t.index ["shelf_id", "book_id"], name: "index_shelf_entries_on_shelf_id_and_book_id", unique: true
+    t.index ["shelf_id", "position"], name: "index_shelf_entries_on_shelf_id_and_position"
+    t.index ["shelf_id"], name: "index_shelf_entries_on_shelf_id"
+  end
+
+  create_table "shelves", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "name", null: false
+    t.boolean "sync_to_kobo", default: false, null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["sync_to_kobo"], name: "index_shelves_on_sync_to_kobo"
+    t.index ["user_id", "name"], name: "index_shelves_on_user_id_and_name", unique: true
+    t.index ["user_id"], name: "index_shelves_on_user_id"
+  end
+
   create_table "tags", force: :cascade do |t|
     t.integer "calibre_id"
     t.datetime "created_at", null: false
@@ -191,4 +215,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_200000) do
   add_foreign_key "list_entries", "lists"
   add_foreign_key "readings", "books"
   add_foreign_key "readings", "users"
+  add_foreign_key "shelf_entries", "books"
+  add_foreign_key "shelf_entries", "shelves"
+  add_foreign_key "shelves", "users"
 end

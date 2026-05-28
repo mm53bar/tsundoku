@@ -1,0 +1,54 @@
+<% content_for :title, "Shelves" %>
+
+<div class="flex items-end justify-between gap-4 mb-8">
+  <div>
+    <h1 class="text-3xl font-semibold tracking-tight">Shelves</h1>
+    <p class="text-stone-600 text-sm mt-1">
+      <%= pluralize(@shelves.length, "shelf") %> · personal to <%= current_user.display_name %>
+    </p>
+  </div>
+
+  <%= link_to new_shelf_path,
+        class: "inline-flex items-center gap-2 px-4 py-2 bg-stone-900 text-white text-sm font-medium rounded-md hover:bg-stone-700 transition" do %>
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+    </svg>
+    New shelf
+  <% end %>
+</div>
+
+<% if @shelves.empty? %>
+  <div class="bg-white border border-stone-200 rounded-lg p-12 text-center text-stone-600">
+    <p class="text-lg font-medium text-stone-800 mb-2">No shelves yet.</p>
+    <p class="text-sm">
+      Shelves are personal collections of books you've chosen to group together —
+      "Currently Reading," "Best of 2024," "Book club picks," whatever feels useful.
+      Books can be on multiple shelves.
+    </p>
+    <%= link_to "Create your first shelf →", new_shelf_path, class: "inline-block mt-4 text-amber-700 hover:text-amber-800 underline" %>
+  </div>
+<% else %>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <% @shelves.each do |shelf| %>
+      <%= link_to shelf, class: "block bg-white border border-stone-200 rounded-lg p-4 hover:shadow-md transition" do %>
+        <div class="flex items-start justify-between gap-2 mb-1">
+          <h2 class="font-medium text-stone-900"><%= shelf.name %></h2>
+          <% if shelf.sync_to_kobo %>
+            <%= render "shared/components/badge/badge",
+                  text: "Syncs",
+                  variant: "blue",
+                  size: "sm",
+                  pill: true %>
+          <% end %>
+        </div>
+        <% if shelf.description.present? %>
+          <p class="text-xs text-stone-500 line-clamp-2 mb-2"><%= shelf.description %></p>
+        <% end %>
+        <p class="text-xs text-stone-500">
+          <span class="font-mono text-stone-700"><%= shelf.shelf_entries.size %></span>
+          <%= "book".pluralize(shelf.shelf_entries.size) %>
+        </p>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>

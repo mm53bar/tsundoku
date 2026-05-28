@@ -4,6 +4,8 @@ class User < ApplicationRecord
   has_many :readings, dependent: :destroy
   has_many :read_books, through: :readings, source: :book
 
+  has_many :shelves, dependent: :destroy
+
   validates :username, presence: true, uniqueness: true
 
   def self.find_or_provision_from_proxy(username:, email: nil, name: nil)
