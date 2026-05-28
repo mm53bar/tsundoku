@@ -1,0 +1,33 @@
+<%# Locals: book (required), reading (optional, nil if user hasn't marked it).
+    Wrapped in a turbo_frame so the controller's update action can replace
+    just this fragment, giving instant feedback on the dropdown change. %>
+<%= turbo_frame_tag dom_id(book, :reading) do %>
+  <div class="flex items-center gap-3 text-sm">
+    <span class="text-stone-600">My status:</span>
+    <%= form_with url: book_reading_path(book), method: :patch, local: true, data: { turbo: true } do |f| %>
+      <%= f.select :status,
+            options_for_select(
+              [
+                [ "Not on my list",     "none" ],
+                [ "Want to Read",       "want_to_read" ],
+                [ "Currently Reading",  "currently_reading" ],
+                [ "Paused",             "paused" ],
+                [ "Read",                "read" ],
+                [ "Did Not Finish",     "did_not_finish" ]
+              ],
+              reading&.status || "none"
+            ),
+            {},
+            onchange: "this.form.requestSubmit()",
+            class: "py-1.5 px-2 text-sm rounded-md border border-stone-300 bg-white focus:border-amber-600 focus:ring-amber-600 focus:outline-none cursor-pointer" %>
+    <% end %>
+
+    <% if reading&.sync_to_kobo? %>
+      <%= render "shared/components/badge/badge",
+            text: "Will sync",
+            variant: "blue",
+            size: "sm",
+            pill: true %>
+    <% end %>
+  </div>
+<% end %>

@@ -13,6 +13,8 @@ class Book < ApplicationRecord
   has_many :list_entries, dependent: :nullify, inverse_of: :book
   has_many :lists, -> { distinct }, through: :list_entries
 
+  has_many :readings, dependent: :destroy
+
   validates :calibre_id, uniqueness: true, allow_nil: true
   validates :title, :path, :imported_at, presence: true
 
