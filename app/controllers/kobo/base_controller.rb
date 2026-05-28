@@ -31,5 +31,16 @@ module Kobo
       @kobo_user = User.find_by(kobo_handle: params[:handle])
       head :unauthorized unless @kobo_user
     end
+
+    # Books the @kobo_user has opted to sync to their Kobo. Union of two
+    # signals (see ADR 20260528-shelf-wins-sync-conflict.md):
+    #   - reading status in want_to_read / currently_reading
+    #   - membership in a shelf with sync_to_kobo = true
+    # Returns an ActiveRecord::Relation so callers can chain includes/limit.
+    def syncable_books
+      via_reading = @kobo_user.readings.where(status: Reading::SYNCABLE_STATUSES).select(:book_id)
+      via_shelves = ShelfEntry.joins(:shelf).where(shelves: { user: @kobo_user, sync_to_kobo: true }).select(:book_id)
+      Book.where(id: via_reading).or(Book.where(id: via_shelves))
+    end
   end
 end

@@ -55,10 +55,23 @@ class Book < ApplicationRecord
     File.join(Rails.configuration.x.library_path, path, "#{file_name}.#{file_format.downcase}")
   end
 
+  def epub_downloadable?
+    path = epub_full_path
+    path.present? && File.exist?(path)
+  end
+
   # Shelves owned by the given user that contain this book. has_many :shelves
   # is global (any user); this is the per-user filter we want in views.
   def shelves_for(user)
     return Shelf.none unless user
     shelves.where(user: user)
+  end
+
+  KOBO_UUID_NAMESPACE = Digest::UUID.uuid_v5(Digest::UUID::URL_NAMESPACE, "tsundoku-kobo-books").freeze
+
+  # Deterministic v5 UUID derived from the integer id. Used as the Kobo
+  # entitlement/revision/work id across the sync payload.
+  def kobo_uuid
+    Digest::UUID.uuid_v5(KOBO_UUID_NAMESPACE, id.to_s)
   end
 end
