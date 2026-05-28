@@ -9,11 +9,10 @@ require "cgi"
 #   3. Subtitle-tolerant title prefix + normalized author
 #   4. nil (no match — list entry stays "not in library")
 #
-# Author normalization mirrors BookEnricher#normalized_author_name so the
-# same "James S.A. Corey" ↔ "James S. A. Corey" tolerance applies.
+# Author normalization uses Author.normalize_name so the same
+# "James S.A. Corey" ↔ "James S. A. Corey" tolerance applies as in
+# enrichment slug-stamping.
 class BookMatcher
-  HONORIFIC_TRAILING = BookEnricher::HONORIFIC_TRAILING
-
   def self.match(entry)
     new(entry).match
   end
@@ -58,29 +57,10 @@ class BookMatcher
 
   def narrow_by_author(candidates)
     return nil if @author.empty?
-    needle = normalize_author(@author)
+    needle = Author.normalize_name(@author)
 
     candidates.find do |book|
-      book.authors.any? { |a| normalize_author(a.name) == needle }
+      book.authors.any? { |a| Author.normalize_name(a.name) == needle }
     end
-  end
-
-  def normalize_author(name)
-    cleaned = name.to_s.strip.gsub(HONORIFIC_TRAILING, "").downcase.tr(".", " ").gsub(/\s+/, " ").strip
-    tokens = cleaned.split(" ")
-
-    merged = []
-    initials = +""
-    tokens.each do |t|
-      if t.length == 1
-        initials << t
-      else
-        merged << initials unless initials.empty?
-        initials = +""
-        merged << t
-      end
-    end
-    merged << initials unless initials.empty?
-    merged.join(" ")
   end
 end

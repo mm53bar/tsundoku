@@ -30,6 +30,13 @@
         input_type: :text %>
 
   <%= render "books/field",
+        id: "book_author_names_text", name: "book[author_names_text]", label: "Authors",
+        current: @book.authors.map(&:name).join(", "),
+        proposed: nil,
+        input_type: :text %>
+  <p class="-mt-3 text-xs text-stone-500">Comma-separated. Existing authors are reused when names match after normalization (so "James S.A. Corey" finds your "James S. A. Corey" record).</p>
+
+  <%= render "books/field",
         id: "book_description", name: "book[description]", label: "Description",
         current: @book.description,
         proposed: @proposal.dig("fields", "description"),
