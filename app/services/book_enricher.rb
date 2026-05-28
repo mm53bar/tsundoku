@@ -76,36 +76,57 @@ class BookEnricher
     candidates.reject { |c| existing.include?([ c["kind"], c["value"] ]) }
   end
 
-  # Pick the highest-resolution cover Hardcover knows about, across:
-  #   - book.default_cover_edition.images[] (curated set)
-  #   - book.default_cover_edition.cached_image
-  #   - book.cached_image
-  #   - the matched edition's cached_image
-  #   - cached_image on every other edition of the book (book.editions[])
+  # Pick the highest-resolution book-shaped cover Hardcover knows about,
+  # across the matched edition, the matched book, every other edition under
+  # that book, and book.canonical if Hardcover has deduped the record.
   #
-  # Hardcover sometimes stores the same title as multiple book records (e.g.
-  # one for paperback, one for ebook), and the matched record can have a
-  # 128x192 thumbnail while a sibling edition has the publisher's full image.
-  # Walking every edition for the matched book covers that case.
+  # "Book-shaped" means aspect ratio (height/width) between ~1.35 and ~1.75
+  # — the range typical book covers fall in. Hardcover ships a lot of 500x500
+  # square thumbnails alongside the real cover; without the ratio filter, raw
+  # area picks the square over the proper 2:3 cover.
+  BOOK_RATIO_MIN = 1.35
+  BOOK_RATIO_MAX = 1.75
+
   def proposed_cover(edition, book_data)
-    default_edition = book_data["default_cover_edition"] || {}
-
     candidates = []
-    Array(default_edition["images"]).each { |img| add_cover_candidate(candidates, img) }
-    add_cover_candidate(candidates, default_edition["cached_image"])
-    add_cover_candidate(candidates, book_data["cached_image"])
     add_cover_candidate(candidates, edition["cached_image"])
-    Array(book_data["editions"]).each { |ed| add_cover_candidate(candidates, ed["cached_image"]) }
+    harvest_book_covers(candidates, book_data)
+    harvest_book_covers(candidates, book_data["canonical"]) if book_data["canonical"].present?
 
-    best = candidates.max_by { |c| c["width"].to_i * c["height"].to_i }
-    Rails.logger.info("BookEnricher: book ##{@book.id} cover candidates=#{candidates.size}, best=#{best && "#{best['width']}x#{best['height']}"}")
+    candidates.uniq! { |c| c["url"] }
 
+    book_shaped = candidates.select { |c| book_shaped_ratio?(c) }
+    best = (book_shaped.presence || candidates).max_by { |c| c["width"].to_i * c["height"].to_i }
+
+    log_candidates(candidates, best)
     return nil unless best && best["url"].present?
     best
   end
 
+  def harvest_book_covers(candidates, book_data)
+    return unless book_data.is_a?(Hash)
+    add_cover_candidate(candidates, book_data["cached_image"])
+    Array(book_data["images"]).each { |img| add_cover_candidate(candidates, img) }
+
+    default_edition = book_data["default_cover_edition"]
+    if default_edition.is_a?(Hash)
+      add_cover_candidate(candidates, default_edition["cached_image"])
+      Array(default_edition["images"]).each { |img| add_cover_candidate(candidates, img) }
+    end
+
+    Array(book_data["editions"]).each { |ed| add_cover_candidate(candidates, ed["cached_image"]) }
+  end
+
+  def book_shaped_ratio?(candidate)
+    width  = candidate["width"].to_i
+    height = candidate["height"].to_i
+    return false if width.zero? || height.zero?
+    ratio = height.to_f / width
+    ratio.between?(BOOK_RATIO_MIN, BOOK_RATIO_MAX)
+  end
+
   def add_cover_candidate(candidates, raw)
-    return if raw.nil?
+    return if raw.nil? || (raw.is_a?(Hash) && raw.empty?)
     url = unwrap_resize(raw.is_a?(Hash) ? raw["url"] : raw)
     return if url.blank?
 
@@ -114,6 +135,12 @@ class BookEnricher
       "width"  => raw.is_a?(Hash) ? raw["width"]  : nil,
       "height" => raw.is_a?(Hash) ? raw["height"] : nil
     }
+  end
+
+  def log_candidates(candidates, best)
+    summary = candidates.map { |c| "#{c['width']}x#{c['height']}" }.join(", ")
+    chosen  = best ? "#{best['width']}x#{best['height']} (#{best['url']})" : "none"
+    Rails.logger.info("BookEnricher: book ##{@book.id} cover candidates=[#{summary}], chosen=#{chosen}")
   end
 
   # Hardcover's cached_image is typically the direct asset URL, but the website
