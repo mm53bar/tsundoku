@@ -1,9 +1,14 @@
 <%# Locals: book, shelf, on_shelf (boolean).
     A single row in the picker panel. Form submits a Turbo POST to the
-    toggle endpoint; response replaces this frame AND the chip row above.
-    Wrapped in a turbo_frame so the row's checkbox state updates without
-    re-rendering the whole panel. %>
-<%= turbo_frame_tag "membership_#{shelf.id}_for_book_#{book.id}" do %>
+    toggle endpoint; toggle.turbo_stream.erb replaces this div by ID.
+
+    Important: this wrapper is a plain div, NOT a turbo-frame. Putting
+    the form inside a turbo-frame causes Turbo's form-submission tracker
+    to expect a matching frame in the response. Our response is a
+    turbo-stream that replaces the wrapper element — Turbo can't reconcile
+    that with the frame's expectations and surfaces "Content missing"
+    even though the streams applied correctly. %>
+<%= tag.div id: "membership_#{shelf.id}_for_book_#{book.id}" do %>
   <%= form_with url: toggle_shelf_book_path(book, shelf_id: shelf.id), method: :post, class: "block" do %>
     <button type="submit"
             class="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-stone-50 transition text-left cursor-pointer">

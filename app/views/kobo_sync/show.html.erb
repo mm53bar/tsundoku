@@ -22,6 +22,31 @@
     </div>
   </div>
 
+  <% if @devices.any? %>
+    <div class="bg-white border border-stone-200 rounded-lg p-6 mb-6">
+      <h2 class="text-xs font-semibold uppercase tracking-wider text-stone-500 mb-3">
+        <%= pluralize(@devices.size, "device") %>
+      </h2>
+      <div class="space-y-3">
+        <% @devices.each do |device| %>
+          <div class="flex items-baseline justify-between gap-4 text-sm">
+            <div>
+              <p class="font-medium text-stone-900"><%= device.model.presence || "Kobo" %></p>
+              <p class="text-xs text-stone-500">
+                <% if device.firmware_version.present? %>firmware <%= device.firmware_version %><% end %>
+                <% if device.os_version.present? %> · OS <%= device.os_version %><% end %>
+                <% if device.serial_number.present? %> · <%= device.serial_number %><% end %>
+              </p>
+            </div>
+            <% if device.last_seen_at %>
+              <p class="text-xs text-stone-500 shrink-0">last sync <%= time_ago_in_words(device.last_seen_at) %> ago</p>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
   <div class="bg-white border border-stone-200 rounded-lg p-6 mb-6">
     <h2 class="font-semibold text-stone-900 mb-3">Setup on your Kobo</h2>
     <ol class="list-decimal list-inside text-sm text-stone-700 space-y-2">

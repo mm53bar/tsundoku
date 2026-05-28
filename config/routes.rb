@@ -35,7 +35,11 @@ Rails.application.routes.draw do
     end
   end
 
-  resources :shelves, only: [ :index, :show, :new, :create, :edit, :update, :destroy ]
+  resources :shelves, only: [ :index, :show, :new, :create, :edit, :update, :destroy ] do
+    member do
+      delete "books/:book_id", to: "shelves#remove_book", as: :remove_book
+    end
+  end
 
   resources :lists, only: [ :index, :show, :new, :create, :edit, :update, :destroy ] do
     member do

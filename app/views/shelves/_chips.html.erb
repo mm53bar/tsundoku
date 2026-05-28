@@ -1,8 +1,10 @@
 <%# Locals: book (required), user (required).
-    Just the chip cluster (no panel, no "+ Add" button). Wrapped in its
-    own turbo_frame so toggle responses can update the chips without
-    destroying the picker panel that wraps the form making the request. %>
-<%= turbo_frame_tag dom_id(book, :shelf_chips), class: "contents" do %>
+    Just the chip cluster (no panel, no "+ Add" button). The plain div
+    wrapper is the target for turbo_stream.replace from the toggle action
+    — using a turbo-frame here would put the form inside the picker into
+    a nested-frame structure that confuses Turbo's submission tracking
+    and produces "Content missing." %>
+<%= tag.div id: dom_id(book, :shelf_chips), class: "contents" do %>
   <% book.shelves_for(user).by_name.each do |shelf| %>
     <%= link_to shelf, class: "inline-flex items-center gap-1 px-2 py-1 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs rounded-full border border-stone-200 transition" do %>
       <%= shelf.name %>

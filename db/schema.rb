@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_28_210517) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_28_230013) do
   create_table "authors", force: :cascade do |t|
     t.integer "calibre_id"
     t.datetime "created_at", null: false
@@ -79,6 +79,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_210517) do
     t.index ["series_id"], name: "index_books_on_series_id"
     t.index ["title"], name: "index_books_on_title"
     t.index ["uuid"], name: "index_books_on_uuid"
+  end
+
+  create_table "kobo_devices", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "firmware_version"
+    t.datetime "last_seen_at"
+    t.string "model"
+    t.string "os_version"
+    t.string "serial_number", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["user_id", "serial_number"], name: "index_kobo_devices_on_user_id_and_serial_number", unique: true
+    t.index ["user_id"], name: "index_kobo_devices_on_user_id"
+  end
+
+  create_table "kobo_synced_books", force: :cascade do |t|
+    t.integer "book_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["book_id"], name: "index_kobo_synced_books_on_book_id"
+    t.index ["user_id", "book_id"], name: "index_kobo_synced_books_on_user_id_and_book_id", unique: true
+    t.index ["user_id"], name: "index_kobo_synced_books_on_user_id"
   end
 
   create_table "list_entries", force: :cascade do |t|
@@ -213,6 +236,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_210517) do
   add_foreign_key "book_tags", "tags"
   add_foreign_key "books", "publishers"
   add_foreign_key "books", "series"
+  add_foreign_key "kobo_devices", "users"
+  add_foreign_key "kobo_synced_books", "books"
+  add_foreign_key "kobo_synced_books", "users"
   add_foreign_key "list_entries", "books"
   add_foreign_key "list_entries", "lists"
   add_foreign_key "readings", "books"
