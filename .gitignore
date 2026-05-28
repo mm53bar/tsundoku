@@ -47,3 +47,8 @@
 /oatmeal-taupe-instrument.zip
 /oatmeal-taupe-instrument/
 Gemini_Generated_Image_*.png
+
+# Reference downloads dropped into the project root (Rails Blocks zips,
+# etc). Keep them out of the repo; their licenses don't typically permit
+# redistribution.
+/*.zip
