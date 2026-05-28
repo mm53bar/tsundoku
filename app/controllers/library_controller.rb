@@ -1,8 +1,12 @@
 class LibraryController < ApplicationController
   before_action :require_admin!, only: :import
 
+  ALLOWED_SORTS = %w[title recently_added].freeze
+
   def index
-    @books = Book.by_title.includes(:authors, :series)
+    @sort = ALLOWED_SORTS.include?(params[:sort]) ? params[:sort] : "title"
+    scope = (@sort == "recently_added") ? Book.recently_added : Book.by_title
+    @books = scope.includes(:authors, :series)
     @calibre_db_available = CalibreImporter.available?
     @calibre_import_in_progress = Task.active.where(kind: "calibre_import").exists?
   end
