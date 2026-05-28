@@ -53,9 +53,11 @@ Rails.application.routes.draw do
   post "/kobo-sync/regenerate", to: "kobo_sync#regenerate", as: :regenerate_kobo_sync
 
   # Kobo device endpoints. Authelia bypass is configured at NPM; auth is
-  # by mnemonic handle in the URL (see Kobo::BaseController).
+  # by mnemonic handle in the URL (see Kobo::BaseController). Anything we
+  # don't implement yet falls through to the catch-all and returns {}.
   scope "/kobo/:handle", module: "kobo", as: :kobo do
     get "/", to: "base#root"
+    match "*path", to: "base#fallback", via: :all
   end
 
   root "library#index"
