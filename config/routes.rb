@@ -61,6 +61,11 @@ Rails.application.routes.draw do
     # Phase B: library sync, cover serving, EPUB download.
     get "v1/library/sync", to: "sync#sync", as: :library_sync
 
+    get "v1/library/:book_uuid/metadata",
+        to:          "sync#metadata",
+        as:          :book_metadata,
+        constraints: { book_uuid: /\h{8}-\h{4}-\h{4}-\h{4}-\h{12}/ }
+
     get ":book_uuid/:width/:height/:greyscale/image.jpg",
         to:          "covers#show",
         as:          :cover,

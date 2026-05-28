@@ -11,6 +11,18 @@ module Kobo
       render json: books.map { |book| new_entitlement(book) }
     end
 
+    # GET /kobo/:handle/v1/library/:book_uuid/metadata
+    # The device requests per-book metadata after sync before downloading.
+    # Returning {} here causes the device to silently drop the entitlement
+    # (it adds the book to the library list but never fetches the EPUB).
+    def metadata
+      uuid = params[:book_uuid]
+      book = syncable_books.find { |b| b.kobo_uuid == uuid }
+      return head :not_found unless book
+
+      render json: book_metadata(book, uuid)
+    end
+
     private
 
     def new_entitlement(book)
