@@ -72,7 +72,7 @@
           <%= radio_button_tag :accept_cover, "0", true, class: "sr-only" %>
           <div class="aspect-[2/3] w-32 bg-stone-100 rounded overflow-hidden ring-1 ring-stone-200/60">
             <% if @book.cover_available? %>
-              <img src="<%= cover_book_path(@book) %>" class="w-full h-full object-cover">
+              <img src="<%= cover_book_path(@book, v: @book.updated_at.to_i) %>" class="w-full h-full object-cover">
             <% end %>
           </div>
           <p class="text-sm font-medium">Keep current</p>
