@@ -57,6 +57,26 @@ Rails.application.routes.draw do
   # don't implement yet falls through to the catch-all and returns {}.
   scope "/kobo/:handle", module: "kobo", as: :kobo do
     get "/", to: "base#root"
+
+    # Phase B: library sync, cover serving, EPUB download.
+    get "v1/library/sync", to: "sync#sync", as: :library_sync
+
+    get ":book_uuid/:width/:height/:greyscale/image.jpg",
+        to:          "covers#show",
+        as:          :cover,
+        constraints: {
+          book_uuid: /\h{8}-\h{4}-\h{4}-\h{4}-\h{12}/,
+          width:     /\d+/,
+          height:    /\d+/,
+          greyscale: /true|false|0|1/
+        }
+
+    get "download/:book_id/:format",
+        to:          "downloads#show",
+        as:          :download,
+        constraints: { book_id: /\d+/, format: /EPUB3?|KEPUB/ }
+
+    # Catch-all — MUST stay last.
     match "*path", to: "base#fallback", via: :all
   end
 

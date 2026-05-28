@@ -14,4 +14,10 @@ class Series < ApplicationRecord
     return nil if hardcover_slug.blank?
     "https://hardcover.app/series/#{ERB::Util.url_encode(hardcover_slug)}"
   end
+
+  KOBO_UUID_NAMESPACE = Digest::UUID.uuid_v5(Digest::UUID::URL_NAMESPACE, "tsundoku-kobo-series").freeze
+
+  def kobo_uuid
+    Digest::UUID.uuid_v5(KOBO_UUID_NAMESPACE, id.to_s)
+  end
 end
