@@ -71,29 +71,34 @@
     </div>
   <% end %>
 
-  <% if @proposal["cover"].present? %>
+  <% has_proposed_cover = @proposal["cover"].present? %>
+  <% if @book.cover_available? || has_proposed_cover %>
     <div class="border-t border-stone-200 pt-6">
       <h2 class="text-sm font-semibold uppercase tracking-wider text-stone-500 mb-3">Cover</h2>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg">
-        <label class="flex flex-col items-center gap-2 p-3 border-2 rounded-lg cursor-pointer border-stone-200 has-[:checked]:border-amber-600 has-[:checked]:bg-amber-50/40 transition">
-          <%= radio_button_tag :accept_cover, "0", true, class: "sr-only" %>
+        <label class="flex flex-col items-center gap-2 p-3 border-2 rounded-lg <%= has_proposed_cover ? "cursor-pointer border-stone-200 has-[:checked]:border-amber-600 has-[:checked]:bg-amber-50/40 transition" : "border-stone-200" %>">
+          <% if has_proposed_cover %>
+            <%= radio_button_tag :accept_cover, "0", true, class: "sr-only" %>
+          <% end %>
           <div class="aspect-[2/3] w-32 bg-stone-100 rounded overflow-hidden ring-1 ring-stone-200/60">
             <% if @book.cover_available? %>
               <img src="<%= cover_book_path(@book, v: @book.updated_at.to_i) %>" class="w-full h-full object-cover">
             <% end %>
           </div>
-          <p class="text-sm font-medium">Keep current</p>
+          <p class="text-sm font-medium"><%= has_proposed_cover ? "Keep current" : "Current cover" %></p>
         </label>
-        <label class="flex flex-col items-center gap-2 p-3 border-2 rounded-lg cursor-pointer border-stone-200 has-[:checked]:border-amber-600 has-[:checked]:bg-amber-50/40 transition">
-          <%= radio_button_tag :accept_cover, "1", false, class: "sr-only" %>
-          <div class="aspect-[2/3] w-32 bg-stone-100 rounded overflow-hidden ring-1 ring-stone-200/60">
-            <img src="<%= @proposal["cover"]["url"] %>" class="w-full h-full object-cover" loading="lazy" referrerpolicy="no-referrer">
-          </div>
-          <p class="text-sm font-medium">Use from Hardcover</p>
-          <% if @proposal["cover"]["width"].present? && @proposal["cover"]["height"].present? %>
-            <p class="text-xs text-stone-500"><%= @proposal["cover"]["width"] %> × <%= @proposal["cover"]["height"] %></p>
-          <% end %>
-        </label>
+        <% if has_proposed_cover %>
+          <label class="flex flex-col items-center gap-2 p-3 border-2 rounded-lg cursor-pointer border-stone-200 has-[:checked]:border-amber-600 has-[:checked]:bg-amber-50/40 transition">
+            <%= radio_button_tag :accept_cover, "1", false, class: "sr-only" %>
+            <div class="aspect-[2/3] w-32 bg-stone-100 rounded overflow-hidden ring-1 ring-stone-200/60">
+              <img src="<%= @proposal["cover"]["url"] %>" class="w-full h-full object-cover" loading="lazy" referrerpolicy="no-referrer">
+            </div>
+            <p class="text-sm font-medium">Use from Hardcover</p>
+            <% if @proposal["cover"]["width"].present? && @proposal["cover"]["height"].present? %>
+              <p class="text-xs text-stone-500"><%= @proposal["cover"]["width"] %> × <%= @proposal["cover"]["height"] %></p>
+            <% end %>
+          </label>
+        <% end %>
       </div>
     </div>
   <% end %>
