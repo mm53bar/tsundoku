@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_28_232046) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_28_234957) do
   create_table "authors", force: :cascade do |t|
     t.integer "calibre_id"
     t.datetime "created_at", null: false
@@ -61,6 +61,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_232046) do
     t.string "file_format"
     t.string "file_name"
     t.datetime "imported_at", null: false
+    t.string "kobo_uuid"
     t.datetime "last_enriched_at"
     t.datetime "last_modified"
     t.string "path", null: false
@@ -74,6 +75,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_232046) do
     t.string "uuid"
     t.index ["added_at"], name: "index_books_on_added_at"
     t.index ["calibre_id"], name: "index_books_on_calibre_id", unique: true
+    t.index ["kobo_uuid"], name: "index_books_on_kobo_uuid", unique: true
     t.index ["last_enriched_at"], name: "index_books_on_last_enriched_at"
     t.index ["publisher_id"], name: "index_books_on_publisher_id"
     t.index ["series_id"], name: "index_books_on_series_id"
@@ -102,6 +104,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_232046) do
     t.index ["book_id"], name: "index_kobo_synced_books_on_book_id"
     t.index ["user_id", "book_id"], name: "index_kobo_synced_books_on_user_id_and_book_id", unique: true
     t.index ["user_id"], name: "index_kobo_synced_books_on_user_id"
+  end
+
+  create_table "kobo_synced_shelves", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "kobo_uuid", null: false
+    t.integer "shelf_id", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["kobo_uuid"], name: "index_kobo_synced_shelves_on_kobo_uuid"
+    t.index ["user_id", "shelf_id"], name: "index_kobo_synced_shelves_on_user_id_and_shelf_id", unique: true
+    t.index ["user_id"], name: "index_kobo_synced_shelves_on_user_id"
   end
 
   create_table "list_entries", force: :cascade do |t|
@@ -177,10 +190,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_232046) do
   create_table "shelves", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "description"
+    t.string "kobo_uuid"
     t.string "name", null: false
     t.boolean "sync_to_kobo", default: false, null: false
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
+    t.index ["kobo_uuid"], name: "index_shelves_on_kobo_uuid", unique: true
     t.index ["sync_to_kobo"], name: "index_shelves_on_sync_to_kobo"
     t.index ["user_id", "name"], name: "index_shelves_on_user_id_and_name", unique: true
     t.index ["user_id"], name: "index_shelves_on_user_id"
@@ -239,6 +254,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_232046) do
   add_foreign_key "kobo_devices", "users"
   add_foreign_key "kobo_synced_books", "books"
   add_foreign_key "kobo_synced_books", "users"
+  add_foreign_key "kobo_synced_shelves", "users"
   add_foreign_key "list_entries", "books"
   add_foreign_key "list_entries", "lists"
   add_foreign_key "readings", "books"

@@ -1,25 +1,58 @@
 module Kobo
   # GET /kobo/:handle/v1/library/sync
-  # The main sync endpoint. Returns a JSON array of entitlement entries
-  # for every book in the user's syncable set. Phase B implementation:
-  # always send everything as NewEntitlement (no synctoken cursor yet —
-  # see design doc §4.3). The device dedupes by entitlement UUID so
-  # re-sending the same books is idempotent.
+  # Diff-based sync against the per-user KoboSyncedBook/KoboSyncedShelf
+  # snapshot. Only emits Entitlements/Tags for things that have actually
+  # changed since the last sync. Drop-outs become tombstones:
+  # ChangedEntitlement {IsRemoved: true} for books, DeletedTag for shelves.
   class SyncController < BaseController
     def sync
-      books = syncable_books.includes(:authors, :publisher, :series).select(&:epub_downloadable?)
-      synced_at_by_book = ensure_synced_records(books)
+      current_books            = syncable_books.includes(:authors, :publisher, :series).select(&:epub_downloadable?)
+      current_book_ids         = current_books.map(&:id).to_set
+      uuid_by_book_id          = current_books.to_h { |b| [ b.id, b.kobo_uuid ] }
 
-      # Build the book entitlements first, then append Tag blocks for any
-      # shelves marked sync_to_kobo. Tag items are filtered to books that
-      # are themselves in the sync payload — sending a Tag.Items reference
-      # to a UUID the device doesn't have as an entitlement creates a
-      # dangling shelf entry on-device.
-      uuid_by_book_id = books.to_h { |b| [ b.id, b.kobo_uuid ] }
-      shelves         = @kobo_user.shelves.syncing.includes(shelf_entries: :book).by_name
+      previously_synced_books  = @kobo_user.kobo_synced_books.where(book_id: current_book_ids).index_by(&:book_id)
+      removed_book_records     = @kobo_user.kobo_synced_books.where.not(book_id: current_book_ids).includes(:book)
 
-      payload  = books.map { |book| new_entitlement(book, synced_at_by_book[book.id]) }
-      payload += shelves.map { |shelf| new_tag(shelf, uuid_by_book_id) }
+      payload = []
+
+      current_books.each do |book|
+        record = previously_synced_books[book.id]
+        if record.nil?
+          record = @kobo_user.kobo_synced_books.create!(book: book)
+          payload << new_entitlement(book, record.created_at)
+        elsif book.updated_at > record.updated_at
+          record.touch
+          payload << changed_entitlement(book, record.created_at)
+        end
+      end
+
+      removed_book_records.each do |record|
+        # The Book record still exists (it just dropped out of the
+        # syncable set) so kobo_uuid is still valid for the tombstone.
+        payload << removed_entitlement(record.book, record.created_at)
+      end
+      removed_book_records.destroy_all
+
+      current_shelves            = @kobo_user.shelves.syncing.includes(:shelf_entries).by_name.to_a
+      current_shelf_ids          = current_shelves.map(&:id).to_set
+      previously_synced_shelves  = @kobo_user.kobo_synced_shelves.where(shelf_id: current_shelf_ids).index_by(&:shelf_id)
+      removed_shelf_records      = @kobo_user.kobo_synced_shelves.where.not(shelf_id: current_shelf_ids)
+
+      current_shelves.each do |shelf|
+        record = previously_synced_shelves[shelf.id]
+        if record.nil?
+          @kobo_user.kobo_synced_shelves.create!(shelf_id: shelf.id, kobo_uuid: shelf.kobo_uuid)
+          payload << new_tag(shelf, uuid_by_book_id)
+        elsif shelf.updated_at > record.updated_at
+          record.touch
+          payload << changed_tag(shelf, uuid_by_book_id)
+        end
+      end
+
+      removed_shelf_records.each do |record|
+        payload << deleted_tag(record.kobo_uuid)
+      end
+      removed_shelf_records.destroy_all
 
       render json: payload
     end
@@ -29,73 +62,79 @@ module Kobo
     # Returning {} here causes the device to silently drop the entitlement
     # (it adds the book to the library list but never fetches the EPUB).
     def metadata
-      uuid = params[:book_uuid]
-      book = syncable_books.find { |b| b.kobo_uuid == uuid }
+      book = find_book_by_kobo_uuid(params[:book_uuid])
       return head :not_found unless book
 
       # Wrap in an array — calibre-web does this and the device errors
       # out on an unwrapped object.
-      render json: [ book_metadata(book, uuid) ]
+      render json: [ book_metadata(book, book.kobo_uuid) ]
     end
 
     private
 
-    # Make sure every syncable book has a KoboSyncedBook row for the
-    # current user, creating new ones with Time.current. Returns a
-    # {book_id => synced_at} map for use in entitlement Created fields.
-    def ensure_synced_records(books)
-      existing = @kobo_user.kobo_synced_books.where(book_id: books.map(&:id)).pluck(:book_id, :created_at).to_h
-      books.each do |book|
-        next if existing[book.id]
-        record = @kobo_user.kobo_synced_books.create!(book: book)
-        existing[book.id] = record.created_at
-      end
-      existing
+    def new_entitlement(book, synced_at)
+      { "NewEntitlement" => entitlement_envelope(book, synced_at, is_removed: false) }
+    end
+
+    def changed_entitlement(book, synced_at)
+      { "ChangedEntitlement" => entitlement_envelope(book, synced_at, is_removed: false) }
+    end
+
+    def removed_entitlement(book, synced_at)
+      { "ChangedEntitlement" => entitlement_envelope(book, synced_at, is_removed: true) }
+    end
+
+    def entitlement_envelope(book, synced_at, is_removed:)
+      uuid     = book.kobo_uuid
+      created  = (synced_at || Time.current).iso8601
+      modified = (book.last_modified || book.updated_at).iso8601
+
+      {
+        "BookEntitlement" => {
+          "Accessibility"       => "Full",
+          "ActivePeriod"        => { "From" => created },
+          "Created"             => created,
+          "CrossRevisionId"     => uuid,
+          "Id"                  => uuid,
+          "IsRemoved"           => is_removed,
+          "IsHiddenFromArchive" => false,
+          "IsLocked"            => false,
+          "LastModified"        => modified,
+          "OriginCategory"      => "Imported",
+          "RevisionId"          => uuid,
+          "Status"              => is_removed ? "Removed" : "Active"
+        },
+        "BookMetadata" => book_metadata(book, uuid)
+      }
     end
 
     def new_tag(shelf, uuid_by_book_id)
+      { "NewTag" => { "Tag" => tag_envelope(shelf, uuid_by_book_id) } }
+    end
+
+    def changed_tag(shelf, uuid_by_book_id)
+      { "ChangedTag" => { "Tag" => tag_envelope(shelf, uuid_by_book_id) } }
+    end
+
+    def deleted_tag(uuid)
+      # Tombstone — only the Id matters, but include the minimum the
+      # device will accept.
+      { "DeletedTag" => { "Tag" => { "Id" => uuid } } }
+    end
+
+    def tag_envelope(shelf, uuid_by_book_id)
       items = shelf.shelf_entries.filter_map do |entry|
         uuid = uuid_by_book_id[entry.book_id]
         { "Type" => "ProductRevisionTagItem", "RevisionId" => uuid } if uuid
       end
 
       {
-        "NewTag" => {
-          "Tag" => {
-            "Created"      => shelf.created_at.iso8601,
-            "Id"           => shelf.kobo_uuid,
-            "Items"        => items,
-            "LastModified" => shelf.updated_at.iso8601,
-            "Name"         => shelf.name,
-            "Type"         => "UserTag"
-          }
-        }
-      }
-    end
-
-    def new_entitlement(book, synced_at)
-      uuid     = book.kobo_uuid
-      created  = (synced_at || Time.current).iso8601
-      modified = (book.last_modified || book.updated_at).iso8601
-
-      {
-        "NewEntitlement" => {
-          "BookEntitlement" => {
-            "Accessibility"       => "Full",
-            "ActivePeriod"        => { "From" => created },
-            "Created"             => created,
-            "CrossRevisionId"     => uuid,
-            "Id"                  => uuid,
-            "IsRemoved"           => false,
-            "IsHiddenFromArchive" => false,
-            "IsLocked"            => false,
-            "LastModified"        => modified,
-            "OriginCategory"      => "Imported",
-            "RevisionId"          => uuid,
-            "Status"              => "Active"
-          },
-          "BookMetadata" => book_metadata(book, uuid)
-        }
+        "Created"      => shelf.created_at.iso8601,
+        "Id"           => shelf.kobo_uuid,
+        "Items"        => items,
+        "LastModified" => shelf.updated_at.iso8601,
+        "Name"         => shelf.name,
+        "Type"         => "UserTag"
       }
     end
 

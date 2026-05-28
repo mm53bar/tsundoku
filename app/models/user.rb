@@ -6,6 +6,7 @@ class User < ApplicationRecord
 
   has_many :shelves, dependent: :destroy
   has_many :kobo_synced_books, dependent: :destroy
+  has_many :kobo_synced_shelves, dependent: :destroy
   has_many :kobo_devices, dependent: :destroy
 
   validates :username, presence: true, uniqueness: true

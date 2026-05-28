@@ -44,16 +44,16 @@ module Kobo
       Book.where(id: via_reading).or(Book.where(id: via_shelves))
     end
 
-    # Reverse lookup: kobo_uuid -> Book. Scoped to syncable books, since
-    # those are the only ones the device should plausibly reference back
-    # to us (anything else came from Kobo's own store catalog).
+    # Indexed reverse lookup: kobo_uuid -> Book. Filtered to syncable
+    # books so the device can only reference back to things it could
+    # plausibly know about — anything else came from Kobo's store catalog.
     def find_book_by_kobo_uuid(uuid)
-      syncable_books.find { |b| b.kobo_uuid == uuid }
+      syncable_books.find_by(kobo_uuid: uuid)
     end
 
-    # Reverse lookup: kobo_uuid -> Shelf, for tag-related endpoints.
+    # Indexed reverse lookup: kobo_uuid -> Shelf for this user.
     def find_shelf_by_kobo_uuid(uuid)
-      @kobo_user.shelves.find { |s| s.kobo_uuid == uuid }
+      @kobo_user.shelves.find_by(kobo_uuid: uuid)
     end
 
     # Opportunistically pulls device telemetry out of request params and
