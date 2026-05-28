@@ -1,0 +1,48 @@
+<% content_for :title, "Lists" %>
+
+<div class="flex items-end justify-between gap-4 mb-8">
+  <div>
+    <h1 class="text-3xl font-semibold tracking-tight">Lists</h1>
+    <p class="text-stone-600 text-sm mt-1"><%= pluralize(@lists.length, "list") %></p>
+  </div>
+
+  <% if current_user&.admin? %>
+    <%= link_to new_list_path,
+          class: "inline-flex items-center gap-2 px-4 py-2 bg-stone-900 text-white text-sm font-medium rounded-md hover:bg-stone-700 transition" do %>
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      New list
+    <% end %>
+  <% end %>
+</div>
+
+<% if @lists.empty? %>
+  <div class="bg-white border border-stone-200 rounded-lg p-12 text-center text-stone-600">
+    <p class="text-lg font-medium text-stone-800 mb-2">No lists yet.</p>
+    <p class="text-sm">
+      Lists are a way to track curated collections like "Oprah's Book Club" or "The Greatest Books"
+      and see at a glance which ones you already have in your library.
+    </p>
+    <% if current_user&.admin? %>
+      <%= link_to "Create your first list →", new_list_path, class: "inline-block mt-4 text-amber-700 hover:text-amber-800 underline" %>
+    <% end %>
+  </div>
+<% else %>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <% @lists.each do |list| %>
+      <%= link_to list, class: "block bg-white border border-stone-200 rounded-lg p-4 hover:shadow-md transition" do %>
+        <h2 class="font-medium text-stone-900 mb-1"><%= list.name %></h2>
+        <% if list.description.present? %>
+          <p class="text-xs text-stone-500 line-clamp-2 mb-2"><%= list.description %></p>
+        <% end %>
+        <p class="text-xs text-stone-500">
+          <span class="font-mono text-stone-700"><%= list.matched_count %></span>
+          of
+          <span class="font-mono text-stone-700"><%= list.total_count %></span>
+          in your library
+        </p>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_27_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_28_050000) do
   create_table "authors", force: :cascade do |t|
     t.integer "calibre_id"
     t.datetime "created_at", null: false
@@ -79,6 +79,28 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_200000) do
     t.index ["series_id"], name: "index_books_on_series_id"
     t.index ["title"], name: "index_books_on_title"
     t.index ["uuid"], name: "index_books_on_uuid"
+  end
+
+  create_table "list_entries", force: :cascade do |t|
+    t.string "author_name"
+    t.integer "book_id"
+    t.datetime "created_at", null: false
+    t.integer "list_id", null: false
+    t.integer "position", default: 0, null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["book_id"], name: "index_list_entries_on_book_id"
+    t.index ["list_id", "position"], name: "index_list_entries_on_list_id_and_position"
+    t.index ["list_id"], name: "index_list_entries_on_list_id"
+  end
+
+  create_table "lists", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "name", null: false
+    t.string "source_url"
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_lists_on_name"
   end
 
   create_table "publishers", force: :cascade do |t|
@@ -151,4 +173,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_200000) do
   add_foreign_key "book_tags", "tags"
   add_foreign_key "books", "publishers"
   add_foreign_key "books", "series"
+  add_foreign_key "list_entries", "books"
+  add_foreign_key "list_entries", "lists"
 end

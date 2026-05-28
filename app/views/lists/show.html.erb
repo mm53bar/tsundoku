@@ -1,0 +1,81 @@
+<% content_for :title, @list.name %>
+
+<div class="mb-6">
+  <%= link_to lists_path, class: "inline-flex items-center gap-1 text-sm text-stone-600 hover:text-stone-900" do %>
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+    </svg>
+    Lists
+  <% end %>
+</div>
+
+<div class="flex items-start justify-between gap-4 mb-2">
+  <h1 class="text-3xl font-semibold tracking-tight"><%= @list.name %></h1>
+
+  <% if current_user&.admin? %>
+    <%= button_to @list,
+          method: :delete,
+          form: { data: { turbo_confirm: "Delete '#{@list.name}' and all its entries?" } },
+          class: "shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-stone-300 text-stone-700 text-sm font-medium rounded-md hover:bg-red-50 hover:border-red-200 hover:text-red-700 transition cursor-pointer" do %>
+      Delete
+    <% end %>
+  <% end %>
+</div>
+
+<p class="text-sm text-stone-600 mb-1">
+  <span class="font-mono text-stone-900"><%= @list.matched_count %></span>
+  of
+  <span class="font-mono text-stone-900"><%= @list.total_count %></span>
+  in your library
+</p>
+
+<% if (source = @list.safe_source_url) %>
+  <p class="text-xs text-stone-500 mb-6">
+    Source:
+    <%= link_to source, source, target: "_blank", rel: "noopener",
+          class: "underline hover:text-stone-900 break-all" %>
+  </p>
+<% end %>
+
+<% if @list.description.present? %>
+  <p class="text-sm text-stone-700 mb-6 max-w-2xl"><%= @list.description %></p>
+<% end %>
+
+<div class="border-t border-stone-200 pt-4 mt-4">
+  <ol class="space-y-1">
+    <% @entries.each_with_index do |entry, index| %>
+      <li class="flex items-center gap-3 px-3 py-2 rounded-md <%= entry.matched? ? "bg-emerald-50/40" : "" %>">
+        <span class="shrink-0 w-6 text-right text-xs text-stone-400 font-mono"><%= index + 1 %></span>
+
+        <div class="flex-1 min-w-0">
+          <% if entry.matched? %>
+            <%= link_to entry.book, class: "block group" do %>
+              <p class="text-sm font-medium text-stone-900 group-hover:text-amber-700 truncate"><%= entry.book.title %></p>
+              <% if entry.book.authors.any? %>
+                <p class="text-xs text-stone-500 truncate"><%= entry.book.author_names %></p>
+              <% end %>
+            <% end %>
+          <% else %>
+            <p class="text-sm text-stone-700 truncate"><%= entry.title %></p>
+            <% if entry.author_name.present? %>
+              <p class="text-xs text-stone-500 truncate"><%= entry.author_name %></p>
+            <% end %>
+          <% end %>
+        </div>
+
+        <% if entry.matched? %>
+          <span class="shrink-0 inline-flex items-center gap-1 text-xs text-emerald-700 font-medium">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+            </svg>
+            In library
+          </span>
+        <% else %>
+          <span class="shrink-0 text-xs text-stone-400">
+            Not in library
+          </span>
+        <% end %>
+      </li>
+    <% end %>
+  </ol>
+</div>
