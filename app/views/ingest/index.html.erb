@@ -1,0 +1,83 @@
+<% content_for :title, "Ingest" %>
+
+<div class="flex items-end justify-between gap-4 mb-6">
+  <div>
+    <h1 class="text-3xl font-semibold tracking-tight">Ingest</h1>
+    <p class="text-stone-600 text-sm mt-1">
+      Drop EPUB files into <code class="bg-stone-100 px-1.5 py-0.5 rounded text-xs"><%= @ingest_path %></code> and click "Scan now."
+    </p>
+  </div>
+
+  <% if @pending_files.any? %>
+    <%= button_to ingest_scan_path,
+          method: :post,
+          form: { data: { turbo_confirm: "Queue #{pluralize(@pending_files.size, "file")} for ingest?" } },
+          class: "inline-flex items-center gap-2 px-4 py-2 bg-stone-900 text-white text-sm font-medium rounded-md hover:bg-stone-700 transition cursor-pointer" do %>
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4"/>
+      </svg>
+      Scan now (<%= @pending_files.size %>)
+    <% end %>
+  <% end %>
+</div>
+
+<section class="mb-8">
+  <h2 class="text-sm font-semibold uppercase tracking-wider text-stone-500 mb-3">
+    <%= pluralize(@pending_files.size, "pending file") %>
+  </h2>
+  <% if @pending_files.empty? %>
+    <div class="bg-white border border-stone-200 rounded-lg p-8 text-center text-stone-600">
+      <p class="text-sm">The ingest folder is empty. Drop EPUB files in and refresh.</p>
+    </div>
+  <% else %>
+    <ul class="bg-white border border-stone-200 rounded-lg divide-y divide-stone-100 max-h-96 overflow-y-auto">
+      <% @pending_files.each do |path| %>
+        <li class="px-4 py-2 text-sm font-mono text-stone-700">
+          <%= path.sub(/\A#{Regexp.escape(@ingest_path)}\//, "") %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</section>
+
+<% if @recent_tasks.any? %>
+  <section>
+    <h2 class="text-sm font-semibold uppercase tracking-wider text-stone-500 mb-3">Recent ingests</h2>
+    <ul class="bg-white border border-stone-200 rounded-lg divide-y divide-stone-100">
+      <% @recent_tasks.each do |task| %>
+        <li class="px-4 py-2 flex items-center gap-3 text-sm">
+          <div class="shrink-0">
+            <% case task.status %>
+            <% when "succeeded" %>
+              <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+              </svg>
+            <% when "failed" %>
+              <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            <% else %>
+              <svg class="animate-spin w-4 h-4 text-amber-700" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+              </svg>
+            <% end %>
+          </div>
+          <div class="flex-1 min-w-0">
+            <% if task.subject.is_a?(Book) %>
+              <%= link_to task.subject.title, task.subject, class: "text-stone-900 hover:text-amber-700 truncate block" %>
+            <% else %>
+              <p class="text-stone-700 truncate">
+                <%= task.result.is_a?(Hash) ? task.result["file_path"]&.split("/")&.last : "Unknown" %>
+              </p>
+            <% end %>
+            <% if task.failed? && task.error_message.present? %>
+              <p class="text-xs text-red-700 truncate"><%= task.error_message %></p>
+            <% end %>
+          </div>
+          <p class="shrink-0 text-xs text-stone-500"><%= time_ago_in_words(task.created_at) %> ago</p>
+        </li>
+      <% end %>
+    </ul>
+  </section>
+<% end %>

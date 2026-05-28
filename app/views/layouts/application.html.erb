@@ -37,6 +37,9 @@
               <%= link_to "Authors", authors_path, class: "hover:text-stone-900 #{"text-stone-900 font-medium" if controller_name == "authors"}" %>
               <%= link_to "Series",  series_index_path, class: "hover:text-stone-900 #{"text-stone-900 font-medium" if controller_name == "series"}" %>
               <%= link_to "Lists",   lists_path, class: "hover:text-stone-900 #{"text-stone-900 font-medium" if controller_name == "lists"}" %>
+              <% if current_user&.admin? %>
+                <%= link_to "Ingest",  ingest_index_path, class: "hover:text-stone-900 #{"text-stone-900 font-medium" if controller_name == "ingest"}" %>
+              <% end %>
             </nav>
           <% end %>
         </div>

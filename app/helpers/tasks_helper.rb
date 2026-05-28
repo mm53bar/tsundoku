@@ -19,6 +19,12 @@ module TasksHelper
       parts << "#{r[:identifiers_added]} new IDs" if r[:identifiers_added].to_i.positive?
       parts << "#{r[:fields_updated]} fields filled" if r[:fields_updated].to_i.positive?
       parts.any? ? "Hardcover: #{parts.join(' · ')}" : "Hardcover: already current"
+    when "book_ingest"
+      r = task.result.with_indifferent_access
+      case r[:status]
+      when "ingested"  then "Added to library — enrichment running"
+      when "duplicate" then "Already in library (matched by ISBN)"
+      end
     end
   end
 end

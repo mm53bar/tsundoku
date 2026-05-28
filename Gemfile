@@ -39,6 +39,11 @@ gem "thruster", require: false
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 gem "image_processing", "~> 1.2"
 
+# Read EPUB metadata. EPUBs are ZIP archives containing an OPF
+# (Dublin Core) metadata file; rubyzip is the minimal way to crack
+# them open during ingest.
+gem "rubyzip", "~> 2.4"
+
 # Authentication is forward-auth: nginx-proxy-manager + Authelia gate the
 # request and inject Remote-User / Remote-Email / Remote-Groups headers. The
 # app trusts these headers. No OIDC client in the app itself.
