@@ -76,28 +76,44 @@ class BookEnricher
     candidates.reject { |c| existing.include?([ c["kind"], c["value"] ]) }
   end
 
-  # Prefer book.default_cover_edition.images[] (Hardcover's curated cover),
-  # picking the highest-resolution variant. Falls back to default_cover_edition.cached_image,
-  # then book.cached_image, then edition.cached_image. Skip if the URL matches
-  # what we already have stored.
+  # Pick the highest-resolution cover Hardcover knows about, across:
+  #   - book.default_cover_edition.images[] (curated set)
+  #   - book.default_cover_edition.cached_image
+  #   - book.cached_image
+  #   - the matched edition's cached_image
+  #   - cached_image on every other edition of the book (book.editions[])
+  #
+  # Hardcover sometimes stores the same title as multiple book records (e.g.
+  # one for paperback, one for ebook), and the matched record can have a
+  # 128x192 thumbnail while a sibling edition has the publisher's full image.
+  # Walking every edition for the matched book covers that case.
   def proposed_cover(edition, book_data)
     default_edition = book_data["default_cover_edition"] || {}
 
     candidates = []
-    Array(default_edition["images"]).each do |img|
-      url = unwrap_resize(img["url"])
-      candidates << { "url" => url, "width" => img["width"], "height" => img["height"] } if url
-    end
-    [ default_edition["cached_image"], book_data["cached_image"], edition["cached_image"] ].each do |raw|
-      next unless raw
-      url = unwrap_resize(raw.is_a?(Hash) ? raw["url"] : raw)
-      candidates << { "url" => url, "width" => raw.is_a?(Hash) ? raw["width"] : nil, "height" => raw.is_a?(Hash) ? raw["height"] : nil } if url
-    end
+    Array(default_edition["images"]).each { |img| add_cover_candidate(candidates, img) }
+    add_cover_candidate(candidates, default_edition["cached_image"])
+    add_cover_candidate(candidates, book_data["cached_image"])
+    add_cover_candidate(candidates, edition["cached_image"])
+    Array(book_data["editions"]).each { |ed| add_cover_candidate(candidates, ed["cached_image"]) }
 
-    best = candidates.max_by { |c| (c["width"].to_i * c["height"].to_i) }
+    best = candidates.max_by { |c| c["width"].to_i * c["height"].to_i }
+    Rails.logger.info("BookEnricher: book ##{@book.id} cover candidates=#{candidates.size}, best=#{best && "#{best['width']}x#{best['height']}"}")
+
     return nil unless best && best["url"].present?
-
     best
+  end
+
+  def add_cover_candidate(candidates, raw)
+    return if raw.nil?
+    url = unwrap_resize(raw.is_a?(Hash) ? raw["url"] : raw)
+    return if url.blank?
+
+    candidates << {
+      "url"    => url,
+      "width"  => raw.is_a?(Hash) ? raw["width"]  : nil,
+      "height" => raw.is_a?(Hash) ? raw["height"] : nil
+    }
   end
 
   # Hardcover's cached_image is typically the direct asset URL, but the website
