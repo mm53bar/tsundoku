@@ -48,5 +48,15 @@ Rails.application.routes.draw do
   get  "/ingest",      to: "ingest#index", as: :ingest_index
   post "/ingest/scan", to: "ingest#scan",  as: :ingest_scan
 
+  # User-facing "Sync with Kobo" settings page. Authelia-protected as normal.
+  get  "/kobo-sync",            to: "kobo_sync#show",       as: :kobo_sync
+  post "/kobo-sync/regenerate", to: "kobo_sync#regenerate", as: :regenerate_kobo_sync
+
+  # Kobo device endpoints. Authelia bypass is configured at NPM; auth is
+  # by mnemonic handle in the URL (see Kobo::BaseController).
+  scope "/kobo/:handle", module: "kobo", as: :kobo do
+    get "/", to: "base#root"
+  end
+
   root "library#index"
 end

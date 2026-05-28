@@ -1,0 +1,49 @@
+<% content_for :title, "Sync with Kobo" %>
+
+<div class="max-w-2xl">
+  <h1 class="text-3xl font-semibold tracking-tight mb-2">Sync with Kobo</h1>
+  <p class="text-stone-600 text-sm mb-8">
+    Point your Kobo eReader at this URL to sync your library — books with reading
+    status <em>Want to Read</em> or <em>Currently Reading</em>, plus anything on
+    a shelf you've marked to sync.
+  </p>
+
+  <div class="bg-white border border-stone-200 rounded-lg p-6 mb-6">
+    <p class="text-xs font-semibold uppercase tracking-wider text-stone-500 mb-2">Your sync URL</p>
+    <div class="flex items-center gap-3">
+      <code class="flex-1 font-mono text-sm bg-stone-50 border border-stone-200 rounded px-3 py-2 break-all"><%= @url %></code>
+      <button type="button"
+              data-controller="copy"
+              data-action="click->copy#copy"
+              data-copy-value-value="<%= @url %>"
+              class="shrink-0 inline-flex items-center px-3 py-2 bg-white border border-stone-300 text-stone-700 text-sm font-medium rounded-md hover:bg-stone-50 transition cursor-pointer">
+        Copy
+      </button>
+    </div>
+  </div>
+
+  <div class="bg-white border border-stone-200 rounded-lg p-6 mb-6">
+    <h2 class="font-semibold text-stone-900 mb-3">Setup on your Kobo</h2>
+    <ol class="list-decimal list-inside text-sm text-stone-700 space-y-2">
+      <li>Connect your Kobo to a computer with the USB cable.</li>
+      <li>Open the file <code class="font-mono text-xs bg-stone-100 px-1.5 py-0.5 rounded">.kobo/Kobo/Kobo eReader.conf</code> in a text editor.</li>
+      <li>Find the line starting with <code class="font-mono text-xs bg-stone-100 px-1.5 py-0.5 rounded">api_endpoint=</code> under <code class="font-mono text-xs bg-stone-100 px-1.5 py-0.5 rounded">[OneStoreServices]</code>.</li>
+      <li>Replace the existing value with the URL above.</li>
+      <li>Save the file, eject the Kobo, and tap <strong>Sync</strong> on the home screen.</li>
+    </ol>
+  </div>
+
+  <div class="border-t border-stone-200 pt-6">
+    <h2 class="text-sm font-semibold uppercase tracking-wider text-stone-500 mb-3">Regenerate</h2>
+    <p class="text-sm text-stone-600 mb-3">
+      Generating a new URL invalidates the old one. Use this if your Kobo is lost
+      or you suspect someone on your network has the URL who shouldn't.
+    </p>
+    <%= button_to regenerate_kobo_sync_path,
+          method: :post,
+          form: { data: { turbo_confirm: "Generate a new URL? Your Kobo will need to be re-configured." } },
+          class: "inline-flex items-center px-3 py-1.5 bg-white border border-stone-300 text-stone-700 text-sm font-medium rounded-md hover:bg-stone-50 transition cursor-pointer" do %>
+      Regenerate URL
+    <% end %>
+  </div>
+</div>
