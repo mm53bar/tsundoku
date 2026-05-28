@@ -13,6 +13,7 @@ Rails.application.routes.draw do
   resources :books, only: [ :show, :edit, :update ] do
     member do
       get  :cover
+      get  :download
       post :enrich
     end
   end

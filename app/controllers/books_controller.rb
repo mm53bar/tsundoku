@@ -12,6 +12,16 @@ class BooksController < ApplicationController
     send_file path, type: cover_mime_type(path), disposition: "inline"
   end
 
+  def download
+    path = safe_epub_path
+    return head :not_found unless path
+
+    send_file path,
+              type: "application/epub+zip",
+              disposition: "attachment",
+              filename: "#{@book.title}.epub"
+  end
+
   def edit
     @task     = consume_proposal_task(params[:from_task])
     @proposal = @task&.result.presence || {}
@@ -190,5 +200,11 @@ class BooksController < ApplicationController
     when ".webp" then "image/webp"
     else              "image/jpeg"
     end
+  end
+
+  def safe_epub_path
+    return nil if @book.path.blank? || @book.file_name.blank?
+    extension = (@book.file_format.presence || "EPUB").downcase
+    safe_path_under(Rails.configuration.x.library_path, File.join(@book.path, "#{@book.file_name}.#{extension}"))
   end
 end
