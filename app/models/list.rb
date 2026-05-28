@@ -6,6 +6,18 @@ class List < ApplicationRecord
 
   scope :by_name, -> { order(Arel.sql("name COLLATE NOCASE ASC")) }
 
+  def to_param
+    "#{id}-#{name.parameterize}"
+  end
+
+  def matched_count
+    list_entries.where.not(book_id: nil).count
+  end
+
+  def total_count
+    list_entries.size
+  end
+
   # Use this in views instead of `source_url` directly — strips anything
   # that's not an http(s) URL so we never render a javascript: or data: link
   # even if the format validation got bypassed (e.g. via direct DB write).
@@ -28,17 +40,5 @@ class List < ApplicationRecord
     end
   rescue URI::InvalidURIError
     errors.add(:source_url, "is not a valid URL")
-  end
-
-  def to_param
-    "#{id}-#{name.parameterize}"
-  end
-
-  def matched_count
-    list_entries.where.not(book_id: nil).count
-  end
-
-  def total_count
-    list_entries.size
   end
 end
