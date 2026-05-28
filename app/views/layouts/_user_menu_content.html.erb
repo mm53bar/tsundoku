@@ -1,0 +1,19 @@
+<%# Inserted into the Rails Blocks navbar as the dropdown content for the
+    user menu. Layout: name + email + admin badge in a header block, then
+    a sign-out button below a divider. %>
+<div class="text-sm">
+  <div class="px-3 py-2 border-b border-neutral-200 dark:border-neutral-700">
+    <p class="font-medium text-stone-900"><%= current_user.display_name %></p>
+    <% if current_user.email.present? %>
+      <p class="text-xs text-stone-500 truncate"><%= current_user.email %></p>
+    <% end %>
+    <% if current_user.admin? %>
+      <p class="mt-1.5 inline-block text-xs uppercase tracking-wider text-amber-700 font-semibold">Admin</p>
+    <% end %>
+  </div>
+  <%= button_to sign_out_path, method: :delete,
+        form: { class: "block" },
+        class: "block w-full text-left px-3 py-2 text-stone-700 hover:bg-stone-50 cursor-pointer" do %>
+    Sign out
+  <% end %>
+</div>
