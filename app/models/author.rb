@@ -7,6 +7,39 @@ class Author < ApplicationRecord
 
   scope :by_name, -> { order(Arel.sql("COALESCE(NULLIF(sort_name, ''), name) COLLATE NOCASE ASC")) }
 
+  HONORIFIC_TRAILING = /\s+(Ph\.?D\.?|M\.?D\.?|D\.?D\.?S\.?|Esq\.?|Jr\.?|Sr\.?|II|III|IV)\.?\s*\z/i
+
+  # Canonical form for cross-source matching. Lowercases, strips trailing
+  # academic / generational honorifics, drops dots, and merges consecutive
+  # single-letter tokens so "James S.A. Corey", "James S. A. Corey", and
+  # "James S A Corey" all hash to "james sa corey". Used by:
+  #   - BookEnricher when stamping Hardcover slugs onto local authors
+  #   - BookMatcher when matching list entries to library books
+  #   - BooksController#update when finding-or-creating authors from the
+  #     edit form's comma-separated names field
+  def self.normalize_name(name)
+    cleaned = name.to_s.strip.gsub(HONORIFIC_TRAILING, "").downcase.tr(".", " ").gsub(/\s+/, " ").strip
+    tokens = cleaned.split(" ")
+
+    merged = []
+    initials = +""
+    tokens.each do |t|
+      if t.length == 1
+        initials << t
+      else
+        merged << initials unless initials.empty?
+        initials = +""
+        merged << t
+      end
+    end
+    merged << initials unless initials.empty?
+    merged.join(" ")
+  end
+
+  def normalized_name
+    self.class.normalize_name(name)
+  end
+
   def to_param
     "#{id}-#{name.parameterize}"
   end

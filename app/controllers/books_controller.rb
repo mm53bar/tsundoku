@@ -23,6 +23,7 @@ class BooksController < ApplicationController
 
     Book.transaction do
       apply_publisher
+      apply_authors
       @book.update!(book_params)
       apply_accepted_identifiers
       apply_accepted_cover
@@ -82,6 +83,36 @@ class BooksController < ApplicationController
     return if @book.publisher&.name == name
     publisher = Publisher.find_or_create_by!(name: name)
     @book.update!(publisher: publisher)
+  end
+
+  # Parse the comma-separated author_names field, reuse existing Author
+  # records when names normalize to the same canonical form (so "James
+  # S.A. Corey" and "James S. A. Corey" don't fragment into two records),
+  # create new ones for unmatched names, then rebuild book_authors in the
+  # order the user typed. Field absent → no change. Field present-but-
+  # blank → clears all authors.
+  def apply_authors
+    text = params.dig(:book, :author_names_text)
+    return if text.nil?
+
+    names = text.to_s.split(",").map(&:strip).reject(&:empty?)
+
+    normalized_to_author = Author.all.index_by { |a| Author.normalize_name(a.name) }
+
+    target_authors = names.map do |name|
+      key = Author.normalize_name(name)
+      existing = normalized_to_author[key]
+      if existing
+        existing
+      else
+        Author.create!(name: name).tap { |a| normalized_to_author[key] = a }
+      end
+    end
+
+    @book.book_authors.destroy_all
+    target_authors.each_with_index do |author, i|
+      @book.book_authors.create!(author: author, position: i)
+    end
   end
 
   # Form submits an array of "kind|value" tokens for each accepted identifier.
