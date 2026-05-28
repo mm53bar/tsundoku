@@ -1,24 +1,23 @@
 <%# Locals: book (required), user (required).
-    Inline chip cluster showing which of the user's shelves contain this book.
-    Wrapped in a turbo_frame so shelf_entries#toggle can replace it after a
-    membership change. Includes the "+ Add to shelf" button that toggles the
-    picker panel. %>
-<%= turbo_frame_tag dom_id(book, :shelves) do %>
-  <div data-controller="shelf-picker" class="relative inline-flex items-start flex-wrap gap-1.5">
-    <%= render "shelves/chips", book: book, user: user %>
+    Inline chip cluster + "Add to shelf" picker. No outer turbo_frame —
+    the inner `<div id="shelf_chips_book_X">` is the turbo_stream target
+    for membership updates. An outer frame would intercept anything
+    link-like inside (including the chips themselves) as frame
+    navigation, producing "Content missing" responses. %>
+<div data-controller="shelf-picker" class="relative inline-flex items-start flex-wrap gap-1.5">
+  <%= render "shelves/chips", book: book, user: user %>
 
-    <button type="button"
-            data-action="shelf-picker#toggle"
-            class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full border border-dashed border-stone-300 text-stone-600 hover:text-stone-900 hover:border-stone-500 transition cursor-pointer">
-      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-      </svg>
-      Add to shelf
-    </button>
+  <button type="button"
+          data-action="shelf-picker#toggle"
+          class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full border border-dashed border-stone-300 text-stone-600 hover:text-stone-900 hover:border-stone-500 transition cursor-pointer">
+    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+    </svg>
+    Add to shelf
+  </button>
 
-    <div data-shelf-picker-target="panel"
-         class="hidden absolute top-full left-0 mt-2 w-72 bg-white border border-stone-200 rounded-md shadow-lg z-10">
-      <%= render "shelves/picker_panel", book: book, user: user %>
-    </div>
+  <div data-shelf-picker-target="panel"
+       class="hidden absolute top-full left-0 mt-2 w-72 bg-white border border-stone-200 rounded-md shadow-lg z-10">
+    <%= render "shelves/picker_panel", book: book, user: user %>
   </div>
-<% end %>
+</div>

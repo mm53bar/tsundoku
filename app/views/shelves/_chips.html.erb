@@ -1,18 +1,24 @@
 <%# Locals: book (required), user (required).
-    Just the chip cluster (no panel, no "+ Add" button). The plain div
-    wrapper is the target for turbo_stream.replace from the toggle action
-    — using a turbo-frame here would put the form inside the picker into
-    a nested-frame structure that confuses Turbo's submission tracking
-    and produces "Content missing." %>
+    Each chip is a button_to that REMOVES the book from that shelf when
+    clicked — matching the user's mental model ("the chip is a tag I can
+    pluck off the book"). Submits via Turbo to the toggle endpoint;
+    response is a turbo-stream that updates this div + the matching row
+    inside the picker panel. %>
 <%= tag.div id: dom_id(book, :shelf_chips), class: "contents" do %>
   <% book.shelves_for(user).by_name.each do |shelf| %>
-    <%= link_to shelf, class: "inline-flex items-center gap-1 px-2 py-1 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs rounded-full border border-stone-200 transition" do %>
+    <%= button_to toggle_shelf_book_path(book, shelf_id: shelf.id),
+          method: :post,
+          form: { class: "inline", data: { turbo_confirm: "Remove '#{book.title}' from shelf '#{shelf.name}'?" } },
+          class: "inline-flex items-center gap-1 px-2 py-1 bg-stone-100 hover:bg-red-50 hover:border-red-200 hover:text-red-700 text-stone-700 text-xs rounded-full border border-stone-200 transition cursor-pointer group/chip" do %>
       <%= shelf.name %>
       <% if shelf.sync_to_kobo %>
-        <svg class="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-3 h-3 text-blue-600 group-hover/chip:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l3-3m0 0l3 3m-3-3v12M21 12l-3 3m0 0l-3-3m3 3V3"/>
         </svg>
       <% end %>
+      <svg class="w-3 h-3 opacity-40 group-hover/chip:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
     <% end %>
   <% end %>
 <% end %>
