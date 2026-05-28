@@ -20,7 +20,9 @@ module Kobo
       book = syncable_books.find { |b| b.kobo_uuid == uuid }
       return head :not_found unless book
 
-      render json: book_metadata(book, uuid)
+      # Wrap in an array — calibre-web does this and the device errors
+      # out on an unwrapped object.
+      render json: [ book_metadata(book, uuid) ]
     end
 
     private
