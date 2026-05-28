@@ -8,7 +8,7 @@ class AuthorsController < ApplicationController
 
   def show
     @author = Author.find(params[:id])
-    @books  = @author.books.by_title.includes(:authors, :series)
+    @books  = @author.books.by_title.includes(:authors, :series, :lists)
   end
 
   # Loaded lazily by the Turbo Frame on the show page. Hits Hardcover for
