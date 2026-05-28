@@ -3,6 +3,7 @@ class BooksController < ApplicationController
   before_action :require_admin!, only: [ :enrich, :edit, :update ]
 
   def show
+    @reading = current_user.readings.find_by(book: @book) if signed_in?
   end
 
   def cover

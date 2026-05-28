@@ -1,0 +1,6 @@
+<%# Replace the status-picker turbo_frame with itself (carrying the new
+    reading state) so the dropdown reflects the saved status, the "Will sync"
+    badge appears/disappears, and the form is ready for the next change. %>
+<%= turbo_stream.replace dom_id(@book, :reading) do %>
+  <%= render "readings/status_picker", book: @book, reading: @reading %>
+<% end %>

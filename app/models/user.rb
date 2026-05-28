@@ -1,6 +1,9 @@
 class User < ApplicationRecord
   enum :role, { reader: 0, admin: 1 }
 
+  has_many :readings, dependent: :destroy
+  has_many :read_books, through: :readings, source: :book
+
   validates :username, presence: true, uniqueness: true
 
   def self.find_or_provision_from_proxy(username:, email: nil, name: nil)

@@ -73,6 +73,12 @@
       <p class="text-lg text-stone-700 mt-2"><%= author_links(@book.authors, class_name: "hover:text-amber-700 hover:underline") %></p>
     <% end %>
 
+    <% if signed_in? %>
+      <div class="mt-4">
+        <%= render "readings/status_picker", book: @book, reading: @reading %>
+      </div>
+    <% end %>
+
     <% if @book.series.present? %>
       <p class="text-sm text-stone-500 italic mt-1">
         <%= render "series/link", series: @book.series, class_name: "italic hover:text-amber-700 hover:underline" %><% if @book.series_index.present? %>, book <%= @book.series_index.to_s.sub(/\.0+\z/, "") %><% end %>

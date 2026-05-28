@@ -16,6 +16,7 @@ Rails.application.routes.draw do
       get  :download
       post :enrich
     end
+    resource :reading, only: [ :update ]
   end
 
   resources :authors, only: [ :index, :show ] do
