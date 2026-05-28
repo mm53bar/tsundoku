@@ -84,6 +84,30 @@ class BookEnricher
     name.to_s.strip.gsub(HONORIFIC_TRAILING, "").gsub(/\s+/, " ").strip
   end
 
+  # Normalize for *matching* — lowercase, drop dots, collapse whitespace,
+  # and merge consecutive single-letter tokens into one. This way
+  # "James S.A. Corey", "James S. A. Corey", and "James S A Corey" all
+  # hash to "james sa corey" and the stamp_author_slugs lookup finds
+  # the local author regardless of which spacing the upstream uses.
+  def normalized_author_name(name)
+    cleaned = clean_author_name(name).downcase.tr(".", " ").gsub(/\s+/, " ").strip
+    tokens = cleaned.split(" ")
+
+    merged = []
+    initials = +""
+    tokens.each do |t|
+      if t.length == 1
+        initials << t
+      else
+        merged << initials unless initials.empty?
+        initials = +""
+        merged << t
+      end
+    end
+    merged << initials unless initials.empty?
+    merged.join(" ")
+  end
+
   # Bidirectional substring match: keep a hit if its title (or any of its
   # alternative_titles) either contains the local book's title or is
   # contained by it. Catches the "local says Accelerate / Hardcover has
@@ -117,14 +141,14 @@ class BookEnricher
   def stamp_author_slugs(contributions)
     return unless contributions.is_a?(Array)
 
-    local_by_cleaned_name = @book.authors.index_by { |a| clean_author_name(a.name).downcase }
+    local_by_normalized = @book.authors.index_by { |a| normalized_author_name(a.name) }
 
     contributions.each do |contribution|
       hc_name = contribution.dig("author", "name")
       hc_slug = contribution.dig("author", "slug")
       next if hc_name.blank? || hc_slug.blank?
 
-      local = local_by_cleaned_name[clean_author_name(hc_name).downcase]
+      local = local_by_normalized[normalized_author_name(hc_name)]
       next unless local
       next if local.hardcover_slug.present?
       local.update!(hardcover_slug: hc_slug)
