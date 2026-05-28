@@ -13,12 +13,16 @@
   <h1 class="text-3xl font-semibold tracking-tight"><%= @list.name %></h1>
 
   <% if current_user&.admin? %>
-    <%= button_to @list,
-          method: :delete,
-          form: { data: { turbo_confirm: "Delete '#{@list.name}' and all its entries?" } },
-          class: "shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-stone-300 text-stone-700 text-sm font-medium rounded-md hover:bg-red-50 hover:border-red-200 hover:text-red-700 transition cursor-pointer" do %>
-      Delete
-    <% end %>
+    <div class="shrink-0 flex items-center gap-2">
+      <%= link_to "Edit", edit_list_path(@list),
+            class: "inline-flex items-center px-3 py-1.5 bg-white border border-stone-300 text-stone-700 text-sm font-medium rounded-md hover:bg-stone-50 transition" %>
+      <%= button_to @list,
+            method: :delete,
+            form: { data: { turbo_confirm: "Delete '#{@list.name}' and all its entries?" } },
+            class: "inline-flex items-center px-3 py-1.5 bg-white border border-stone-300 text-stone-700 text-sm font-medium rounded-md hover:bg-red-50 hover:border-red-200 hover:text-red-700 transition cursor-pointer" do %>
+        Delete
+      <% end %>
+    </div>
   <% end %>
 </div>
 
@@ -44,13 +48,13 @@
 <div class="border-t border-stone-200 pt-4 mt-4">
   <ol class="space-y-1">
     <% @entries.each_with_index do |entry, index| %>
-      <li class="flex items-center gap-3 px-3 py-2 rounded-md <%= entry.matched? ? "bg-emerald-50/40" : "" %>">
+      <li class="group flex items-center gap-3 px-3 py-2 rounded-md <%= entry.matched? ? "bg-emerald-50/40" : "" %>">
         <span class="shrink-0 w-6 text-right text-xs text-stone-400 font-mono"><%= index + 1 %></span>
 
         <div class="flex-1 min-w-0">
           <% if entry.matched? %>
-            <%= link_to entry.book, class: "block group" do %>
-              <p class="text-sm font-medium text-stone-900 group-hover:text-amber-700 truncate"><%= entry.book.title %></p>
+            <%= link_to entry.book, class: "block group/link" do %>
+              <p class="text-sm font-medium text-stone-900 group-hover/link:text-amber-700 truncate"><%= entry.book.title %></p>
               <% if entry.book.authors.any? %>
                 <p class="text-xs text-stone-500 truncate"><%= entry.book.author_names %></p>
               <% end %>
@@ -75,7 +79,35 @@
             Not in library
           </span>
         <% end %>
+
+        <% if current_user&.admin? %>
+          <%= button_to list_list_entry_path(@list, entry),
+                method: :delete,
+                form: { data: { turbo_confirm: "Remove '#{entry.title}' from this list?" } },
+                title: "Remove entry",
+                class: "shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-stone-400 hover:text-red-700 cursor-pointer" do %>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          <% end %>
+        <% end %>
       </li>
     <% end %>
   </ol>
+
+  <% if current_user&.admin? %>
+    <div class="mt-4 pt-4 border-t border-stone-100">
+      <%= form_with url: list_list_entries_path(@list), method: :post, local: true, class: "flex flex-col sm:flex-row gap-2" do %>
+        <%= text_field_tag "list_entry[title]", nil,
+              placeholder: "Title",
+              required: true,
+              class: "flex-1 rounded-md border border-stone-300 px-3 py-2 text-sm shadow-sm focus:border-amber-600 focus:ring-amber-600 focus:outline-none" %>
+        <%= text_field_tag "list_entry[author_name]", nil,
+              placeholder: "Author (optional)",
+              class: "flex-1 rounded-md border border-stone-300 px-3 py-2 text-sm shadow-sm focus:border-amber-600 focus:ring-amber-600 focus:outline-none" %>
+        <%= submit_tag "Add entry",
+              class: "shrink-0 inline-flex items-center justify-center px-4 py-2 bg-stone-900 text-white text-sm font-medium rounded-md hover:bg-stone-700 transition cursor-pointer" %>
+      <% end %>
+    </div>
+  <% end %>
 </div>

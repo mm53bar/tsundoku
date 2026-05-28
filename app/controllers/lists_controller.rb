@@ -1,6 +1,6 @@
 class ListsController < ApplicationController
-  before_action :require_admin!, only: [ :new, :create, :destroy ]
-  before_action :set_list, only: [ :show, :destroy ]
+  before_action :require_admin!, only: [ :new, :create, :edit, :update, :destroy ]
+  before_action :set_list, only: [ :show, :edit, :update, :destroy ]
 
   def index
     @lists = List.by_name
@@ -44,6 +44,18 @@ class ListsController < ApplicationController
   rescue ActiveRecord::RecordInvalid => e
     flash.now[:alert] = "Couldn't save: #{e.message}"
     render :new, status: :unprocessable_content
+  end
+
+  def edit
+  end
+
+  def update
+    if @list.update(list_params)
+      redirect_to @list, notice: "List updated."
+    else
+      flash.now[:alert] = @list.errors.full_messages.to_sentence
+      render :edit, status: :unprocessable_content
+    end
   end
 
   def destroy
