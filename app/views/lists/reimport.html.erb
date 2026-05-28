@@ -14,7 +14,7 @@
   Paste a fresh copy of the list below. Tsundoku will show you what would change before applying anything — added entries, removed entries, and how many stay the same. The current list (<%= pluralize(@list.list_entries.size, "entry") %>) is untouched until you confirm.
 </p>
 
-<%= form_with url: reimport_list_path(@list), method: :post, local: true, class: "space-y-5 max-w-2xl" do %>
+<%= form_with url: reimport_list_path(@list), method: :post, local: true, data: { turbo: false }, class: "space-y-5 max-w-2xl" do %>
   <div>
     <%= label_tag "list[entries_text]", "New entries", class: "block text-sm font-medium text-stone-700 mb-1" %>
     <%= text_area_tag "list[entries_text]", nil,
