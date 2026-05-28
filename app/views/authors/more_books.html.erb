@@ -1,0 +1,11 @@
+<%= turbo_frame_tag "more_by_author" do %>
+  <% if @books.empty? %>
+    <p class="text-stone-500 text-sm py-4">Hardcover doesn't list other books by this author that aren't already in your library.</p>
+  <% else %>
+    <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
+      <% @books.each do |book| %>
+        <%= render "hardcover/book_thumb", book: book %>
+      <% end %>
+    </div>
+  <% end %>
+<% end %>

@@ -1,0 +1,23 @@
+<%# Locals: book (a hash from Hardcover with id, title, slug, cached_image) %>
+<%
+  cover     = book["cached_image"]
+  cover_url = cover.is_a?(Hash) ? cover["url"] : nil
+  identifier = book["slug"].presence || book["id"].to_s
+  hardcover_url = "https://hardcover.app/books/#{ERB::Util.url_encode(identifier)}"
+%>
+<%= link_to hardcover_url, target: "_blank", rel: "noopener", class: "group block" do %>
+  <div class="aspect-[2/3] bg-stone-200 rounded-md overflow-hidden shadow-sm group-hover:shadow-md transition-shadow ring-1 ring-stone-200/60">
+    <% if cover_url.present? %>
+      <img src="<%= cover_url %>"
+           alt="<%= book["title"] %>"
+           loading="lazy"
+           referrerpolicy="no-referrer"
+           class="w-full h-full object-cover">
+    <% else %>
+      <div class="w-full h-full flex items-center justify-center p-3 bg-gradient-to-br from-stone-100 to-stone-200">
+        <span class="text-center text-xs font-medium text-stone-700 line-clamp-6"><%= book["title"] %></span>
+      </div>
+    <% end %>
+  </div>
+  <p class="mt-2 text-xs text-stone-700 leading-snug line-clamp-2 group-hover:text-stone-900"><%= book["title"] %></p>
+<% end %>

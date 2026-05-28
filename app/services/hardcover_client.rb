@@ -22,6 +22,72 @@ class HardcoverClient
     @token = token
   end
 
+  # Fetch books linked to a given author slug via the contributions
+  # relationship. Each returned hash has at minimum: id, title, slug,
+  # cached_image. Used for the "more by this author" live-fetch on
+  # author show pages.
+  def books_by_author_slug(slug, limit: 50)
+    return [] unless @token.present? && slug.present?
+
+    query = <<~GQL
+      query AuthorBooks($slug: String!, $limit: Int!) {
+        authors(where: { slug: { _eq: $slug } }, limit: 1) {
+          id
+          name
+          slug
+          contributions(limit: $limit) {
+            book {
+              id
+              title
+              slug
+              cached_image
+            }
+          }
+        }
+      }
+    GQL
+
+    response = post(query: query, variables: { slug: slug, limit: limit })
+    return [] unless response
+
+    contributions = Array(response.dig("data", "authors", 0, "contributions"))
+    books = contributions.map { |c| c["book"] }.compact.uniq { |b| b["id"] }
+    Rails.logger.info("HardcoverClient: books_by_author_slug(#{slug.inspect}) returned #{books.size} book(s)")
+    books
+  end
+
+  # Fetch books in a given series slug, ordered by series position.
+  def books_in_series_slug(slug, limit: 50)
+    return [] unless @token.present? && slug.present?
+
+    query = <<~GQL
+      query SeriesBooks($slug: String!, $limit: Int!) {
+        series(where: { slug: { _eq: $slug } }, limit: 1) {
+          id
+          name
+          slug
+          book_series(order_by: { position: asc }, limit: $limit) {
+            position
+            book {
+              id
+              title
+              slug
+              cached_image
+            }
+          }
+        }
+      }
+    GQL
+
+    response = post(query: query, variables: { slug: slug, limit: limit })
+    return [] unless response
+
+    book_series = Array(response.dig("data", "series", 0, "book_series"))
+    books = book_series.map { |bs| bs["book"] }.compact.uniq { |b| b["id"] }
+    Rails.logger.info("HardcoverClient: books_in_series_slug(#{slug.inspect}) returned #{books.size} book(s)")
+    books
+  end
+
   # Hardcover's Typesense-backed search. Required for finding sibling book
   # records (e.g. different ISBNs of the same title) — the regular where
   # clauses don't support _ilike on this server, so naive title matching
