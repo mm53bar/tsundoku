@@ -11,14 +11,10 @@ class ReadingsController < ApplicationController
       @reading = nil
     elsif ALLOWED_STATUSES.include?(status)
       reading = current_user.readings.find_or_initialize_by(book: @book)
-      previous_status = reading.persisted? ? reading.status : nil
       reading.status = status
 
-      # Stamp transition timestamps lazily — only when entering the state
-      # for the first time, never overwrite. Lets the user backdate later
-      # via the edit form if they want.
       reading.started_at  ||= Time.current if status == "currently_reading"
-      reading.finished_at ||= Time.current if %w[read did_not_finish].include?(status) && previous_status != status
+      reading.finished_at ||= Time.current if status == "read"
 
       reading.save!
       @reading = reading
