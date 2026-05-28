@@ -15,8 +15,16 @@
       "file": "app/views/authors/show.html.erb",
       "line": 19,
       "note": "Author#hardcover_url is built from a literal Hardcover.app URL prefix plus a URL-encoded hardcover_slug. The slug is set only by BookEnricher from Hardcover's GraphQL response (not user input) and is URL-encoded via ERB::Util.url_encode in the model accessor."
+    },
+    {
+      "fingerprint": "50ba3d004234bbec85c6d27a156c6a95dfaa2db6f7d9d7af45ef46c8d18c285f",
+      "check_name": "LinkToHref",
+      "message": "Potentially unsafe model attribute in `link_to` href",
+      "file": "app/views/lists/show.html.erb",
+      "line": 35,
+      "note": "List#safe_source_url runs through URI.parse and explicitly returns nil unless the scheme is http or https. The model also has a validate :source_url_must_be_http that rejects any other scheme at save time. The render guard treats nil as 'don't render the link'. Belt-and-suspenders."
     }
   ],
-  "updated": "2026-05-27T18:00:00Z",
+  "updated": "2026-05-28T05:30:00Z",
   "brakeman_version": "8.0.4"
 }
