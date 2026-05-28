@@ -1,7 +1,7 @@
 <%
   has_proposal = proposed.present? && proposed.to_s.strip != current.to_s.strip
   controller_attr = has_proposal ? "suggestion" : nil
-  target_attr     = has_proposal ? "suggestion.input" : nil
+  target_attr     = has_proposal ? "input" : nil
 %>
 <div data-controller="<%= controller_attr %>" data-suggestion-proposed-value="<%= proposed.to_s %>">
   <label for="<%= id %>" class="block text-sm font-medium text-stone-700 mb-1"><%= label %></label>
