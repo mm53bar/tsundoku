@@ -31,6 +31,8 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :shelves, only: [ :index, :show, :new, :create, :edit, :update, :destroy ]
+
   resources :lists, only: [ :index, :show, :new, :create, :edit, :update, :destroy ] do
     member do
       get  :reimport
