@@ -71,6 +71,11 @@ Rails.application.routes.draw do
         as:          :book_metadata,
         constraints: { book_uuid: /\h{8}-\h{4}-\h{4}-\h{4}-\h{12}/ }
 
+    # NB: greyscale segment is intentionally permissive — the device
+    # substitutes its own representation ("False" with a capital F from
+    # the {IsGreyscale} template variable, not "false" as in the literal
+    # template). Anchoring on a strict regex caused covers to fall
+    # through to the {} fallback and books to render without art.
     get ":book_uuid/:width/:height/:greyscale/image.jpg",
         to:          "covers#show",
         as:          :cover,
@@ -78,7 +83,7 @@ Rails.application.routes.draw do
           book_uuid: /\h{8}-\h{4}-\h{4}-\h{4}-\h{12}/,
           width:     /\d+/,
           height:    /\d+/,
-          greyscale: /true|false|0|1/
+          greyscale: /[A-Za-z01]+/
         }
 
     get "download/:book_id/:format",
