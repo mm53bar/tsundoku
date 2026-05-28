@@ -10,6 +10,9 @@ class Book < ApplicationRecord
 
   has_many :book_identifiers, dependent: :destroy, inverse_of: :book
 
+  has_many :list_entries, dependent: :nullify, inverse_of: :book
+  has_many :lists, -> { distinct }, through: :list_entries
+
   validates :calibre_id, presence: true, uniqueness: true
   validates :title, :path, :imported_at, presence: true
 

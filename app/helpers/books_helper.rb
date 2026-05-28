@@ -6,6 +6,7 @@ module BooksHelper
     parts = [ book.title ]
     parts.concat(book.authors.map(&:name))
     parts << book.series.name if book.series
+    parts.concat(book.lists.map(&:name))
     parts.compact.map(&:to_s).join(" ").downcase
   end
 end

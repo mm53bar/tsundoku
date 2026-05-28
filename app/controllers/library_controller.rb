@@ -6,7 +6,7 @@ class LibraryController < ApplicationController
   def index
     @sort = ALLOWED_SORTS.include?(params[:sort]) ? params[:sort] : "title"
     scope = (@sort == "recently_added") ? Book.recently_added : Book.by_title
-    @books = scope.includes(:authors, :series)
+    @books = scope.includes(:authors, :series, :lists)
     @calibre_db_available = CalibreImporter.available?
     @calibre_import_in_progress = Task.active.where(kind: "calibre_import").exists?
   end
