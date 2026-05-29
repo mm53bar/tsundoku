@@ -47,8 +47,20 @@ module Kobo
     # Indexed reverse lookup: kobo_uuid -> Book. Filtered to syncable
     # books so the device can only reference back to things it could
     # plausibly know about — anything else came from Kobo's store catalog.
+    #
+    # Orphan detection: if the UUID maps to a real Book that's just not
+    # currently syncable, the device must have cached the entitlement
+    # from an earlier sync (before KoboSyncedBook tracking existed, or
+    # via some other gap). Track it so the next /v1/library/sync emits
+    # IsRemoved and the device archives the ghost. Self-healing — no
+    # one-shot backfill needed.
     def find_book_by_kobo_uuid(uuid)
-      syncable_books.find_by(kobo_uuid: uuid)
+      book = syncable_books.find_by(kobo_uuid: uuid)
+      return book if book
+
+      orphan = Book.find_by(kobo_uuid: uuid)
+      @kobo_user.kobo_synced_books.find_or_create_by!(book: orphan) if orphan
+      nil
     end
 
     # Indexed reverse lookup: kobo_uuid -> Shelf for this user.
