@@ -123,12 +123,13 @@ class Book < ApplicationRecord
     end
   end
 
-  # Random UUID set before validation so it's available for indexed lookup
-  # immediately. Old records were backfilled with deterministic v5(id)
-  # UUIDs by the migration to preserve the Kobo's cached entitlements;
-  # new records get random UUIDs because nothing depends on them being
-  # derivable from id anymore.
+  # Books imported from Calibre carry their original Calibre UUID in
+  # `uuid` — calibre-web (and the CWA fork) use that same value as the
+  # Kobo entitlement Id, so adopting it here means a device that was
+  # previously syncing via CWA sees Tsundoku's entitlements as already
+  # known. Books created any other way (manual ingest, no metadata.db)
+  # get a fresh random UUID.
   def set_kobo_uuid
-    self.kobo_uuid ||= SecureRandom.uuid
+    self.kobo_uuid ||= uuid.presence || SecureRandom.uuid
   end
 end
