@@ -26,6 +26,15 @@ class Book < ApplicationRecord
   validates :title, :path, :imported_at, presence: true
   validates :kobo_uuid, presence: true, uniqueness: true
 
+  # Soft-delete by default — every Book query excludes rows with a
+  # deleted_at. Sync needs to keep emitting tombstones for these until
+  # each user's device has acknowledged the removal, so we can't hard-
+  # delete on the spot. KoboSyncedBook#book unscopes to see through the
+  # filter for tombstone emission; everything else (library, search,
+  # ingest) is happy with the default-filtered set.
+  default_scope { where(deleted_at: nil) }
+  scope :with_deleted, -> { unscope(where: :deleted_at) }
+
   scope :by_title, -> { order(Arel.sql("COALESCE(NULLIF(sort_title, ''), title) COLLATE NOCASE ASC")) }
   scope :recently_added, -> { order(added_at: :desc) }
 
@@ -89,7 +98,62 @@ class Book < ApplicationRecord
     shelves.where(user: user)
   end
 
+  # Mark the book as deleted and remove its files from disk. The Book row
+  # plus its KoboSyncedBook rows stick around so the next Kobo sync per
+  # user can emit a tombstone (via the existing "dropped from syncable
+  # set" path in SyncController). After every user has synced, the
+  # KoboSyncedBook rows clean themselves up — only the Book row remains
+  # as a permanent gravestone (cheap, prevents re-ingest from re-claiming
+  # the same calibre_id under a new UUID).
+  #
+  # Everything else that holds user state about this book (readings,
+  # shelf entries, identifiers, author/tag joins) is destroyed outright
+  # since none of it makes sense without the book.
+  def soft_delete!
+    transaction do
+      readings.destroy_all
+      shelf_entries.destroy_all
+      book_authors.destroy_all
+      book_tags.destroy_all
+      book_identifiers.destroy_all
+      list_entries.update_all(book_id: nil)
+      delete_files_from_disk!
+      update!(deleted_at: Time.current)
+    end
+  end
+
+  def deleted?
+    deleted_at.present?
+  end
+
   private
+
+  def delete_files_from_disk!
+    library_root = Rails.configuration.x.library_path
+    storage_root = Rails.root.join("storage").to_s
+
+    # Library-rooted files: EPUB, KEPUB, original cover.
+    [ epub_full_path, kepub_path ].compact.each do |path|
+      next unless path.start_with?(library_root)
+      File.delete(path) if File.exist?(path)
+    end
+    if cover_path.present?
+      lib_cover = File.join(library_root, cover_path)
+      File.delete(lib_cover) if lib_cover.start_with?(library_root) && File.exist?(lib_cover)
+    end
+
+    # Enriched cover lives under Rails.root/storage.
+    if enriched_cover_path.present?
+      enriched = File.join(storage_root, enriched_cover_path)
+      File.delete(enriched) if enriched.start_with?(storage_root) && File.exist?(enriched)
+    end
+
+    # Remove the book's directory if it's now empty.
+    book_dir = File.join(library_root, path) if path.present?
+    if book_dir && book_dir.start_with?(library_root) && File.directory?(book_dir) && Dir.empty?(book_dir)
+      Dir.rmdir(book_dir)
+    end
+  end
 
   # Random UUID set before validation so it's available for indexed lookup
   # immediately. Old records were backfilled with deterministic v5(id)
