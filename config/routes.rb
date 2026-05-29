@@ -15,7 +15,7 @@ Rails.application.routes.draw do
   # title/author matches; not a full search page.
   get "/search", to: "search#show", as: :search
 
-  resources :books, only: [ :show, :edit, :update ] do
+  resources :books, only: [ :show, :edit, :update, :destroy ] do
     member do
       get  :cover
       get  :download

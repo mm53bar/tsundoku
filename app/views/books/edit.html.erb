@@ -108,3 +108,22 @@
     <%= link_to "Cancel", @book, class: "text-sm text-stone-600 hover:text-stone-900" %>
   </div>
 <% end %>
+
+<details class="mt-16 max-w-3xl rounded-lg border border-red-200 bg-red-50/40 group">
+  <summary class="flex items-center gap-2 px-4 py-3 text-sm font-medium text-red-800 cursor-pointer select-none">
+    <svg class="w-4 h-4 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+    </svg>
+    Danger zone
+  </summary>
+  <div class="px-4 pb-4 pt-2 space-y-3 border-t border-red-200">
+    <p class="text-sm text-red-700">
+      Deleting this book removes it from your library, drops it from any Kobo devices on next sync, and deletes the EPUB, KEPUB, and cover files from disk. Your reading record and shelf memberships go too. This cannot be undone.
+    </p>
+    <%= button_to "Delete book",
+          book_path(@book),
+          method: :delete,
+          data: { turbo_confirm: "Permanently delete \"#{@book.title}\"?" },
+          class: "inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition cursor-pointer" %>
+  </div>
+</details>

@@ -1,6 +1,6 @@
 class BooksController < ApplicationController
   before_action :set_book
-  before_action :require_admin!, only: [ :enrich, :edit, :update ]
+  before_action :require_admin!, only: [ :enrich, :edit, :update, :destroy ]
 
   def show
     @reading = current_user.readings.find_by(book: @book) if signed_in?
@@ -44,6 +44,16 @@ class BooksController < ApplicationController
   rescue ActiveRecord::RecordInvalid => e
     flash.now[:alert] = "Save failed: #{e.message}"
     render :edit, status: :unprocessable_content
+  end
+
+  def destroy
+    title = @book.title
+    # Cascades to readings/shelf_entries/book_authors/book_tags/book_identifiers
+    # via :destroy; list_entries via :nullify; kobo_synced_books via :nullify
+    # (those rows survive to tombstone on the next sync). Files come off
+    # disk in Book's before_destroy callback.
+    @book.destroy
+    redirect_to root_path, notice: "Deleted \"#{title}\"."
   end
 
   def enrich

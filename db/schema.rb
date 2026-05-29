@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_29_023521) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_29_200030) do
   create_table "authors", force: :cascade do |t|
     t.integer "calibre_id"
     t.datetime "created_at", null: false
@@ -97,11 +97,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_023521) do
   end
 
   create_table "kobo_synced_books", force: :cascade do |t|
-    t.integer "book_id", null: false
+    t.integer "book_id"
     t.datetime "created_at", null: false
+    t.string "kobo_uuid", null: false
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
     t.index ["book_id"], name: "index_kobo_synced_books_on_book_id"
+    t.index ["kobo_uuid"], name: "index_kobo_synced_books_on_kobo_uuid"
     t.index ["user_id", "book_id"], name: "index_kobo_synced_books_on_user_id_and_book_id", unique: true
     t.index ["user_id"], name: "index_kobo_synced_books_on_user_id"
   end
