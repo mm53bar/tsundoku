@@ -5,8 +5,7 @@ module Kobo
   # Add server-side resizing later if the device proves unhappy.
   class CoversController < BaseController
     def show
-      uuid = params[:book_uuid]
-      book = syncable_books.find { |b| b.kobo_uuid == uuid }
+      book = find_book_by_kobo_uuid(params[:book_uuid])
       return head :not_found unless book
 
       path = book.cover_full_path
