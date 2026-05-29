@@ -89,7 +89,7 @@ module Kobo
       created  = (synced_at || Time.current).iso8601
       modified = (book.last_modified || book.updated_at).iso8601
 
-      {
+      envelope = {
         "BookEntitlement" => {
           "Accessibility"       => "Full",
           "ActivePeriod"        => { "From" => created },
@@ -106,6 +106,13 @@ module Kobo
         },
         "BookMetadata" => book_metadata(book, uuid)
       }
+
+      unless is_removed
+        reading = @kobo_user.readings.find_by(book_id: book.id)
+        envelope["ReadingState"] = reading.kobo_state_payload(book) if reading
+      end
+
+      envelope
     end
 
     def new_tag(shelf, uuid_by_book_id)

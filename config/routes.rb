@@ -75,6 +75,15 @@ Rails.application.routes.draw do
         as:          :book_metadata,
         constraints: { book_uuid: /\h{8}-\h{4}-\h{4}-\h{4}-\h{12}/ }
 
+    # Phase D: reading state.
+    get "v1/library/:book_uuid/state",
+        to:          "reading_states#show",
+        as:          :book_state,
+        constraints: { book_uuid: /\h{8}-\h{4}-\h{4}-\h{4}-\h{12}/ }
+    put "v1/library/:book_uuid/state",
+        to:          "reading_states#update",
+        constraints: { book_uuid: /\h{8}-\h{4}-\h{4}-\h{4}-\h{12}/ }
+
     # NB: greyscale segment is intentionally permissive — the device
     # substitutes its own representation ("False" with a capital F from
     # the {IsGreyscale} template variable, not "false" as in the literal
