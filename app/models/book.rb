@@ -26,6 +26,7 @@ class Book < ApplicationRecord
   has_many :kobo_synced_books, dependent: :nullify
 
   before_validation :set_kobo_uuid, on: :create
+  before_destroy    :broadcast_tombstone_to_kobo_users
   before_destroy    :delete_files_from_disk!
 
   validates :calibre_id, uniqueness: true, allow_nil: true
@@ -96,6 +97,26 @@ class Book < ApplicationRecord
   end
 
   private
+
+  # Make sure every Kobo-connected user gets a tombstone on their next
+  # sync — even if Tsundoku never told them about this book (CWA might
+  # have, or the user might have side-loaded by some other means).
+  #
+  # Tombstones for entitlements the device doesn't have are silently
+  # ignored, so over-broadcasting is harmless. The alternative — only
+  # tombstoning users with an existing kobo_synced_books row — leaves
+  # orphans on devices whose state Tsundoku never tracked.
+  #
+  # Skips users who already have a row for this book; `dependent: :nullify`
+  # turns those into tombstones in the same destroy pass.
+  def broadcast_tombstone_to_kobo_users
+    return if kobo_uuid.blank?
+
+    User.where.not(kobo_handle: [ nil, "" ]).find_each do |user|
+      next if user.kobo_synced_books.where(book_id: id).exists?
+      user.kobo_synced_books.create!(book_id: nil, kobo_uuid: kobo_uuid)
+    end
+  end
 
   # Wipe the on-disk artifacts (EPUB, KEPUB, cover, enriched cover) before
   # the DB row goes. Guarded by start_with? checks so a malformed model

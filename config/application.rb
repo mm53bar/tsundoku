@@ -33,6 +33,12 @@ module Tsundoku
     config.x.library_path = ENV.fetch("LIBRARY_PATH") { Rails.root.join("storage/library_dev").to_s }
     config.x.ingest_path  = ENV.fetch("INGEST_PATH")  { Rails.root.join("storage/ingest_dev").to_s }
 
+    # Optional read-only bind mount of CWA's config directory (the same
+    # one CWA itself uses at /config in its compose). When present, the
+    # CWA migration rake tasks pick up app.db automatically without
+    # needing a path argument.
+    config.x.cwa_config_path = ENV.fetch("CWA_CONFIG_PATH", "/cwa-config")
+
     revision_file       = Rails.root.join("REVISION")
     revision_short_file = Rails.root.join("REVISION_SHORT")
     config.x.git_sha       = revision_file.exist?       ? revision_file.read.strip       : "dev"
