@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_28_234957) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_29_023521) do
   create_table "authors", force: :cascade do |t|
     t.integer "calibre_id"
     t.datetime "created_at", null: false
@@ -153,6 +153,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_234957) do
     t.integer "book_id", null: false
     t.datetime "created_at", null: false
     t.datetime "finished_at"
+    t.datetime "kobo_synced_at"
+    t.string "location_source"
+    t.string "location_type"
+    t.string "location_value"
+    t.integer "progress_percent"
+    t.integer "spent_reading_minutes"
     t.datetime "started_at"
     t.integer "status", default: 0, null: false
     t.datetime "updated_at", null: false
