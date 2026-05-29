@@ -10,18 +10,24 @@ namespace :kobo do
   # syncing-shelf membership) — which is the design intent: only books
   # the user has explicitly opted into ride along.
   #
-  # Usage: bin/rails 'kobo:import_sync_state_from_cwa[/path/to/app.db,mike,smoketest]'
+  # Usage:
+  #   bin/rails 'kobo:import_sync_state_from_cwa[mike,smoketest]'
+  #     — picks up <CWA_CONFIG_PATH>/app.db (default /cwa-config/app.db)
+  #   bin/rails 'kobo:import_sync_state_from_cwa[mike,smoketest,/explicit/path.db]'
+  #     — overrides the auto-discovered location
   desc "Import CWA's kobo_synced_books rows for a (CWA user → Tsundoku user) pair"
-  task :import_sync_state_from_cwa, [ :cwa_db_path, :cwa_username, :tsundoku_username ] => :environment do |_t, args|
+  task :import_sync_state_from_cwa, [ :cwa_username, :tsundoku_username, :cwa_db_path ] => :environment do |_t, args|
     require "sqlite3"
 
-    cwa_db_path       = args[:cwa_db_path].to_s
     cwa_username      = args[:cwa_username].to_s
     tsundoku_username = args[:tsundoku_username].to_s
+    cwa_db_path       = args[:cwa_db_path].presence ||
+                        File.join(Rails.configuration.x.cwa_config_path, "app.db")
 
-    abort "Usage: bin/rails 'kobo:import_sync_state_from_cwa[<app.db>,<cwa_username>,<tsundoku_username>]'" \
-      if cwa_db_path.blank? || cwa_username.blank? || tsundoku_username.blank?
-    abort "CWA db not found: #{cwa_db_path}" unless File.exist?(cwa_db_path)
+    abort "Usage: bin/rails 'kobo:import_sync_state_from_cwa[<cwa_user>,<tsundoku_user>,[<app.db>]]'" \
+      if cwa_username.blank? || tsundoku_username.blank?
+    abort "CWA db not found: #{cwa_db_path} (set CWA_CONFIG_PATH or pass an explicit path)" \
+      unless File.exist?(cwa_db_path)
 
     tsundoku_user = User.find_by(username: tsundoku_username)
     abort "Tsundoku user not found: #{tsundoku_username}" unless tsundoku_user
