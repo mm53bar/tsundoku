@@ -52,3 +52,7 @@ Gemini_Generated_Image_*.png
 # etc). Keep them out of the repo; their licenses don't typically permit
 # redistribution.
 /*.zip
+
+# CWA's data dir, when checked out locally for the migration. Contains
+# personal reading history; never commit.
+/calibre-web/

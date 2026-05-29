@@ -1,21 +1,72 @@
 namespace :kobo do
-  # Read CWA's per-user kobo_synced_books table and replicate it into
-  # Tsundoku's kobo_synced_books. This gives Tsundoku knowledge of every
-  # entitlement CWA had pushed to a given device — without it, books CWA
-  # synced but the user never touched in Tsundoku stay as orphans on the
-  # device forever (no Tsundoku row to nullify, no tombstone on delete).
+  # Self-contained helper for the CWA reading-state lookup. Lives inside
+  # the namespace block as a class rather than top-level `def`s so the
+  # methods don't leak onto Object.
+  cwa_helpers = Class.new do
+    # Pull CWA's per-(user, book) reading state out of app.db: latest
+    # bookmark + statistics row, joined via kobo_reading_state. Returns
+    # an empty hash when the user never opened the book.
+    def self.reading_state(cwa, cwa_user_id, calibre_book_id)
+      row = cwa.execute(<<~SQL, [ cwa_user_id, calibre_book_id ]).first
+        SELECT rs.last_modified              AS rs_last_modified,
+               bm.location_source            AS location_source,
+               bm.location_type              AS location_type,
+               bm.location_value             AS location_value,
+               bm.progress_percent           AS percent,
+               st.spent_reading_minutes      AS spent_minutes
+        FROM   kobo_reading_state rs
+        LEFT JOIN kobo_bookmark    bm ON bm.kobo_reading_state_id = rs.id
+        LEFT JOIN kobo_statistics  st ON st.kobo_reading_state_id = rs.id
+        WHERE  rs.user_id = ? AND rs.book_id = ?
+        LIMIT  1
+      SQL
+      return {} unless row
+
+      last_modified = begin
+        Time.zone.parse(row["rs_last_modified"].to_s)
+      rescue StandardError
+        nil
+      end
+
+      {
+        percent:         row["percent"],
+        location_source: row["location_source"].presence,
+        location_type:   row["location_type"].presence,
+        location_value:  row["location_value"].presence,
+        spent_minutes:   row["spent_minutes"],
+        last_modified:   last_modified
+      }
+    end
+
+    # Map a CWA-reported progress percent (0..100) onto a Tsundoku status.
+    # Defaults to want_to_read when no progress is recorded — book was
+    # synced to the device but never opened.
+    def self.derive_status(percent)
+      p = percent.to_i
+      return :want_to_read if percent.nil? || p.zero?
+      return :read         if p >= 95
+      :currently_reading
+    end
+  end
+
+  # Replicate CWA's per-user sync state into Tsundoku — both the
+  # kobo_synced_books rows (so deletes can tombstone) and a Reading
+  # record with sync_to_device: true plus any progress/bookmark/timing
+  # data CWA captured.
   #
-  # After running this, the next sync will tombstone any imported book
-  # that isn't in the user's current syncable set (no reading status, no
-  # syncing-shelf membership) — which is the design intent: only books
-  # the user has explicitly opted into ride along.
+  # The sync_to_device flag is the important bit: without it the next
+  # sync would immediately tombstone every imported book that doesn't
+  # have a Tsundoku-side status — which is the wrong default for a
+  # migration. Users opt *out* explicitly later (toggle off, delete);
+  # they shouldn't have to opt back *in* for books CWA was already
+  # pushing.
   #
   # Usage:
   #   bin/rails 'kobo:import_sync_state_from_cwa[mike,smoketest]'
   #     — picks up <CWA_CONFIG_PATH>/app.db (default /cwa-config/app.db)
   #   bin/rails 'kobo:import_sync_state_from_cwa[mike,smoketest,/explicit/path.db]'
   #     — overrides the auto-discovered location
-  desc "Import CWA's kobo_synced_books rows for a (CWA user → Tsundoku user) pair"
+  desc "Import CWA's sync state (kobo_synced_books + reading progress) for a user pair"
   task :import_sync_state_from_cwa, [ :cwa_username, :tsundoku_username, :cwa_db_path ] => :environment do |_t, args|
     require "sqlite3"
 
@@ -42,9 +93,11 @@ namespace :kobo do
     cwa_rows = cwa.execute("SELECT book_id FROM kobo_synced_books WHERE user_id = ?", cwa_user_id)
     puts "CWA reports #{cwa_rows.length} synced #{'book'.pluralize(cwa_rows.length)} for user #{cwa_username.inspect}."
 
-    created  = 0
-    existing = 0
-    missing  = 0
+    synced_created  = 0
+    synced_existing = 0
+    reading_created = 0
+    reading_updated = 0
+    missing         = 0
 
     cwa_rows.each do |row|
       calibre_id = row["book_id"]
@@ -54,17 +107,40 @@ namespace :kobo do
         next
       end
 
+      # 1. kobo_synced_books row (so deletes can tombstone)
       ksb = tsundoku_user.kobo_synced_books.find_by(book_id: book.id)
       if ksb
-        existing += 1
+        synced_existing += 1
       else
         tsundoku_user.kobo_synced_books.create!(book: book)
-        created += 1
+        synced_created  += 1
       end
+
+      # 2. Reading record (so the book is syncable + carries progress)
+      progress = cwa_helpers.reading_state(cwa, cwa_user_id, calibre_id)
+      reading  = tsundoku_user.readings.find_or_initialize_by(book: book)
+      was_new  = reading.new_record?
+
+      reading.sync_to_device = true              # set first; before_save callback sees changed?
+      reading.status         = cwa_helpers.derive_status(progress[:percent])
+      if progress[:percent].present?
+        reading.progress_percent = progress[:percent].to_i
+      end
+      reading.location_source       = progress[:location_source] if progress[:location_source]
+      reading.location_type         = progress[:location_type]   if progress[:location_type]
+      reading.location_value        = progress[:location_value]  if progress[:location_value]
+      reading.spent_reading_minutes = progress[:spent_minutes]   if progress[:spent_minutes]
+      reading.started_at  ||= progress[:last_modified] if progress[:percent].to_i.positive?
+      reading.finished_at ||= progress[:last_modified] if progress[:percent].to_i >= 95
+      reading.save!
+
+      was_new ? reading_created += 1 : reading_updated += 1
     end
 
-    puts "Created #{created} #{'row'.pluralize(created)}; #{existing} already present; #{missing} skipped (no matching Tsundoku book)."
-    puts "Trigger a sync to tombstone any non-syncable books." if created.positive?
+    puts "kobo_synced_books: created #{synced_created}, already present #{synced_existing}."
+    puts "readings:          created #{reading_created}, updated #{reading_updated}."
+    puts "skipped:           #{missing} (no matching Tsundoku book)." if missing.positive?
+    puts "Trigger a sync to push reading state to the device." if (synced_created + reading_created + reading_updated).positive?
   end
 
   desc "Migrate sync UUIDs from CWA — adopt Calibre's books.uuid as kobo_uuid so the device de-dupes against entitlements it already has"

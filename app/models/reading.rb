@@ -11,14 +11,10 @@ class Reading < ApplicationRecord
     read:              2
   }, validate: true
 
-  # Statuses that contribute to sync_to_kobo by default. See the design
-  # notes for the rule: status drives the per-book sync default; shelves
-  # marked sync_to_kobo can additionally include books regardless of
-  # status.
-  SYNCABLE_STATUSES = %w[want_to_read currently_reading].freeze
-
   # Tsundoku status ↔ Kobo status. Matches design doc §6 (one-to-one
-  # after we collapsed paused/did_not_finish in earlier work).
+  # after we collapsed paused/did_not_finish in earlier work). Note that
+  # status is now a *progress* signal, not a sync signal — sync intent
+  # lives in the dedicated sync_to_device column.
   KOBO_STATUS_MAP = {
     "want_to_read"      => "ReadyToRead",
     "currently_reading" => "Reading",
@@ -27,9 +23,12 @@ class Reading < ApplicationRecord
 
   validates :user_id, uniqueness: { scope: :book_id }
 
-  def sync_to_kobo?
-    SYNCABLE_STATUSES.include?(status)
-  end
+  # Transitional bridge: until the UI exposes the sync toggle separately,
+  # status changes still drive sync_to_device using the legacy mapping
+  # (want_to_read / currently_reading → sync; read → don't sync). Explicit
+  # sync_to_device assignments win — when the toggle UI lands, callers
+  # that set both fields aren't overridden by this.
+  before_save :default_sync_to_device_from_status
 
   def kobo_status
     KOBO_STATUS_MAP[status] || "ReadyToRead"
@@ -74,6 +73,16 @@ class Reading < ApplicationRecord
   end
 
   private
+
+  def default_sync_to_device_from_status
+    # Skip if the caller has explicitly assigned sync_to_device — they're
+    # opting out of the legacy mapping. Otherwise apply the mapping on
+    # creation (when status_changed? is false for default values) and
+    # whenever status changes thereafter.
+    return if sync_to_device_changed?
+    return unless new_record? || status_changed?
+    self.sync_to_device = %w[want_to_read currently_reading].include?(status)
+  end
 
   def current_bookmark_payload(iso)
     bm = { "LastModified" => iso }

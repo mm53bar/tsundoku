@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_29_200030) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_29_212357) do
   create_table "authors", force: :cascade do |t|
     t.integer "calibre_id"
     t.datetime "created_at", null: false
@@ -163,10 +163,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_200030) do
     t.integer "spent_reading_minutes"
     t.datetime "started_at"
     t.integer "status", default: 0, null: false
+    t.boolean "sync_to_device", default: false, null: false
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
     t.index ["book_id"], name: "index_readings_on_book_id"
     t.index ["status"], name: "index_readings_on_status"
+    t.index ["sync_to_device"], name: "index_readings_on_sync_to_device"
     t.index ["user_id", "book_id"], name: "index_readings_on_user_id_and_book_id", unique: true
     t.index ["user_id"], name: "index_readings_on_user_id"
   end
