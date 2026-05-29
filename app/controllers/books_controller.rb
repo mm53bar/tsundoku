@@ -1,6 +1,6 @@
 class BooksController < ApplicationController
   before_action :set_book
-  before_action :require_admin!, only: [ :enrich, :edit, :update ]
+  before_action :require_admin!, only: [ :enrich, :edit, :update, :destroy ]
 
   def show
     @reading = current_user.readings.find_by(book: @book) if signed_in?
@@ -44,6 +44,12 @@ class BooksController < ApplicationController
   rescue ActiveRecord::RecordInvalid => e
     flash.now[:alert] = "Save failed: #{e.message}"
     render :edit, status: :unprocessable_content
+  end
+
+  def destroy
+    title = @book.title
+    @book.soft_delete!
+    redirect_to root_path, notice: "Deleted \"#{title}\"."
   end
 
   def enrich
