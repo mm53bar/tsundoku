@@ -44,6 +44,25 @@
             </nav>
           <% end %>
         </div>
+        <% if signed_in? %>
+          <div class="flex-1 max-w-md hidden sm:block"
+               data-controller="navbar-search"
+               data-navbar-search-url-value="<%= search_path %>">
+            <div class="relative">
+              <input type="search"
+                     placeholder="Search books..."
+                     autocomplete="off"
+                     data-navbar-search-target="input"
+                     data-action="input->navbar-search#query focus->navbar-search#focus keydown->navbar-search#keydown"
+                     class="w-full rounded-md border border-stone-200 bg-stone-50 px-3 py-1.5 text-sm placeholder:text-stone-400 focus:bg-white focus:border-stone-400 focus:outline-none">
+              <div data-navbar-search-target="dropdown"
+                   hidden
+                   class="absolute top-full left-0 right-0 mt-1 bg-white border border-stone-200 rounded-md shadow-lg z-50 max-h-96 overflow-y-auto">
+                <turbo-frame id="navbar-search-results" data-navbar-search-target="frame"></turbo-frame>
+              </div>
+            </div>
+          </div>
+        <% end %>
         <div class="flex items-center">
           <% if signed_in? %>
             <%= render "shared/components/navbar/navbar",

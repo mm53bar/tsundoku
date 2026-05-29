@@ -1,0 +1,32 @@
+<%# Fragment loaded into the navbar's turbo-frame on each debounced keystroke.
+    Rendered without a layout (see SearchController#show). Each result link
+    targets _top so clicking navigates the whole page out of the dropdown. %>
+<turbo-frame id="navbar-search-results">
+  <% if @books.any? %>
+    <ul class="py-1">
+      <% @books.each do |book| %>
+        <li>
+          <%= link_to book_path(book),
+                data: { turbo_frame: "_top" },
+                class: "flex items-center gap-3 px-3 py-2 hover:bg-stone-50 transition-colors" do %>
+            <div class="w-8 h-12 flex-shrink-0 bg-stone-200 rounded overflow-hidden ring-1 ring-stone-200/60">
+              <% if book.cover_available? %>
+                <%= image_tag cover_book_path(book, v: book.updated_at.to_i),
+                      alt: "",
+                      class: "w-full h-full object-cover" %>
+              <% end %>
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-medium text-stone-900 truncate"><%= book.title %></p>
+              <% if book.authors.any? %>
+                <p class="text-xs text-stone-500 truncate"><%= book.author_names %></p>
+              <% end %>
+            </div>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% elsif @query.length >= SearchController::MIN_QUERY_LEN %>
+    <p class="px-3 py-3 text-sm text-stone-500">No matches for &ldquo;<%= @query %>&rdquo;.</p>
+  <% end %>
+</turbo-frame>
