@@ -383,20 +383,35 @@ progress, no "estimated time left in chapter").
 The conversion tool is `kepubify` — Go binary, no deps, fast (a 5MB EPUB
 converts in ~200ms). Komga runs it on-the-fly server-side.
 
-**v1 decision: ship EPUB only.** The download endpoint serves the raw EPUB
-from disk, format-tagged as `EPUB3` in the sync payload. KEPUB conversion is
-a v1.1 feature — add it when reading-progress fidelity actually matters to
-someone.
+**Decision: eager conversion via background job, not on-demand.** Reasons:
 
-When we do add it, the right shape is:
+- **CPU**: a few hundred ms per book × library size, one-time. Cheap on a
+  Synology overnight; expensive at sync time per book the user hasn't
+  read yet.
+- **Failure mode**: corrupt EPUBs or formats kepubify chokes on become
+  known at ingest, not when the user is staring at the device wondering
+  why the book won't download.
+- **Storage cost**: doubles disk usage. Trivial on a NAS. Worth it.
+- **Code shape**: a job at ingest + a backfill rake task is simpler
+  operationally than on-demand-with-cache (cache invalidation, 503-
+  retry plumbing, all gone).
 
-- A Solid Queue job that converts on demand and caches the result to
-  `storage/kepub/<book_uuid>.kepub.epub`.
-- Cache invalidates on `book.updated_at` change.
-- The download endpoint streams from cache, kicks the job if missing,
-  returns 503 with Retry-After if the conversion isn't done yet.
+Implementation:
 
-The Kobo retries reliably, so 503-then-200 is fine.
+- `ConvertToKepubJob` (Solid Queue), enqueued from `IngestFileJob` after
+  successful ingest.
+- `rake kepub:backfill` — one-time enqueue for every existing book.
+- `rake kepub:reconvert_all` — force-rebuild after kepubify version bump.
+- Output cached at `storage/kepub/book_<id>.kepub.epub`. Atomic rename
+  through a `.partial` tmp file so half-converted files never get served.
+- `Book#kepub_available?` is a `File.exist?` check. No DB column —
+  filesystem is the source of truth.
+- Sync controller's `DownloadUrls` includes KEPUB (when available) +
+  EPUB as fallback. Device prefers KEPUB.
+- `kepubify` binary baked into the Docker image at build time.
+
+EPUB stays in the payload so a book whose conversion failed (or hasn't
+finished yet) still syncs as an EPUB — KEPUB is purely additive.
 
 ## 9. Implementation phases
 

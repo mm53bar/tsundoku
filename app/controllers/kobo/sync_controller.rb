@@ -177,12 +177,32 @@ module Kobo
     end
 
     def download_urls_for(book)
-      return [] unless book.epub_full_path && File.exist?(book.epub_full_path)
+      return [] unless book.epub_downloadable?
 
-      size = File.size(book.epub_full_path)
-      url  = "#{request.base_url}/kobo/#{params[:handle]}/download/#{book.id}/EPUB"
+      base = "#{request.base_url}/kobo/#{params[:handle]}/download/#{book.id}"
 
-      [ { "Format" => "EPUB3", "Size" => size, "Url" => url, "Platform" => "Generic" } ]
+      urls = []
+
+      # Prefer KEPUB when available — Kobo's native format, gives the
+      # device paragraph-level reading-progress instead of chapter-level.
+      if book.kepub_available?
+        urls << {
+          "Format"   => "KEPUB",
+          "Size"     => File.size(book.kepub_path),
+          "Url"      => "#{base}/KEPUB",
+          "Platform" => "Generic"
+        }
+      end
+
+      # EPUB always offered as a fallback.
+      urls << {
+        "Format"   => "EPUB3",
+        "Size"     => File.size(book.epub_full_path),
+        "Url"      => "#{base}/EPUB",
+        "Platform" => "Generic"
+      }
+
+      urls
     end
   end
 end
