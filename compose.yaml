@@ -19,11 +19,12 @@ x-tsundoku-common: &tsundoku-common
     - ${LIBRARY_DIR:?LIBRARY_DIR must be set}:/library:rw
     - ${INGEST_DIR:?INGEST_DIR must be set}:/ingest:rw
     - ${CONFIG_DIR:?CONFIG_DIR must be set}:/rails/storage:rw
-    # Optional — point CWA_CONFIG_DIR at your existing CWA config directory
-    # (the one CWA itself uses at /config) to let the
-    # `kobo:import_sync_state_from_cwa` rake task auto-discover app.db.
-    # Uncomment when migrating from CWA; otherwise leave commented out.
-    # - ${CWA_CONFIG_DIR}:/cwa-config:ro
+    # Point CWA_CONFIG_DIR at your existing CWA config directory (the one
+    # CWA itself uses at /config) to let the `kobo:import_sync_state_from_cwa`
+    # rake task auto-discover app.db. If unset, the repo's empty/ directory
+    # is mounted instead — harmless, the rake task will just error out with
+    # "CWA db not found" if invoked.
+    - ${CWA_CONFIG_DIR:-./empty}:/cwa-config:ro
   environment: &tsundoku-env
     TZ: ${TZ:-UTC}
     LIBRARY_PATH: /library
