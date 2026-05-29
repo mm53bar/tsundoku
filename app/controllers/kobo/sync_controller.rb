@@ -11,7 +11,14 @@ module Kobo
       uuid_by_book_id          = current_books.to_h { |b| [ b.id, b.kobo_uuid ] }
 
       previously_synced_books  = @kobo_user.kobo_synced_books.where(book_id: current_book_ids).index_by(&:book_id)
-      removed_book_records     = @kobo_user.kobo_synced_books.where.not(book_id: current_book_ids).includes(:book)
+      # Tombstones come from two places:
+      #   * rows whose book is still around but no longer syncable
+      #     (status changed, removed from a syncing shelf, etc.)
+      #   * rows whose book was hard-destroyed; book_id is NULL and the
+      #     kobo_uuid snapshot on the row is the only thing left.
+      # SQL's NOT IN excludes NULLs, hence the explicit OR.
+      removed_book_records = @kobo_user.kobo_synced_books
+                                       .where("book_id IS NULL OR book_id NOT IN (?)", current_book_ids.to_a.presence || [ 0 ])
 
       payload = []
 
@@ -27,9 +34,9 @@ module Kobo
       end
 
       removed_book_records.each do |record|
-        # The Book record still exists (it just dropped out of the
-        # syncable set) so kobo_uuid is still valid for the tombstone.
-        payload << removed_entitlement(record.book, record.created_at)
+        # Use the snapshot kobo_uuid on the record so this works whether
+        # the book still exists or was destroyed.
+        payload << removed_entitlement(record.kobo_uuid, record.created_at)
       end
       removed_book_records.destroy_all
 
@@ -73,18 +80,46 @@ module Kobo
     private
 
     def new_entitlement(book, synced_at)
-      { "NewEntitlement" => entitlement_envelope(book, synced_at, is_removed: false) }
+      { "NewEntitlement" => entitlement_envelope(book, synced_at) }
     end
 
     def changed_entitlement(book, synced_at)
-      { "ChangedEntitlement" => entitlement_envelope(book, synced_at, is_removed: false) }
+      { "ChangedEntitlement" => entitlement_envelope(book, synced_at) }
     end
 
-    def removed_entitlement(book, synced_at)
-      { "ChangedEntitlement" => entitlement_envelope(book, synced_at, is_removed: true) }
+    # Tombstone envelope — emitted for rows whose book is gone (or merely
+    # no longer syncable). Takes the kobo_uuid directly because we may
+    # not have a Book to read it from.
+    def removed_entitlement(kobo_uuid, synced_at)
+      created  = (synced_at || Time.current).iso8601
+      envelope = {
+        "BookEntitlement" => {
+          "Accessibility"       => "Full",
+          "ActivePeriod"        => { "From" => created },
+          "Created"             => created,
+          "CrossRevisionId"     => kobo_uuid,
+          "Id"                  => kobo_uuid,
+          "IsRemoved"           => true,
+          "IsHiddenFromArchive" => false,
+          "IsLocked"            => false,
+          "LastModified"        => created,
+          "OriginCategory"      => "Imported",
+          "RevisionId"          => kobo_uuid,
+          "Status"              => "Removed"
+        },
+        "BookMetadata" => {
+          "CrossRevisionId" => kobo_uuid,
+          "EntitlementId"   => kobo_uuid,
+          "RevisionId"      => kobo_uuid,
+          "WorkId"          => kobo_uuid
+        }
+      }
+      { "ChangedEntitlement" => envelope }
     end
 
-    def entitlement_envelope(book, synced_at, is_removed:)
+    # Live entitlement (New or Changed). Tombstones go through
+    # #removed_entitlement directly since they don't have a Book to read.
+    def entitlement_envelope(book, synced_at)
       uuid     = book.kobo_uuid
       created  = (synced_at || Time.current).iso8601
       modified = (book.last_modified || book.updated_at).iso8601
@@ -96,21 +131,19 @@ module Kobo
           "Created"             => created,
           "CrossRevisionId"     => uuid,
           "Id"                  => uuid,
-          "IsRemoved"           => is_removed,
+          "IsRemoved"           => false,
           "IsHiddenFromArchive" => false,
           "IsLocked"            => false,
           "LastModified"        => modified,
           "OriginCategory"      => "Imported",
           "RevisionId"          => uuid,
-          "Status"              => is_removed ? "Removed" : "Active"
+          "Status"              => "Active"
         },
         "BookMetadata" => book_metadata(book, uuid)
       }
 
-      unless is_removed
-        reading = @kobo_user.readings.find_by(book_id: book.id)
-        envelope["ReadingState"] = reading.kobo_state_payload(book) if reading
-      end
+      reading = @kobo_user.readings.find_by(book_id: book.id)
+      envelope["ReadingState"] = reading.kobo_state_payload(book) if reading
 
       envelope
     end

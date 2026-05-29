@@ -18,9 +18,15 @@ class Book < ApplicationRecord
   has_many :shelf_entries, dependent: :destroy
   has_many :shelves, -> { distinct }, through: :shelf_entries
 
-  has_many :kobo_synced_books, dependent: :destroy
+  # Nullify rather than destroy: when a book is deleted we want the
+  # kobo_synced_books rows to *survive* so the next sync per user can
+  # emit a tombstone using their snapshot kobo_uuid. The sync controller
+  # destroys those rows after the tombstone is delivered, completing the
+  # cleanup.
+  has_many :kobo_synced_books, dependent: :nullify
 
   before_validation :set_kobo_uuid, on: :create
+  before_destroy    :delete_files_from_disk!
 
   validates :calibre_id, uniqueness: true, allow_nil: true
   validates :title, :path, :imported_at, presence: true
@@ -90,6 +96,32 @@ class Book < ApplicationRecord
   end
 
   private
+
+  # Wipe the on-disk artifacts (EPUB, KEPUB, cover, enriched cover) before
+  # the DB row goes. Guarded by start_with? checks so a malformed model
+  # column can't trick us into deleting outside the configured roots.
+  def delete_files_from_disk!
+    library_root = Rails.configuration.x.library_path
+    storage_root = Rails.root.join("storage").to_s
+
+    [ epub_full_path, kepub_path ].compact.each do |p|
+      next unless p.start_with?(library_root)
+      File.delete(p) if File.exist?(p)
+    end
+    if cover_path.present?
+      lib_cover = File.join(library_root, cover_path)
+      File.delete(lib_cover) if lib_cover.start_with?(library_root) && File.exist?(lib_cover)
+    end
+    if enriched_cover_path.present?
+      enriched = File.join(storage_root, enriched_cover_path)
+      File.delete(enriched) if enriched.start_with?(storage_root) && File.exist?(enriched)
+    end
+
+    book_dir = File.join(library_root, path) if path.present?
+    if book_dir && book_dir.start_with?(library_root) && File.directory?(book_dir) && Dir.empty?(book_dir)
+      Dir.rmdir(book_dir)
+    end
+  end
 
   # Random UUID set before validation so it's available for indexed lookup
   # immediately. Old records were backfilled with deterministic v5(id)
