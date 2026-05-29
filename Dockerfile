@@ -22,6 +22,15 @@ RUN apt-get update -qq && \
     ln -s /usr/lib/$(uname -m)-linux-gnu/libjemalloc.so.2 /usr/local/lib/libjemalloc.so && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
+# kepubify — converts EPUB → KEPUB for higher-fidelity reading-progress on
+# Kobo devices. Single static Go binary, ~6MB. amd64-only for now since
+# that's the only architecture the build workflow targets.
+ARG KEPUBIFY_VERSION=4.0.4
+RUN curl -fsSL -o /usr/local/bin/kepubify \
+      "https://github.com/pgaskin/kepubify/releases/download/v${KEPUBIFY_VERSION}/kepubify-linux-64bit" && \
+    chmod +x /usr/local/bin/kepubify && \
+    /usr/local/bin/kepubify --version
+
 # Set production environment variables and enable jemalloc for reduced memory usage and latency.
 ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
