@@ -181,28 +181,25 @@ module Kobo
 
       base = "#{request.base_url}/kobo/#{params[:handle]}/download/#{book.id}"
 
-      urls = []
-
-      # Prefer KEPUB when available — Kobo's native format, gives the
-      # device paragraph-level reading-progress instead of chapter-level.
+      # When KEPUB is available we emit it as the *only* DownloadUrl —
+      # listing both KEPUB and EPUB causes the device to pick EPUB
+      # (observed empirically; calibre-web's source does the same
+      # KEPUB-only approach when KEPUB exists).
       if book.kepub_available?
-        urls << {
+        [ {
           "Format"   => "KEPUB",
           "Size"     => File.size(book.kepub_path),
           "Url"      => "#{base}/KEPUB",
           "Platform" => "Generic"
-        }
+        } ]
+      else
+        [ {
+          "Format"   => "EPUB3",
+          "Size"     => File.size(book.epub_full_path),
+          "Url"      => "#{base}/EPUB",
+          "Platform" => "Generic"
+        } ]
       end
-
-      # EPUB always offered as a fallback.
-      urls << {
-        "Format"   => "EPUB3",
-        "Size"     => File.size(book.epub_full_path),
-        "Url"      => "#{base}/EPUB",
-        "Platform" => "Generic"
-      }
-
-      urls
     end
   end
 end
