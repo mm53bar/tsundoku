@@ -46,7 +46,7 @@ module Kobo
     #   - membership in a shelf with sync_to_kobo = true
     # Returns an ActiveRecord::Relation so callers can chain includes/limit.
     def syncable_books
-      via_reading = @kobo_user.readings.where(status: Reading::SYNCABLE_STATUSES).select(:book_id)
+      via_reading = @kobo_user.readings.where(sync_to_device: true).select(:book_id)
       via_shelves = ShelfEntry.joins(:shelf).where(shelves: { user: @kobo_user, sync_to_kobo: true }).select(:book_id)
       Book.where(id: via_reading).or(Book.where(id: via_shelves))
     end
