@@ -9,6 +9,13 @@ module Kobo
     before_action :set_kobo_user
     after_action  :capture_device_info, if: -> { @kobo_user.present? }
 
+    # The device hits ~10 endpoints per sync that we don't implement and
+    # which route to #fallback — analytics, deals, recommendations, wishlist,
+    # nextread, etc. Each one logs Started/Processing/Completed at INFO,
+    # drowning the meaningful sync/metadata/download lines. Raise the level
+    # for the duration of those actions so the structured logs stay readable.
+    around_action :quiet_fallback_logs, only: :fallback
+
     # GET /kobo/:handle
     # Top-level connectivity ping. The real Kobo store returns an empty
     # object here; we mirror that so device sync sees a normal "no work to
@@ -75,6 +82,14 @@ module Kobo
       KoboDevice.upsert_from_request(user: @kobo_user, params: params)
     rescue StandardError => e
       Rails.logger.warn("KoboDevice capture failed: #{e.class}: #{e.message}")
+    end
+
+    def quiet_fallback_logs
+      old_level = Rails.logger.level
+      Rails.logger.level = Logger::WARN
+      yield
+    ensure
+      Rails.logger.level = old_level
     end
   end
 end
