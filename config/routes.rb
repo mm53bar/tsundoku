@@ -10,6 +10,11 @@ Rails.application.routes.draw do
 
   post "/library/import", to: "library#import", as: :library_import
 
+  # Navbar autocomplete. Loaded into a turbo-frame on each keystroke
+  # (debounced client-side). Returns a small fragment with up to 10
+  # title/author matches; not a full search page.
+  get "/search", to: "search#show", as: :search
+
   resources :books, only: [ :show, :edit, :update ] do
     member do
       get  :cover
