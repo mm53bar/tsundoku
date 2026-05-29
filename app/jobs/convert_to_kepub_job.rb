@@ -1,3 +1,5 @@
+require "open3"
+
 class ConvertToKepubJob < ApplicationJob
   queue_as :default
 
@@ -15,15 +17,20 @@ class ConvertToKepubJob < ApplicationJob
 
     # kepubify writes to either a file or directory depending on -o.
     # Use a temp output and atomic-rename to avoid serving a partial
-    # file if conversion fails halfway.
+    # file if conversion fails halfway. Open3 captures stderr so we
+    # can log kepubify's actual error message, not just exit status.
     tmp = "#{book.kepub_path}.partial"
-    success = system("kepubify", "-o", tmp, book.epub_full_path)
+    stdout_str, stderr_str, status = Open3.capture3("kepubify", "-o", tmp, book.epub_full_path)
 
-    if success && File.exist?(tmp)
+    if status.success? && File.exist?(tmp)
       FileUtils.mv(tmp, book.kepub_path)
     else
       File.delete(tmp) if File.exist?(tmp)
-      Rails.logger.warn("kepubify failed for book #{book.id} (#{book.title.inspect})")
+      Rails.logger.warn(
+        "kepubify failed for book #{book.id} (#{book.title.inspect}) " \
+        "from #{book.epub_full_path.inspect}: " \
+        "exit=#{status.exitstatus} stderr=#{stderr_str.strip.inspect} stdout=#{stdout_str.strip.inspect}"
+      )
     end
   end
 end
