@@ -30,6 +30,12 @@ class IngestFileJob < ApplicationJob
         EnrichBookJob.perform_later(enrich_task.id)
       end
 
+      # Convert to KEPUB so the Kobo gets paragraph-level reading-progress
+      # fidelity. Background job — the sync controller serves KEPUB when
+      # available and falls back to EPUB otherwise, so this is purely
+      # additive (sync works either way).
+      ConvertToKepubJob.perform_later(result.book.id)
+
     when :duplicate
       task.update!(subject: result.book)
       task.mark_succeeded!(result_data: {
