@@ -24,6 +24,11 @@ class ConvertToKepubJob < ApplicationJob
 
     if status.success? && File.exist?(tmp)
       FileUtils.mv(tmp, book.kepub_path)
+      # Bump book.updated_at so the next Kobo sync emits ChangedEntitlement
+      # with the new DownloadUrls listing the KEPUB. Without this touch the
+      # diff doesn't see anything to send and the device keeps its cached
+      # EPUB-only entitlements indefinitely.
+      book.touch
     else
       File.delete(tmp) if File.exist?(tmp)
       Rails.logger.warn(
