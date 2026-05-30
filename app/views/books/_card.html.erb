@@ -7,7 +7,7 @@
      data-searchable="<%= book_searchable_text(book) %>">
   <%= link_to book_path(book), class: "block" do %>
     <div class="relative aspect-[2/3] bg-stone-200 rounded-md overflow-hidden shadow-sm group-hover:shadow-xl transition-shadow ring-1 ring-stone-200/60">
-      <% if book.cover_available? %>
+      <% if book.assets.cover_available? %>
         <img src="<%= cover_book_path(book, v: book.updated_at.to_i) %>"
              alt="<%= book.title %>"
              loading="lazy"

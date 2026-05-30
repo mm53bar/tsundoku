@@ -3,8 +3,8 @@ namespace :kepub do
   task backfill: :environment do
     queued = 0
     Book.find_each do |book|
-      next unless book.epub_downloadable?
-      next if book.kepub_available?
+      next unless book.assets.epub_downloadable?
+      next if book.assets.kepub_available?
 
       ConvertToKepubJob.perform_later(book.id)
       queued += 1
@@ -16,7 +16,7 @@ namespace :kepub do
   task reconvert_all: :environment do
     queued = 0
     Book.find_each do |book|
-      next unless book.epub_downloadable?
+      next unless book.assets.epub_downloadable?
 
       ConvertToKepubJob.perform_later(book.id, force: true)
       queued += 1

@@ -8,22 +8,12 @@ module Kobo
       book = find_book_by_kobo_uuid(params[:book_uuid])
       return head :not_found unless book
 
-      path = book.cover_full_path
-      return head :not_found unless path && File.exist?(path)
+      assets = book.assets
+      return head :not_found unless assets.cover_available?
 
-      send_file path, type: cover_mime_type(path), disposition: "inline"
-    end
-
-    private
-
-    def cover_mime_type(path)
-      case File.extname(path).downcase
-      when ".png"           then "image/png"
-      when ".gif"           then "image/gif"
-      when ".webp"          then "image/webp"
-      when ".jpg", ".jpeg"  then "image/jpeg"
-      else                       "application/octet-stream"
-      end
+      send_file assets.cover_full_path,
+                type:        assets.cover_mime_type,
+                disposition: "inline"
     end
   end
 end
