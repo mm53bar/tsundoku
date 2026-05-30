@@ -22,7 +22,6 @@ class LibraryController < ApplicationController
     end
 
     @calibre_db_available = CalibreImporter.available?
-    @calibre_import_in_progress = Task.active.where(kind: "calibre_import").exists?
   end
 
   def import

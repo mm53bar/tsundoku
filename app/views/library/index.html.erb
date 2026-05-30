@@ -10,17 +10,6 @@
     </p>
   </div>
 
-  <% if @calibre_db_available && current_user&.can_import_library? && !@calibre_import_in_progress %>
-    <%= button_to library_import_path,
-          method: :post,
-          form: { data: { turbo_confirm: "Import / re-sync books from Calibre's metadata.db?" } },
-          class: "inline-flex items-center gap-2 px-4 py-2 bg-stone-900 text-white text-sm font-medium rounded-md hover:bg-stone-700 transition" do %>
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4"/>
-      </svg>
-      <%= @books.any? ? "Re-sync from Calibre" : "Import from Calibre" %>
-    <% end %>
-  <% end %>
 </div>
 
 <div data-controller="library-filter">
@@ -60,15 +49,16 @@
 
   <% if @books.empty? %>
     <div class="bg-white border border-stone-200 rounded-lg p-12 text-center text-stone-600">
+      <p class="text-lg font-medium text-stone-800 mb-2">No books yet.</p>
       <% if @calibre_db_available %>
-        <p class="text-lg font-medium text-stone-800 mb-2">Ready to import.</p>
         <p class="text-sm">A Calibre <code>metadata.db</code> was detected in your library directory.</p>
-        <% unless current_user&.can_import_library? %>
-          <p class="text-sm mt-2">Ask an admin to run the import.</p>
-        <% end %>
+        <%= link_to "Set up your library →", setup_path,
+              class: "inline-block mt-4 text-amber-700 hover:text-amber-800 underline" %>
       <% else %>
-        <p class="text-lg font-medium text-stone-800 mb-2">No books yet.</p>
-        <p class="text-sm">Drop a Calibre library into the configured library directory to get started.</p>
+        <p class="text-sm">Drop a Calibre library into the configured library directory, then visit
+          <%= link_to "Setup", setup_path, class: "underline hover:text-stone-900" %>
+          to import it.
+        </p>
       <% end %>
     </div>
   <% else %>

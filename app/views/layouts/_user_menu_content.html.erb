@@ -15,6 +15,14 @@
         class: "block w-full text-left px-3 py-2 text-stone-700 hover:bg-stone-50" do %>
     Sync with Kobo
   <% end %>
+  <%= link_to setup_path,
+        class: "block w-full text-left px-3 py-2 text-stone-700 hover:bg-stone-50" do %>
+    Setup
+  <% end %>
+  <%= link_to tools_path,
+        class: "block w-full text-left px-3 py-2 text-stone-700 hover:bg-stone-50" do %>
+    Tools
+  <% end %>
   <%= button_to sign_out_path, method: :delete,
         form: { class: "block" },
         class: "block w-full text-left px-3 py-2 text-stone-700 hover:bg-stone-50 cursor-pointer" do %>
