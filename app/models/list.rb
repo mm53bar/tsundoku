@@ -1,10 +1,20 @@
 class List < ApplicationRecord
+  belongs_to :user
   has_many :list_entries, -> { order(:position) }, dependent: :destroy, inverse_of: :list
 
   validates :name, presence: true
   validate :source_url_must_be_http
 
   scope :by_name, -> { order(Arel.sql("name COLLATE NOCASE ASC")) }
+
+  # Lists a user can browse: their own (any sharing state) plus other
+  # users' lists that have been explicitly marked `shared`. Owner-only
+  # actions (edit / destroy / manage entries) should keep using
+  # `current_user.lists.find(...)` — this scope is for visibility, not
+  # write authority.
+  scope :visible_to, ->(user) {
+    where(user_id: user&.id).or(where(shared: true))
+  }
 
   def to_param
     "#{id}-#{name.parameterize}"

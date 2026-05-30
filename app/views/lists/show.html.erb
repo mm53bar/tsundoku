@@ -10,7 +10,12 @@
 </div>
 
 <div class="flex items-start justify-between gap-4 mb-2">
-  <h1 class="text-3xl font-semibold tracking-tight"><%= @list.name %></h1>
+  <div>
+    <h1 class="text-3xl font-semibold tracking-tight"><%= @list.name %></h1>
+    <% if @list.user_id != current_user&.id %>
+      <p class="text-xs text-stone-500 mt-1">Shared by <%= @list.user.display_name %></p>
+    <% end %>
+  </div>
 
   <% if current_user&.can_edit_list?(@list) %>
     <div class="shrink-0 flex items-center gap-2">

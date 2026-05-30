@@ -5,6 +5,7 @@ class User < ApplicationRecord
   has_many :read_books, through: :readings, source: :book
 
   has_many :shelves, dependent: :destroy
+  has_many :lists,   dependent: :destroy
   has_many :kobo_synced_books, dependent: :destroy
   has_many :kobo_synced_shelves, dependent: :destroy
   has_many :kobo_devices, dependent: :destroy
@@ -85,10 +86,10 @@ class User < ApplicationRecord
     true
   end
 
-  def can_edit_list?(_list = nil)
-    # Becomes an ownership check (list.user_id == id) once Lists carry
-    # a user_id. Until that migration lands, passive — matches the
-    # other predicates so the gate doesn't break.
-    true
+  # Real ownership check, not passive: a list can only be edited or
+  # destroyed by its owner, even if they shared it for read access.
+  def can_edit_list?(list = nil)
+    return false unless list
+    list.user_id == id
   end
 end

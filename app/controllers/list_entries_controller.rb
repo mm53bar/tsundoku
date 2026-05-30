@@ -1,6 +1,5 @@
 class ListEntriesController < ApplicationController
-  before_action :require_admin!
-  before_action :set_list
+  before_action :set_owned_list
 
   def create
     title  = params.dig(:list_entry, :title).to_s.strip
@@ -37,12 +36,10 @@ class ListEntriesController < ApplicationController
 
   private
 
-  def set_list
-    @list = List.find(params[:list_id])
-  end
-
-  def require_admin!
-    return if current_user&.can_edit_list?(@list)
-    redirect_to lists_path, alert: "Not allowed."
+  # Entries are an owner-only concern. Scoping the lookup through
+  # `current_user.lists` means non-owners 404 here rather than landing
+  # on a "not allowed" redirect — matches the rest of the app.
+  def set_owned_list
+    @list = current_user.lists.find(params[:list_id])
   end
 end

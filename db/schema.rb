@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_30_021909) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_30_161938) do
   create_table "authors", force: :cascade do |t|
     t.integer "calibre_id"
     t.datetime "created_at", null: false
@@ -136,9 +136,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_30_021909) do
     t.datetime "created_at", null: false
     t.text "description"
     t.string "name", null: false
+    t.boolean "shared", default: false, null: false
     t.string "source_url"
     t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
     t.index ["name"], name: "index_lists_on_name"
+    t.index ["user_id"], name: "index_lists_on_user_id"
   end
 
   create_table "publishers", force: :cascade do |t|
@@ -268,6 +271,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_30_021909) do
   add_foreign_key "kobo_synced_shelves", "users"
   add_foreign_key "list_entries", "books"
   add_foreign_key "list_entries", "lists"
+  add_foreign_key "lists", "users"
   add_foreign_key "readings", "books"
   add_foreign_key "readings", "users"
   add_foreign_key "shelf_entries", "books"
