@@ -33,7 +33,14 @@ class BookMatcher
     when 1
       candidates.first
     else
-      narrow_by_author(candidates) || match_by_title_prefix
+      # Multiple exact-title candidates: only match if the author hint
+      # picks one out. Without an author, refuse rather than guess —
+      # listing "Common Title" with no further info shouldn't silently
+      # pin the entry to whichever Book happened to be inserted first.
+      # (The prior code fell through to the title-prefix path here,
+      # which "took the first match" and contradicted the documented
+      # strategy.)
+      narrow_by_author(candidates)
     end
   end
 
