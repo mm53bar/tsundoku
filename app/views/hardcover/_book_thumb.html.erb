@@ -1,23 +1,38 @@
-<%# Locals: book (a hash from Hardcover with id, title, slug, cached_image) %>
+<%# Locals: book (hash from Hardcover with id, title, slug, cached_image),
+    author_hint (optional — author name when known from page context,
+    e.g. on the author show page; used to pre-fill the Shelfmark search). %>
 <%
-  cover     = book["cached_image"]
-  cover_url = cover.is_a?(Hash) ? cover["url"] : nil
-  identifier = book["slug"].presence || book["id"].to_s
+  cover         = book["cached_image"]
+  cover_url     = cover.is_a?(Hash) ? cover["url"] : nil
+  identifier    = book["slug"].presence || book["id"].to_s
   hardcover_url = "https://hardcover.app/books/#{ERB::Util.url_encode(identifier)}"
+  author_hint   = local_assigns[:author_hint]
+  shelfmark     = shelfmark_search_url(title: book["title"], author: author_hint)
 %>
-<%= link_to hardcover_url, target: "_blank", rel: "noopener", class: "group block" do %>
-  <div class="aspect-[2/3] bg-stone-200 rounded-md overflow-hidden shadow-sm group-hover:shadow-md transition-shadow ring-1 ring-stone-200/60">
-    <% if cover_url.present? %>
-      <img src="<%= cover_url %>"
-           alt="<%= book["title"] %>"
-           loading="lazy"
-           referrerpolicy="no-referrer"
-           class="w-full h-full object-cover">
-    <% else %>
-      <div class="w-full h-full flex items-center justify-center p-3 bg-gradient-to-br from-stone-100 to-stone-200">
-        <span class="text-center text-xs font-medium text-stone-700 line-clamp-6"><%= book["title"] %></span>
-      </div>
+<div class="group">
+  <%= link_to hardcover_url, target: "_blank", rel: "noopener", class: "block" do %>
+    <div class="aspect-[2/3] bg-stone-200 rounded-md overflow-hidden shadow-sm group-hover:shadow-md transition-shadow ring-1 ring-stone-200/60">
+      <% if cover_url.present? %>
+        <img src="<%= cover_url %>"
+             alt="<%= book["title"] %>"
+             loading="lazy"
+             referrerpolicy="no-referrer"
+             class="w-full h-full object-cover">
+      <% else %>
+        <div class="w-full h-full flex items-center justify-center p-3 bg-gradient-to-br from-stone-100 to-stone-200">
+          <span class="text-center text-xs font-medium text-stone-700 line-clamp-6"><%= book["title"] %></span>
+        </div>
+      <% end %>
+    </div>
+    <p class="mt-2 text-xs text-stone-700 leading-snug line-clamp-2 group-hover:text-stone-900"><%= book["title"] %></p>
+  <% end %>
+  <% if shelfmark %>
+    <%= link_to shelfmark, target: "_blank", rel: "noopener",
+          class: "mt-1 inline-flex items-center gap-1 text-xs text-amber-700 hover:text-amber-900" do %>
+      Find on Shelfmark
+      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+      </svg>
     <% end %>
-  </div>
-  <p class="mt-2 text-xs text-stone-700 leading-snug line-clamp-2 group-hover:text-stone-900"><%= book["title"] %></p>
-<% end %>
+  <% end %>
+</div>
