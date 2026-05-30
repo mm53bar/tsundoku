@@ -42,6 +42,14 @@ class Reading < ApplicationRecord
 
   before_save :stamp_progress_timestamps, if: :progress_percent_changed?
 
+  # Maintain users.in_progress_reading_count via delta updates so the
+  # navbar pill renders without a COUNT query on every page load. The
+  # state machine compares the previous and current in_progress?
+  # values via dirty tracking; mismatches issue a +1 / -1
+  # update_counters call.
+  after_save    :adjust_user_in_progress_counter, if: :in_progress_relevant_change?
+  after_destroy :decrement_user_in_progress_counter_if_was_in_progress
+
   # Derived progress state. Progress data is the source of truth;
   # status is just a label for it.
   def progress_state
@@ -90,6 +98,35 @@ class Reading < ApplicationRecord
   end
 
   private
+
+  # Was the row in_progress immediately before the just-completed save?
+  # Uses dirty tracking to reconstruct the previous values of the two
+  # fields that determine in_progress? state.
+  def was_in_progress?
+    prev_pct      = saved_change_to_progress_percent? ? saved_change_to_progress_percent.first.to_i : (progress_percent || 0).to_i
+    prev_finished = saved_change_to_finished_at?      ? saved_change_to_finished_at.first           : finished_at
+
+    return false if prev_finished.present?
+    return false if prev_pct >= FINISHED_THRESHOLD_PCT
+    prev_pct.positive?
+  end
+
+  def in_progress_relevant_change?
+    saved_change_to_progress_percent? || saved_change_to_finished_at?
+  end
+
+  def adjust_user_in_progress_counter
+    was = was_in_progress?
+    is  = in_progress?
+    return if was == is
+
+    User.where(id: user_id).update_counters(in_progress_reading_count: is ? 1 : -1)
+  end
+
+  def decrement_user_in_progress_counter_if_was_in_progress
+    return unless in_progress?
+    User.where(id: user_id).update_counters(in_progress_reading_count: -1)
+  end
 
   # Whenever progress_percent changes, derive the timestamps:
   #   - started_at gets set the first time progress goes positive
