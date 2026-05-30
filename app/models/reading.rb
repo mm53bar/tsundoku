@@ -1,41 +1,66 @@
 class Reading < ApplicationRecord
   belongs_to :user
-  # touch: true so a reading-status change in Tsundoku bumps book.updated_at,
-  # triggering ChangedEntitlement in the next Kobo sync diff so the device
-  # picks up the new state.
+  # touch: true so a progress or sync change in Tsundoku bumps
+  # book.updated_at, triggering ChangedEntitlement in the next Kobo
+  # sync diff so the device picks up the new state.
   belongs_to :book, touch: true
-
-  enum :status, {
-    want_to_read:      0,
-    currently_reading: 1,
-    read:              2
-  }, validate: true
-
-  # Tsundoku status ↔ Kobo status. Matches design doc §6 (one-to-one
-  # after we collapsed paused/did_not_finish in earlier work). Note that
-  # status is now a *progress* signal, not a sync signal — sync intent
-  # lives in the dedicated sync_to_device column.
-  KOBO_STATUS_MAP = {
-    "want_to_read"      => "ReadyToRead",
-    "currently_reading" => "Reading",
-    "read"              => "Finished"
-  }.freeze
 
   validates :user_id, uniqueness: { scope: :book_id }
 
-  # Transitional bridge: until the UI exposes the sync toggle separately,
-  # status changes still drive sync_to_device using the legacy mapping
-  # (want_to_read / currently_reading → sync; read → don't sync). Explicit
-  # sync_to_device assignments win — when the toggle UI lands, callers
-  # that set both fields aren't overridden by this.
-  before_save :default_sync_to_device_from_status
+  # The threshold above which a book is considered finished. The Kobo
+  # itself never reports exactly 100% — its calculation rounds — so
+  # treating "near the end" as done is more honest than insisting on
+  # the literal value.
+  FINISHED_THRESHOLD_PCT = 95
 
-  def kobo_status
-    KOBO_STATUS_MAP[status] || "ReadyToRead"
+  # Tsundoku derived state → Kobo wire format. Kobo's protocol uses
+  # ReadyToRead / Reading / Finished. Our derivation produces the
+  # corresponding symbol; this table is the one place that converts.
+  KOBO_STATUS = {
+    not_started: "ReadyToRead",
+    in_progress: "Reading",
+    finished:    "Finished"
+  }.freeze
+
+  # SQL scopes mirror the Ruby derivation in progress_state so callers
+  # can query without loading rows into Ruby. Keep these in sync with
+  # the method below — both reference FINISHED_THRESHOLD_PCT so the
+  # boundary lives in one place.
+  scope :in_progress, -> {
+    where(finished_at: nil)
+      .where("progress_percent > 0 AND progress_percent < ?", FINISHED_THRESHOLD_PCT)
+  }
+
+  scope :finished, -> {
+    where("finished_at IS NOT NULL OR progress_percent >= ?", FINISHED_THRESHOLD_PCT)
+  }
+
+  scope :not_started, -> {
+    where(finished_at: nil)
+      .where("progress_percent = 0 OR progress_percent IS NULL")
+  }
+
+  before_save :stamp_progress_timestamps, if: :progress_percent_changed?
+
+  # Derived progress state. Progress data is the source of truth;
+  # status is just a label for it.
+  def progress_state
+    return :finished    if finished_at.present? || (progress_percent || 0) >= FINISHED_THRESHOLD_PCT
+    return :in_progress if (progress_percent || 0).positive?
+    :not_started
   end
 
-  def self.tsundoku_status_for(kobo_status)
-    KOBO_STATUS_MAP.invert[kobo_status]
+  def finished?    ; progress_state == :finished    end
+  def in_progress? ; progress_state == :in_progress end
+  def not_started? ; progress_state == :not_started end
+
+  def kobo_status
+    KOBO_STATUS.fetch(progress_state)
+  end
+
+  # Display label for the UI, mapping derived state to friendly text.
+  def status_label
+    { not_started: "Not started", in_progress: "Reading", finished: "Finished" }.fetch(progress_state)
   end
 
   # Wire format for the device. Used in both the sync response (inline
@@ -64,24 +89,23 @@ class Reading < ApplicationRecord
     payload
   end
 
-  def self.status_label(status)
-    {
-      "want_to_read"      => "Want to Read",
-      "currently_reading" => "Currently Reading",
-      "read"              => "Read"
-    }[status.to_s]
-  end
-
   private
 
-  def default_sync_to_device_from_status
-    # Skip if the caller has explicitly assigned sync_to_device — they're
-    # opting out of the legacy mapping. Otherwise apply the mapping on
-    # creation (when status_changed? is false for default values) and
-    # whenever status changes thereafter.
-    return if sync_to_device_changed?
-    return unless new_record? || status_changed?
-    self.sync_to_device = %w[want_to_read currently_reading].include?(status)
+  # Whenever progress_percent changes, derive the timestamps:
+  #   - started_at gets set the first time progress goes positive
+  #   - finished_at gets set when progress crosses the threshold
+  #   - finished_at clears on a re-read (progress drops back below the
+  #     threshold), so the user appears in-progress again
+  def stamp_progress_timestamps
+    pct     = (progress_percent || 0).to_i
+    old_pct = (progress_percent_was || 0).to_i
+
+    self.started_at  ||= Time.current if pct.positive?
+    self.finished_at ||= Time.current if pct >= FINISHED_THRESHOLD_PCT
+
+    if old_pct >= FINISHED_THRESHOLD_PCT && pct < FINISHED_THRESHOLD_PCT
+      self.finished_at = nil
+    end
   end
 
   def current_bookmark_payload(iso)

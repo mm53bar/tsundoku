@@ -39,16 +39,6 @@ namespace :kobo do
         last_modified:     last_modified
       }
     end
-
-    # Map a CWA-reported progress percent (0..100) onto a Tsundoku status.
-    # Defaults to want_to_read when no progress is recorded — book was
-    # synced to the device but never opened.
-    def self.derive_status(percent)
-      p = percent.to_i
-      return :want_to_read if percent.nil? || p.zero?
-      return :read         if p >= 95
-      :currently_reading
-    end
   end
 
   # Replicate CWA's per-user sync state into Tsundoku — both the
@@ -123,18 +113,20 @@ namespace :kobo do
       reading  = tsundoku_user.readings.find_or_initialize_by(book: book)
       was_new  = reading.new_record?
 
-      reading.sync_to_device = true              # set first; before_save callback sees changed?
-      reading.status         = cwa_helpers.derive_status(progress[:percent])
-      if progress[:percent].present?
-        reading.progress_percent = progress[:percent].to_i
-      end
+      # Status is derived from progress_percent + finished_at now (no
+      # enum to set). The before_save callback on Reading stamps
+      # started_at / finished_at when progress changes — but we override
+      # those with CWA's last_modified timestamp where available so the
+      # history reflects when the user actually read, not "now."
+      reading.sync_to_device   = true
+      reading.progress_percent = progress[:percent].to_i  if progress[:percent].present?
       reading.location_source        = progress[:location_source]    if progress[:location_source]
       reading.location_type          = progress[:location_type]      if progress[:location_type]
       reading.location_value         = progress[:location_value]     if progress[:location_value]
       reading.spent_reading_minutes  = progress[:spent_minutes]      if progress[:spent_minutes]
       reading.remaining_time_minutes = progress[:remaining_minutes]  if progress[:remaining_minutes]
       reading.started_at  ||= progress[:last_modified] if progress[:percent].to_i.positive?
-      reading.finished_at ||= progress[:last_modified] if progress[:percent].to_i >= 95
+      reading.finished_at ||= progress[:last_modified] if progress[:percent].to_i >= Reading::FINISHED_THRESHOLD_PCT
       reading.save!
 
       was_new ? reading_created += 1 : reading_updated += 1

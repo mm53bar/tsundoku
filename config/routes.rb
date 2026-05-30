@@ -25,7 +25,7 @@ Rails.application.routes.draw do
       # it if present — symmetric with the way the UI's checkbox works.
       post "shelves/:shelf_id/toggle", to: "shelf_entries#toggle", as: :toggle_shelf
     end
-    resource :reading, only: [ :update ]
+    resource :reading, only: [ :update, :destroy ]
   end
 
   resources :authors, only: [ :index, :show ] do

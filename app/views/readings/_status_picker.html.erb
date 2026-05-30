@@ -1,31 +1,75 @@
-<%# Locals: book (required), reading (optional, nil if user hasn't marked it).
-    Wrapped in a turbo_frame so the controller's update action can replace
-    just this fragment, giving instant feedback on the dropdown change. %>
+<%# Locals: book (required), reading (optional, nil if user hasn't engaged with the book).
+    The "status picker" name is historical — this partial used to be a single
+    dropdown that conflated sync intent with reading progress. Now it splits
+    into three controls:
+      * Sync toggle — drives sync_to_device, the user's explicit "I want this
+        on my Kobo" signal. Creating a Reading is a side-effect of flipping
+        the toggle on for a book that doesn't have one yet.
+      * Status chip — shows the derived progress state ("Not started" /
+        "Reading 12%" / "Finished"). Clickable when there's a Reading: toggles
+        finished/unfinished for the "I read this on paper" and "I want to
+        un-mark this" cases.
+      * Remove link — destroys the Reading record entirely (book disappears
+        from your readings; Kobo gets a tombstone on next sync).
+    Wrapped in a turbo_frame so the update action can replace just this
+    fragment after each change. %>
 <%= turbo_frame_tag dom_id(book, :reading) do %>
-  <div class="flex items-center gap-3 text-sm">
-    <span class="text-stone-600">My status:</span>
-    <%= form_with url: book_reading_path(book), method: :patch, scope: :reading do |f| %>
-      <%= f.select :status,
-            options_for_select(
-              [
-                [ "Not on my list",     "none" ],
-                [ "Want to Read",       "want_to_read" ],
-                [ "Currently Reading",  "currently_reading" ],
-                [ "Read",               "read" ]
-              ],
-              reading&.status || "none"
-            ),
-            {},
-            onchange: "this.form.requestSubmit()",
-            class: "py-1.5 px-2 text-sm rounded-md border border-stone-300 bg-white focus:border-amber-600 focus:ring-amber-600 focus:outline-none cursor-pointer" %>
+  <div class="flex flex-wrap items-center gap-3 text-sm">
+    <%# Sync toggle — always present. Implemented as a button_to so the
+        non-JS path works; Turbo replaces the frame on submit. %>
+    <% sync_on = reading&.sync_to_device? %>
+    <%= button_to book_reading_path(book),
+          method: :patch,
+          params: { reading: { sync_to_device: !sync_on } },
+          form: { data: { turbo_frame: dom_id(book, :reading) } },
+          class: "inline-flex items-center gap-2 py-1.5 px-2.5 rounded-md border #{sync_on ? "bg-amber-50 border-amber-300 text-amber-900" : "bg-white border-stone-300 text-stone-700"} hover:border-stone-400 cursor-pointer" do %>
+      <span class="inline-block w-2 h-2 rounded-full <%= sync_on ? "bg-amber-500" : "bg-stone-300" %>"></span>
+      <%= sync_on ? "Synced to Kobo" : "Not synced" %>
     <% end %>
 
-    <% if reading&.sync_to_device? %>
-      <%= render "shared/components/badge/badge",
-            text: "Will sync",
-            variant: "blue",
-            size: "sm",
-            pill: true %>
+    <% if reading %>
+      <%# Status chip — clickable when there's a reading. Tapping toggles
+          the finished/unfinished state for manual control over the "I'm
+          done with this" timestamp. %>
+      <% case reading.progress_state %>
+      <% when :finished %>
+        <%= button_to book_reading_path(book),
+              method: :patch,
+              params: { reading: { mark_finished: "0" } },
+              form: { data: { turbo_frame: dom_id(book, :reading) } },
+              class: "inline-flex items-center gap-1.5 py-1.5 px-2.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100 cursor-pointer",
+              title: "Mark as unfinished" do %>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+          </svg>
+          Finished
+        <% end %>
+      <% when :in_progress %>
+        <%= button_to book_reading_path(book),
+              method: :patch,
+              params: { reading: { mark_finished: "1" } },
+              form: { data: { turbo_frame: dom_id(book, :reading) } },
+              class: "inline-flex items-center py-1.5 px-2.5 rounded-md bg-amber-50 border border-amber-200 text-amber-800 hover:bg-amber-100 cursor-pointer",
+              title: "Mark as finished" do %>
+          Reading<% if reading.progress_percent.to_i.positive? %> · <%= reading.progress_percent %>%<% end %>
+        <% end %>
+      <% when :not_started %>
+        <%= button_to book_reading_path(book),
+              method: :patch,
+              params: { reading: { mark_finished: "1" } },
+              form: { data: { turbo_frame: dom_id(book, :reading) } },
+              class: "inline-flex items-center py-1.5 px-2.5 rounded-md bg-white border border-stone-300 text-stone-700 hover:bg-stone-50 cursor-pointer",
+              title: "Mark as finished without reading" do %>
+          Not started
+        <% end %>
+      <% end %>
+
+      <%= button_to book_reading_path(book),
+            method: :delete,
+            form: { data: { turbo_frame: dom_id(book, :reading), turbo_confirm: "Remove this book from your readings? Your progress and sync state will be cleared." } },
+            class: "inline-flex items-center text-xs text-stone-500 hover:text-red-700 underline cursor-pointer" do %>
+        Remove from my list
+      <% end %>
     <% end %>
   </div>
 <% end %>
