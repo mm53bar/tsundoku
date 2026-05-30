@@ -1,6 +1,4 @@
 class LibraryController < ApplicationController
-  before_action :require_admin!, only: :import
-
   ALLOWED_SORTS   = %w[title recently_added].freeze
   ALLOWED_FILTERS = %w[currently_reading].freeze
 
@@ -36,12 +34,5 @@ class LibraryController < ApplicationController
     task = Task.create!(kind: "calibre_import", status: :queued)
     CalibreImportJob.perform_later(task.id)
     redirect_to root_path, notice: "Import started — progress will appear in the banner above."
-  end
-
-  private
-
-  def require_admin!
-    return if current_user&.can_import_library?
-    redirect_to root_path, alert: "Not allowed."
   end
 end

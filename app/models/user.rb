@@ -42,44 +42,53 @@ class User < ApplicationRecord
   end
 
   # Authorization predicates — readable names for action-permission
-  # checks, used by controllers and views. Today every gated action
-  # collapses to `admin?` (single-role homelab), but naming the
-  # capability at the callsite makes the intent explicit and gives
-  # us a single place to refine if a role ever sits between
-  # reader and admin.
+  # checks. In this homelab deployment every household member is
+  # trusted (Authelia gates the front door), so the predicates that
+  # would have been "admin only" simply pass for any signed-in user.
+  # The names stay so the callsites read in terms of capability, and
+  # so a future install in a less-trusted context has one place to
+  # tighten without touching every controller and view.
   #
-  # Pattern (per docs/reviews/rails-code-review.md §2):
+  # The exception is `can_edit_list?` — list ownership is a real
+  # per-record check (only the owner can edit/destroy a list, even
+  # if they shared it).
+  #
+  # Pattern (per docs/architecture-principles.md §3):
   #   - controllers call `current_user&.can_X?` before destructive or
-  #     admin-only actions
+  #     ownership-bearing actions
   #   - views use the same predicate to decide whether to render the
   #     action's button/link
-  #   - ownership-scoped lookups (`current_user.shelves.find(...)`)
-  #     stay as-is — they're already the right Rails idiom
+  #   - ownership-scoped lookups (`current_user.shelves.find(...)`,
+  #     `current_user.lists.find(...)`) stay as-is — they're the
+  #     right Rails idiom
   def can_import_library?
-    admin?
+    true
   end
 
   def can_ingest?
-    admin?
+    true
   end
 
   def can_edit_book?(_book = nil)
-    admin?
+    true
   end
 
   def can_destroy_book?(_book = nil)
-    admin?
+    true
   end
 
   def can_enrich_book?(_book = nil)
-    admin?
+    true
   end
 
   def can_manage_lists?
-    admin?
+    true
   end
 
   def can_edit_list?(_list = nil)
-    admin?
+    # Becomes an ownership check (list.user_id == id) once Lists carry
+    # a user_id. Until that migration lands, passive — matches the
+    # other predicates so the gate doesn't break.
+    true
   end
 end

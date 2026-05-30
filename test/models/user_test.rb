@@ -1,38 +1,33 @@
 require "test_helper"
 
 class UserTest < ActiveSupport::TestCase
-  # All current authorization rules collapse to `admin?`, but naming each
-  # capability separately at the callsite is the point — these tests fix
-  # the mapping so a future split (e.g., "editor" role between reader and
-  # admin) gets reviewable diffs instead of silent behavior changes.
-  test "admin user can do all admin actions" do
-    admin = users(:admin)
-    assert admin.admin?
-    assert admin.can_import_library?
-    assert admin.can_ingest?
-    assert admin.can_edit_book?
-    assert admin.can_destroy_book?
-    assert admin.can_enrich_book?
-    assert admin.can_manage_lists?
-    assert admin.can_edit_list?
+  # Predicates are passive in this homelab deployment — every signed-in
+  # household member is trusted (Authelia gates the door). Tests pin
+  # "true for any User, falsy via &. for nil" so a future tightening
+  # gets a reviewable diff. can_edit_list? becomes a real ownership
+  # check when Lists carry user_id (commit 2 of this refactor); the
+  # test below currently asserts the passive shape.
+  test "any signed-in user can do all currently-gated actions" do
+    [ users(:admin), users(:reader) ].each do |user|
+      assert user.can_import_library?, "#{user.username} can_import_library?"
+      assert user.can_ingest?,          "#{user.username} can_ingest?"
+      assert user.can_edit_book?,       "#{user.username} can_edit_book?"
+      assert user.can_destroy_book?,    "#{user.username} can_destroy_book?"
+      assert user.can_enrich_book?,     "#{user.username} can_enrich_book?"
+      assert user.can_manage_lists?,    "#{user.username} can_manage_lists?"
+      assert user.can_edit_list?,       "#{user.username} can_edit_list?"
+    end
   end
 
-  test "reader user is denied admin actions" do
-    reader = users(:reader)
-    refute reader.admin?
-    refute reader.can_import_library?
-    refute reader.can_ingest?
-    refute reader.can_edit_book?
-    refute reader.can_destroy_book?
-    refute reader.can_enrich_book?
-    refute reader.can_manage_lists?
-    refute reader.can_edit_list?
+  test "nil-safe via current_user&.can_X?" do
+    # Controllers and views call predicates with `current_user&.can_X?`.
+    # Confirm the &. shape returns nil (falsy) for an anonymous request.
+    no_user = nil
+    refute no_user&.can_import_library?
+    refute no_user&.can_edit_book?
   end
 
   test "book-scoped predicates accept the book argument" do
-    # Today the predicate ignores the argument, but the signature exists
-    # so callers can pass a book and we have room to refine per-book
-    # ownership later.
     admin = users(:admin)
     book = Book.new(title: "T", path: "x", imported_at: Time.current)
     assert admin.can_edit_book?(book)
