@@ -1,13 +1,15 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
-one:
-  oidc_sub: MyString
-  email: MyString
-  name: MyString
+admin:
+  username: admin_user
+  email: admin@example.com
+  name: Admin User
   role: 1
+  kobo_handle: admin-handle
 
-two:
-  oidc_sub: MyString
-  email: MyString
-  name: MyString
-  role: 1
+reader:
+  username: reader_user
+  email: reader@example.com
+  name: Reader User
+  role: 0
+  kobo_handle: reader-handle
