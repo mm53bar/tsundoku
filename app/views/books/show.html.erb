@@ -12,7 +12,7 @@
 <div class="grid grid-cols-1 md:grid-cols-[16rem_1fr] lg:grid-cols-[20rem_1fr] gap-8 lg:gap-12 items-start">
   <div>
     <div class="aspect-[2/3] bg-stone-200 rounded-lg overflow-hidden shadow-md ring-1 ring-stone-200/60">
-      <% if @book.cover_available? %>
+      <% if @book.assets.cover_available? %>
         <img src="<%= cover_book_path(@book, v: @book.updated_at.to_i) %>"
              alt="<%= @book.title %>"
              class="w-full h-full object-cover">

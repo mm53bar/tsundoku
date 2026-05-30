@@ -45,15 +45,11 @@ class Book < ApplicationRecord
   end
 
   # All file/path concerns route through this PORO so the safe-resolution
-  # rules live in one place. See app/models/book_assets.rb.
+  # rules live in one place. Callers should use `book.assets.epub_full_path`
+  # (etc.) rather than reaching for paths directly. See app/models/book_assets.rb.
   def assets
     @assets ||= BookAssets.new(self)
   end
-
-  delegate :epub_full_path, :epub_downloadable?,
-           :kepub_path, :kepub_available?,
-           :cover_full_path, :cover_available?,
-           to: :assets
 
   def enriched?
     last_enriched_at.present?

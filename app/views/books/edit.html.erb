@@ -72,7 +72,7 @@
   <% end %>
 
   <% has_proposed_cover = @proposal["cover"].present? %>
-  <% if @book.cover_available? || has_proposed_cover %>
+  <% if @book.assets.cover_available? || has_proposed_cover %>
     <div class="border-t border-stone-200 pt-6">
       <h2 class="text-sm font-semibold uppercase tracking-wider text-stone-500 mb-3">Cover</h2>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg">
@@ -81,7 +81,7 @@
             <%= radio_button_tag :accept_cover, "0", true, class: "sr-only" %>
           <% end %>
           <div class="aspect-[2/3] w-32 bg-stone-100 rounded overflow-hidden ring-1 ring-stone-200/60">
-            <% if @book.cover_available? %>
+            <% if @book.assets.cover_available? %>
               <img src="<%= cover_book_path(@book, v: @book.updated_at.to_i) %>" class="w-full h-full object-cover">
             <% end %>
           </div>

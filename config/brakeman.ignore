@@ -1,12 +1,20 @@
 {
   "ignored_warnings": [
     {
-      "fingerprint": "1187346c108073b00436570b8e9f405b71150f6853a929a115868a583a400c8e",
+      "fingerprint": "1b6534999e1504f3f7c4eec9c1a8b1c78d3d666379d914f8f43f5bad4b45c45c",
+      "check_name": "FileAccess",
+      "message": "Model attribute used in file name",
+      "file": "app/jobs/convert_to_kepub_job.rb",
+      "line": 20,
+      "note": "Path comes from BookAssets#kepub_path which constrains the result under library_root via Pathname.expand_path + start_with?(root + separator). Background job; book_id is the only param. See app/models/book_assets.rb#under_root."
+    },
+    {
+      "fingerprint": "1cf5756972659132da3ce8646e5931c857fb26f7cf137f42555450282227ce68",
       "check_name": "SendFile",
-      "message": "Parameter value used in file name",
-      "file": "app/controllers/kobo/downloads_controller.rb",
-      "line": 14,
-      "note": "params[:book_id] is only used as a lookup against syncable_books (the Kobo user's scoped book set); the served path comes from Book#kepub_path which joins Rails.configuration.x.library_path with model columns (path, file_name) populated by IngestFileJob from filesystem scans, not from user input. Endpoint is LAN-only behind mnemonic-handle auth."
+      "message": "Model attribute used in file name",
+      "file": "app/controllers/books_controller.rb",
+      "line": 22,
+      "note": "BookAssets#epub_full_path returns nil unless the resolved path lives under library_root. Authelia gates this route; even without that, BookAssets#under_root would refuse a path that escaped the root. See app/models/book_assets.rb."
     },
     {
       "fingerprint": "47ba6d49fec8f4a28c4c8d2f7d33b3ef37c6dc06f3bbfd310f1ec4601b796c08",
@@ -25,36 +33,44 @@
       "note": "List#safe_source_url runs through URI.parse and explicitly returns nil unless the scheme is http or https. The model also has a validate :source_url_must_be_http that rejects any other scheme at save time. The render guard treats nil as 'don't render the link'. Belt-and-suspenders."
     },
     {
-      "fingerprint": "58e501e31fca91b8567e0226f22ac036016671dbbc9ca5286911294a46f1d3bf",
+      "fingerprint": "69d1d9c373cd8be0eb966ff8c6a08f3a4ae319db7e75f05dc4b5e6756f7963a5",
       "check_name": "SendFile",
       "message": "Parameter value used in file name",
       "file": "app/controllers/kobo/downloads_controller.rb",
-      "line": 21,
-      "note": "Same reasoning as the KEPUB branch above: params[:book_id] is only a scoped-lookup key; epub_full_path joins library_path with ingest-populated columns, not user input. LAN-only endpoint."
+      "line": 15,
+      "note": "params[:book_id] is only used as a lookup against syncable_books (the Kobo user's scoped book set); the served path comes from BookAssets#kepub_path which constrains the result under library_root. LAN-only endpoint behind mnemonic-handle auth."
     },
     {
-      "fingerprint": "637781a79d9ee5520d95c4c4e06dcf068dbcb6857751863c996584466569b739",
+      "fingerprint": "6bdea99ffb548c7f87b6130640c0d5b4cd851121618aceeccd8dcfaec7ef71ae",
       "check_name": "FileAccess",
       "message": "Model attribute used in file name",
       "file": "app/jobs/convert_to_kepub_job.rb",
-      "line": 26,
-      "note": "ConvertToKepubJob runs from the queue; book_id is the only param and the path comes from Book#kepub_path. The components (library_path, book.path, book.file_name) are populated by IngestFileJob from filesystem scans, not user input. No code path lets the web app write to those columns."
+      "line": 30,
+      "note": "Both source (tmp file we just wrote) and destination (BookAssets#kepub_path) are constrained under library_root. Background job."
     },
     {
-      "fingerprint": "64971f3f1eb9db271c6dafd0e5abe3a33543f7eb4684f2c39dcbd615a83a5978",
+      "fingerprint": "745ae150ef9260c226760ffd0f6de57beebbb93026881ab47b5cc1d67e6cfae5",
       "check_name": "SendFile",
       "message": "Parameter value used in file name",
       "file": "app/controllers/kobo/covers_controller.rb",
       "line": 14,
-      "note": "params[:book_uuid] is only used as a lookup key (find_book_by_kobo_uuid); the served path comes from Book#cover_full_path which joins library_path/storage with cover_path or enriched_cover_path. Both are model columns set by ingest/enrichment, not user input. LAN-only endpoint behind mnemonic-handle auth."
+      "note": "params[:book_uuid] is only used as a lookup key (find_book_by_kobo_uuid); the served path comes from BookAssets#cover_full_path which constrains the result under storage_root (enriched cover) or library_root (Calibre cover). LAN-only endpoint behind mnemonic-handle auth."
     },
     {
-      "fingerprint": "7aba4bf2f40e065dcc1aae3bd67da84e8873ed79655072a63b7460c9efa7fd6a",
-      "check_name": "FileAccess",
-      "message": "Model attribute used in file name",
+      "fingerprint": "8cd49257cb5664cfca76b86bce1d2246f14f83e5aa997dfac9e105da227863eb",
+      "check_name": "Execute",
+      "message": "Possible command injection",
       "file": "app/jobs/convert_to_kepub_job.rb",
-      "line": 16,
-      "note": "Same reasoning as the FileUtils.mv warning below: kepub_path is derived from ingest-populated model columns and a fixed library_path config. Background job, not user-controllable."
+      "line": 27,
+      "note": "Open3.capture3 is called with an argv array (each arg as a separate string), not a single command string — Ruby execs the program directly via posix_spawn/fork+exec, never invoking a shell. Shell metacharacters in any arg would be inert. The args themselves are kepubify, a fixed flag, and two paths derived from BookAssets (constrained under library_root)."
+    },
+    {
+      "fingerprint": "9b7721c9438eab0064abf0d9ab6658a6c91e37c7d4638191cf9468d973515a83",
+      "check_name": "SendFile",
+      "message": "Model attribute used in file name",
+      "file": "app/controllers/books_controller.rb",
+      "line": 13,
+      "note": "BookAssets#cover_full_path returns nil unless the resolved path lives under storage_root (enriched cover) or library_root (Calibre cover). Authelia gates this route; the path-safety constraint is enforced regardless. See app/models/book_assets.rb#under_root."
     },
     {
       "fingerprint": "a769d3e75f7d49e9901a461ac5eac6a4d36de76613d220384d644a4ec8bae559",
@@ -65,22 +81,22 @@
       "note": "Author#hardcover_url is built from a literal Hardcover.app URL prefix plus a URL-encoded hardcover_slug. The slug is set only by BookEnricher from Hardcover's GraphQL response (not user input) and is URL-encoded via ERB::Util.url_encode in the model accessor."
     },
     {
-      "fingerprint": "b383f52d44d188c822078b592f31b3e7897cf7883d1318e760d666261909719a",
-      "check_name": "Execute",
-      "message": "Possible command injection",
-      "file": "app/jobs/convert_to_kepub_job.rb",
-      "line": 23,
-      "note": "Open3.capture3 is called with an argv array (each arg as a separate string), not a single command string — Ruby execs the program directly via posix_spawn/fork+exec, never invoking a shell. Shell metacharacters in any arg would be inert. The args themselves are kepubify, a fixed flag, and two paths derived from ingest-populated model columns."
-    },
-    {
-      "fingerprint": "f6bbcf744a6326fa434417427728172be0f783929add8029222162a8b37ac6bd",
+      "fingerprint": "af4bcf54662fc9fa6fb71e7ec76e14571b38fc6f67cfe2abc635addbdddf1632",
       "check_name": "FileAccess",
       "message": "Model attribute used in file name",
       "file": "app/jobs/convert_to_kepub_job.rb",
-      "line": 33,
-      "note": "Same reasoning as the FileUtils.mv warning: kepub_path components come from ingest-populated columns and fixed library_path config. Background job, not user-controllable."
+      "line": 37,
+      "note": "Deletes the tmp file we wrote at line 30. tmp is BookAssets#kepub_path + '.partial', so it's already constrained under library_root."
+    },
+    {
+      "fingerprint": "bc5f54c4d99f8625816c16fcc943872d2ef2cf3bb6a281d92507583f84c84190",
+      "check_name": "SendFile",
+      "message": "Parameter value used in file name",
+      "file": "app/controllers/kobo/downloads_controller.rb",
+      "line": 21,
+      "note": "Same reasoning as the KEPUB branch: params[:book_id] is only a scoped-lookup key; BookAssets#epub_full_path constrains the result under library_root. LAN-only endpoint."
     }
   ],
-  "updated": "2026-05-29T19:15:00Z",
+  "updated": "2026-05-30T03:30:00Z",
   "brakeman_version": "8.0.4"
 }

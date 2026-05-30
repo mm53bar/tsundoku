@@ -4,26 +4,30 @@ class ConvertToKepubJob < ApplicationJob
   queue_as :default
 
   # Convert a book's EPUB to KEPUB so the Kobo gets paragraph-level
-  # reading-progress fidelity instead of chapter-level. Output is
-  # cached in Rails storage; sync prefers it when present and falls
-  # back to the raw EPUB otherwise.
+  # reading-progress fidelity instead of chapter-level. Output lands
+  # alongside the source EPUB (so it rides along with library backups
+  # and re-ingest); sync prefers it when present and falls back to the
+  # raw EPUB otherwise. Paths come from BookAssets so the safe-root
+  # rules apply uniformly.
   def perform(book_id, force: false)
     book = Book.find_by(id: book_id)
     return unless book
-    return unless book.epub_downloadable?
-    return if !force && book.kepub_available?
 
-    FileUtils.mkdir_p(File.dirname(book.kepub_path))
+    assets = book.assets
+    return unless assets.epub_downloadable?
+    return if !force && assets.kepub_available?
+
+    FileUtils.mkdir_p(File.dirname(assets.kepub_path))
 
     # kepubify writes to either a file or directory depending on -o.
     # Use a temp output and atomic-rename to avoid serving a partial
     # file if conversion fails halfway. Open3 captures stderr so we
     # can log kepubify's actual error message, not just exit status.
-    tmp = "#{book.kepub_path}.partial"
-    stdout_str, stderr_str, status = Open3.capture3("kepubify", "-o", tmp, book.epub_full_path)
+    tmp = "#{assets.kepub_path}.partial"
+    stdout_str, stderr_str, status = Open3.capture3("kepubify", "-o", tmp, assets.epub_full_path)
 
     if status.success? && File.exist?(tmp)
-      FileUtils.mv(tmp, book.kepub_path)
+      FileUtils.mv(tmp, assets.kepub_path)
       # Bump book.updated_at so the next Kobo sync emits ChangedEntitlement
       # with the new DownloadUrls listing the KEPUB. Without this touch the
       # diff doesn't see anything to send and the device keeps its cached
@@ -33,7 +37,7 @@ class ConvertToKepubJob < ApplicationJob
       File.delete(tmp) if File.exist?(tmp)
       Rails.logger.warn(
         "kepubify failed for book #{book.id} (#{book.title.inspect}) " \
-        "from #{book.epub_full_path.inspect}: " \
+        "from #{assets.epub_full_path.inspect}: " \
         "exit=#{status.exitstatus} stderr=#{stderr_str.strip.inspect} stdout=#{stdout_str.strip.inspect}"
       )
     end

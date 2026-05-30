@@ -6,7 +6,7 @@ module Kobo
   # ChangedEntitlement {IsRemoved: true} for books, DeletedTag for shelves.
   class SyncController < BaseController
     def sync
-      current_books            = syncable_books.includes(:authors, :publisher, :series).select(&:epub_downloadable?)
+      current_books            = syncable_books.includes(:authors, :publisher, :series).select { |b| b.assets.epub_downloadable? }
       current_book_ids         = current_books.map(&:id).to_set
       uuid_by_book_id          = current_books.to_h { |b| [ b.id, b.kobo_uuid ] }
 
@@ -210,7 +210,8 @@ module Kobo
     end
 
     def download_urls_for(book)
-      return [] unless book.epub_downloadable?
+      assets = book.assets
+      return [] unless assets.epub_downloadable?
 
       base = "#{request.base_url}/kobo/#{params[:handle]}/download/#{book.id}"
 
@@ -218,17 +219,17 @@ module Kobo
       # listing both KEPUB and EPUB causes the device to pick EPUB
       # (observed empirically; calibre-web's source does the same
       # KEPUB-only approach when KEPUB exists).
-      if book.kepub_available?
+      if assets.kepub_available?
         [ {
           "Format"   => "KEPUB",
-          "Size"     => File.size(book.kepub_path),
+          "Size"     => File.size(assets.kepub_path),
           "Url"      => "#{base}/KEPUB",
           "Platform" => "Generic"
         } ]
       else
         [ {
           "Format"   => "EPUB3",
-          "Size"     => File.size(book.epub_full_path),
+          "Size"     => File.size(assets.epub_full_path),
           "Url"      => "#{base}/EPUB",
           "Platform" => "Generic"
         } ]

@@ -10,7 +10,7 @@
                 data: { turbo_frame: "_top" },
                 class: "flex items-center gap-3 px-3 py-2 hover:bg-stone-50 transition-colors" do %>
             <div class="w-8 h-12 flex-shrink-0 bg-stone-200 rounded overflow-hidden ring-1 ring-stone-200/60">
-              <% if book.cover_available? %>
+              <% if book.assets.cover_available? %>
                 <%= image_tag cover_book_path(book, v: book.updated_at.to_i),
                       alt: "",
                       class: "w-full h-full object-cover" %>

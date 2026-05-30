@@ -7,20 +7,22 @@ class BooksController < ApplicationController
   end
 
   def cover
-    path = safe_cover_path
-    return head :not_found unless path
+    assets = @book.assets
+    return head :not_found unless assets.cover_available?
 
-    send_file path, type: cover_mime_type(path), disposition: "inline"
+    send_file assets.cover_full_path,
+              type:        assets.cover_mime_type,
+              disposition: "inline"
   end
 
   def download
-    path = safe_epub_path
-    return head :not_found unless path
+    assets = @book.assets
+    return head :not_found unless assets.epub_downloadable?
 
-    send_file path,
-              type: "application/epub+zip",
+    send_file assets.epub_full_path,
+              type:        "application/epub+zip",
               disposition: "attachment",
-              filename: "#{@book.title}.epub"
+              filename:    "#{@book.title}.epub"
   end
 
   def edit
@@ -181,41 +183,5 @@ class BooksController < ApplicationController
     @book.update!(enriched_cover_path: relative, last_enriched_at: Time.current)
   rescue => e
     Rails.logger.warn("BooksController: cover download failed for book #{@book.id} — #{e.class}: #{e.message}")
-  end
-
-  # Resolve a cover path and refuse anything that tries to escape its
-  # expected root directory. Enriched covers live under Rails.root/storage,
-  # Calibre covers live under the library bind-mount.
-  def safe_cover_path
-    if @book.enriched_cover_path.present?
-      enriched = safe_path_under(Rails.root.join("storage"), @book.enriched_cover_path)
-      return enriched if enriched
-    end
-
-    return nil if @book.cover_path.blank?
-    safe_path_under(Rails.configuration.x.library_path, @book.cover_path)
-  end
-
-  def safe_path_under(root, relative)
-    base = Pathname.new(root).expand_path
-    candidate = base.join(relative).expand_path
-    return nil unless candidate.to_s.start_with?(base.to_s + File::SEPARATOR)
-    return nil unless candidate.file?
-    candidate.to_s
-  end
-
-  def cover_mime_type(path)
-    case File.extname(path).downcase
-    when ".png"  then "image/png"
-    when ".gif"  then "image/gif"
-    when ".webp" then "image/webp"
-    else              "image/jpeg"
-    end
-  end
-
-  def safe_epub_path
-    return nil if @book.path.blank? || @book.file_name.blank?
-    extension = (@book.file_format.presence || "EPUB").downcase
-    safe_path_under(Rails.configuration.x.library_path, File.join(@book.path, "#{@book.file_name}.#{extension}"))
   end
 end
