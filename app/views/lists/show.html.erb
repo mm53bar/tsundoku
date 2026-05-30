@@ -82,6 +82,14 @@
             In library
           </span>
         <% else %>
+          <%= shelfmark_link_to(title: entry.title, author: entry.author_name,
+                class: "shrink-0 inline-flex items-center gap-1 text-xs text-amber-700 hover:text-amber-900 font-medium",
+                title: "Find on Shelfmark") do %>
+            Find on Shelfmark
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+            </svg>
+          <% end %>
           <span class="shrink-0 text-xs text-stone-400">
             Not in library
           </span>

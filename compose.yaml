@@ -35,6 +35,11 @@ x-tsundoku-common: &tsundoku-common
     RAILS_LOG_TO_STDOUT: "1"
     # Phase 2 metadata enrichment. Optional — unset means Hardcover lookups are skipped.
     HARDCOVER_APP_API_TOKEN: ${HARDCOVER_APP_API_TOKEN:-}
+    # Optional — Shelfmark instance URL. When set, the UI renders
+    # "Find via Shelfmark" links next to books not in the local library;
+    # Shelfmark downloads land in INGEST_DIR and AutoIngestScanJob ingests
+    # them. Unset → no links rendered.
+    SHELFMARK_URL: ${SHELFMARK_URL:-}
 
 services:
   tsundoku:

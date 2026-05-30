@@ -4,7 +4,7 @@
   <% else %>
     <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
       <% @books.each do |book| %>
-        <%= render "hardcover/book_thumb", book: book %>
+        <%= render "hardcover/book_thumb", book: book, author_hint: @author.name %>
       <% end %>
     </div>
   <% end %>
