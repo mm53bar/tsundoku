@@ -1,5 +1,12 @@
 # 20260528 — Per-user `Reading` model with a three-state status enum
 
+> **Partially superseded by `20260530-reading-sync-intent-split.md`.**
+> The decision to use `SYNCABLE_STATUSES` to drive Kobo sync inclusion
+> no longer holds — sync intent now lives in a dedicated
+> `sync_to_device` boolean. The rest of this ADR (separate model per
+> user, three-state status, lazy timestamps, Kobo wire mapping) still
+> applies.
+
 ## Context
 
 Tsundoku is multi-user. Each user needs to track which books they want to
