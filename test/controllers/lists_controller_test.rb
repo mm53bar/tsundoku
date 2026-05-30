@@ -18,7 +18,7 @@ class ListsControllerTest < ActionDispatch::IntegrationTest
     List.destroy_all
   end
 
-  # Visibility — `visible_to` on List scopes index/show.
+  # Visibility — `List.for(user)` scopes index/show.
 
   test "index shows the user's own lists" do
     get lists_path, headers: headers_for(@owner)

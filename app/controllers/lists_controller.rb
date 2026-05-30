@@ -3,7 +3,7 @@ class ListsController < ApplicationController
   before_action :set_owned_list,   only: [ :edit, :update, :reimport, :destroy ]
 
   def index
-    @lists = List.visible_to(current_user).by_name.includes(:user)
+    @lists = List.for(current_user).by_name.includes(:user)
   end
 
   def show
@@ -93,7 +93,7 @@ class ListsController < ApplicationController
 
   # `show` allows anyone with visibility (owner or shared) to view.
   def set_visible_list
-    @list = List.visible_to(current_user).find(params[:id])
+    @list = List.for(current_user).find(params[:id])
   end
 
   # `edit` / `update` / `reimport` / `destroy` are owner-only — the

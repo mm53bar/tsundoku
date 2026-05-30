@@ -7,12 +7,13 @@ class List < ApplicationRecord
 
   scope :by_name, -> { order(Arel.sql("name COLLATE NOCASE ASC")) }
 
-  # Lists a user can browse: their own (any sharing state) plus other
-  # users' lists that have been explicitly marked `shared`. Owner-only
-  # actions (edit / destroy / manage entries) should keep using
-  # `current_user.lists.find(...)` — this scope is for visibility, not
-  # write authority.
-  scope :visible_to, ->(user) {
+  # Records this user may read in normal app flow: their own (any
+  # sharing state) plus other users' lists that have been explicitly
+  # marked `shared`. Per docs/architecture-principles.md §3, the `.for`
+  # naming is the project-wide convention for user-relative read
+  # access; owner-only writes use `current_user.lists.find(...)`
+  # instead.
+  scope :for, ->(user) {
     where(user_id: user&.id).or(where(shared: true))
   }
 
