@@ -30,17 +30,10 @@ class BooksController < ApplicationController
   end
 
   def update
-    @task     = Task.find_by(id: params[:task_id], subject: @book, kind: "metadata_enrichment", status: :succeeded) if params[:task_id].present?
+    @task     = find_succeeded_task(params[:task_id])
     @proposal = @task&.result.presence || {}
 
-    Book.transaction do
-      apply_publisher
-      apply_authors
-      @book.update!(book_params)
-      apply_accepted_identifiers
-      apply_accepted_cover
-    end
-
+    MetadataProposal.new(book: @book, task: @task, choices: extract_choices).apply!
     redirect_to @book, notice: "Book updated."
   rescue ActiveRecord::RecordInvalid => e
     flash.now[:alert] = "Save failed: #{e.message}"
@@ -79,103 +72,35 @@ class BooksController < ApplicationController
     @book = Book.find(params[:id])
   end
 
-  # Find the task, verify it belongs to this book, and mark it reviewed.
-  # Viewing the edit form *is* the review — explicit per the project rule
-  # ("just viewing them is enough to mark the enrichment as finished").
+  # Edit's task-lookup and update's task-lookup differ only in the param
+  # name (`from_task` vs `task_id`). consume_proposal_task uses the
+  # former and marks the task reviewed (viewing the form *is* the
+  # review per the project rule); find_succeeded_task uses the latter
+  # without marking, since update's task came from the hidden field on
+  # the form and was already consumed at edit time.
   def consume_proposal_task(task_id)
-    return nil if task_id.blank?
-    task = Task.find_by(id: task_id, subject: @book, kind: "metadata_enrichment", status: :succeeded)
-    return nil unless task
-    task.mark_reviewed! if task.reviewed_at.nil?
+    task = find_succeeded_task(task_id)
+    task.mark_reviewed! if task && task.reviewed_at.nil?
     task
   end
 
-  def book_params
-    params.require(:book).permit(:title, :sort_title, :description, :pubdate, :series_index)
+  def find_succeeded_task(task_id)
+    return nil if task_id.blank?
+    Task.find_by(id: task_id, subject: @book, kind: "metadata_enrichment", status: :succeeded)
   end
 
-  def apply_publisher
-    name = params.dig(:book, :publisher_name).to_s.strip
-    return if name.blank?
-    return if @book.publisher&.name == name
-    publisher = Publisher.find_or_create_by!(name: name)
-    @book.update!(publisher: publisher)
-  end
-
-  # Parse the comma-separated author_names field, reuse existing Author
-  # records when names normalize to the same canonical form (so "James
-  # S.A. Corey" and "James S. A. Corey" don't fragment into two records),
-  # create new ones for unmatched names, then rebuild book_authors in the
-  # order the user typed. Field absent → no change. Field present-but-
-  # blank → clears all authors.
-  def apply_authors
-    text = params.dig(:book, :author_names_text)
-    return if text.nil?
-
-    names = text.to_s.split(",").map(&:strip).reject(&:empty?)
-
-    normalized_to_author = Author.all.index_by { |a| Author.normalize_name(a.name) }
-
-    target_authors = names.map do |name|
-      key = Author.normalize_name(name)
-      existing = normalized_to_author[key]
-      if existing
-        existing
-      else
-        Author.create!(name: name).tap { |a| normalized_to_author[key] = a }
-      end
-    end
-
-    @book.book_authors.destroy_all
-    target_authors.each_with_index do |author, i|
-      @book.book_authors.create!(author: author, position: i)
-    end
-  end
-
-  # Form submits an array of "kind|value" tokens for each accepted identifier.
-  # We re-validate each one against the proposal to make sure the form can't
-  # inject arbitrary kinds/values.
-  def apply_accepted_identifiers
-    tokens = Array(params[:accepted_identifiers])
-    return if tokens.empty? || @proposal.blank?
-
-    proposed = Array(@proposal["identifiers"]).map { |h| [ h["kind"], h["value"] ] }.to_set
-    tokens.each do |token|
-      kind, value = token.to_s.split("|", 2)
-      next unless proposed.include?([ kind, value ])
-      next if @book.book_identifiers.exists?(kind: kind, value: value)
-      @book.book_identifiers.create!(kind: kind, value: value)
-    end
-  end
-
-  # Cover URL comes from the task's proposal, never the form, so the user
-  # can't trick us into fetching an arbitrary URL.
-  def apply_accepted_cover
-    return unless params[:accept_cover] == "1"
-    cover = @proposal&.dig("cover")
-    return unless cover && cover["url"].present?
-
-    download_proposed_cover(cover["url"])
-  end
-
-  def download_proposed_cover(url)
-    require "net/http"
-    uri = URI(url)
-    return unless %w[http https].include?(uri.scheme)
-
-    response = Net::HTTP.start(uri.hostname, uri.port,
-                               use_ssl: uri.scheme == "https",
-                               open_timeout: 5,
-                               read_timeout: 30) do |http|
-      http.get(uri.request_uri)
-    end
-    return unless response.is_a?(Net::HTTPSuccess)
-
-    FileUtils.mkdir_p(Rails.root.join("storage", "covers"))
-    relative = "covers/book_#{@book.id}.jpg"
-    File.binwrite(Rails.root.join("storage", relative), response.body)
-    @book.update!(enriched_cover_path: relative, last_enriched_at: Time.current)
-  rescue => e
-    Rails.logger.warn("BooksController: cover download failed for book #{@book.id} — #{e.class}: #{e.message}")
+  # Pull the user's accept/reject decisions out of params into a plain
+  # struct so the MetadataProposal PORO doesn't need to know about
+  # ActionController::Parameters. book_attributes is the only piece
+  # that needs strong-param filtering; the others are scalars or arrays
+  # we re-validate inside the PORO.
+  def extract_choices
+    MetadataProposal::Choices.new(
+      book_attributes:            params.require(:book).permit(:title, :sort_title, :description, :pubdate, :series_index),
+      publisher_name:             params.dig(:book, :publisher_name),
+      author_names_text:          params.dig(:book, :author_names_text),
+      accepted_identifier_tokens: Array(params[:accepted_identifiers]),
+      accept_cover:               params[:accept_cover] == "1"
+    )
   end
 end
