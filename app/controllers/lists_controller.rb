@@ -1,9 +1,9 @@
 class ListsController < ApplicationController
-  before_action :require_admin!, only: [ :new, :create, :edit, :update, :reimport, :destroy ]
-  before_action :set_list, only: [ :show, :edit, :update, :reimport, :destroy ]
+  before_action :set_visible_list, only: :show
+  before_action :set_owned_list,   only: [ :edit, :update, :reimport, :destroy ]
 
   def index
-    @lists = List.by_name
+    @lists = List.visible_to(current_user).by_name.includes(:user)
   end
 
   def show
@@ -11,11 +11,11 @@ class ListsController < ApplicationController
   end
 
   def new
-    @list = List.new
+    @list = current_user.lists.new
   end
 
   def create
-    @list = List.new(list_params)
+    @list = current_user.lists.new(list_params)
     entries_text = params.dig(:list, :entries_text).to_s
 
     parsed = ListEntryParser.parse(entries_text)
@@ -91,17 +91,21 @@ class ListsController < ApplicationController
 
   private
 
-  def set_list
-    @list = List.find(params[:id])
+  # `show` allows anyone with visibility (owner or shared) to view.
+  def set_visible_list
+    @list = List.visible_to(current_user).find(params[:id])
   end
 
-  def require_admin!
-    return if current_user&.can_manage_lists?
-    redirect_to lists_path, alert: "Not allowed."
+  # `edit` / `update` / `reimport` / `destroy` are owner-only — the
+  # ownership-scoped lookup is the gate. A request for someone else's
+  # list 404s rather than 403s; that's the conventional Rails idiom
+  # and gives less information to a probing client.
+  def set_owned_list
+    @list = current_user.lists.find(params[:id])
   end
 
   def list_params
-    params.require(:list).permit(:name, :description, :source_url)
+    params.require(:list).permit(:name, :description, :source_url, :shared)
   end
 
   # Rebuild this list's entries from a parsed array. Deletes existing

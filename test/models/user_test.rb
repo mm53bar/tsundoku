@@ -8,6 +8,8 @@ class UserTest < ActiveSupport::TestCase
   # check when Lists carry user_id (commit 2 of this refactor); the
   # test below currently asserts the passive shape.
   test "any signed-in user can do all currently-gated actions" do
+    # can_edit_list? is excluded — it's a real ownership check tested
+    # separately. The rest are passive in this homelab deployment.
     [ users(:admin), users(:reader) ].each do |user|
       assert user.can_import_library?, "#{user.username} can_import_library?"
       assert user.can_ingest?,          "#{user.username} can_ingest?"
@@ -15,7 +17,6 @@ class UserTest < ActiveSupport::TestCase
       assert user.can_destroy_book?,    "#{user.username} can_destroy_book?"
       assert user.can_enrich_book?,     "#{user.username} can_enrich_book?"
       assert user.can_manage_lists?,    "#{user.username} can_manage_lists?"
-      assert user.can_edit_list?,       "#{user.username} can_edit_list?"
     end
   end
 
@@ -35,10 +36,14 @@ class UserTest < ActiveSupport::TestCase
     assert admin.can_enrich_book?(book)
   end
 
-  test "list-scoped predicate accepts the list argument" do
-    admin = users(:admin)
-    list = List.new(name: "Test list")
-    assert admin.can_edit_list?(list)
+  test "can_edit_list? is an ownership check" do
+    admin  = users(:admin)
+    reader = users(:reader)
+    admin_list = admin.lists.create!(name: "Admin's list")
+
+    assert admin.can_edit_list?(admin_list),  "owner can edit"
+    refute reader.can_edit_list?(admin_list), "non-owner cannot edit"
+    refute admin.can_edit_list?(nil),          "nil list is not editable"
   end
 
   test "display_name prefers name when set" do
