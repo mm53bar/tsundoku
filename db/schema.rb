@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_29_212357) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_30_021909) do
   create_table "authors", force: :cascade do |t|
     t.integer "calibre_id"
     t.datetime "created_at", null: false
@@ -160,6 +160,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_212357) do
     t.string "location_type"
     t.string "location_value"
     t.integer "progress_percent"
+    t.integer "remaining_time_minutes"
     t.integer "spent_reading_minutes"
     t.datetime "started_at"
     t.integer "status", default: 0, null: false

@@ -13,7 +13,8 @@ namespace :kobo do
                bm.location_type              AS location_type,
                bm.location_value             AS location_value,
                bm.progress_percent           AS percent,
-               st.spent_reading_minutes      AS spent_minutes
+               st.spent_reading_minutes      AS spent_minutes,
+               st.remaining_time_minutes     AS remaining_minutes
         FROM   kobo_reading_state rs
         LEFT JOIN kobo_bookmark    bm ON bm.kobo_reading_state_id = rs.id
         LEFT JOIN kobo_statistics  st ON st.kobo_reading_state_id = rs.id
@@ -29,12 +30,13 @@ namespace :kobo do
       end
 
       {
-        percent:         row["percent"],
-        location_source: row["location_source"].presence,
-        location_type:   row["location_type"].presence,
-        location_value:  row["location_value"].presence,
-        spent_minutes:   row["spent_minutes"],
-        last_modified:   last_modified
+        percent:           row["percent"],
+        location_source:   row["location_source"].presence,
+        location_type:     row["location_type"].presence,
+        location_value:    row["location_value"].presence,
+        spent_minutes:     row["spent_minutes"],
+        remaining_minutes: row["remaining_minutes"],
+        last_modified:     last_modified
       }
     end
 
@@ -126,10 +128,11 @@ namespace :kobo do
       if progress[:percent].present?
         reading.progress_percent = progress[:percent].to_i
       end
-      reading.location_source       = progress[:location_source] if progress[:location_source]
-      reading.location_type         = progress[:location_type]   if progress[:location_type]
-      reading.location_value        = progress[:location_value]  if progress[:location_value]
-      reading.spent_reading_minutes = progress[:spent_minutes]   if progress[:spent_minutes]
+      reading.location_source        = progress[:location_source]    if progress[:location_source]
+      reading.location_type          = progress[:location_type]      if progress[:location_type]
+      reading.location_value         = progress[:location_value]     if progress[:location_value]
+      reading.spent_reading_minutes  = progress[:spent_minutes]      if progress[:spent_minutes]
+      reading.remaining_time_minutes = progress[:remaining_minutes]  if progress[:remaining_minutes]
       reading.started_at  ||= progress[:last_modified] if progress[:percent].to_i.positive?
       reading.finished_at ||= progress[:last_modified] if progress[:percent].to_i >= 95
       reading.save!

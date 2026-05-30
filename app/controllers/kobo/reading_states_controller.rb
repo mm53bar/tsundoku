@@ -85,7 +85,8 @@ module Kobo
 
     def apply_stats(reading, stats)
       return unless stats
-      reading.spent_reading_minutes = stats["SpentReadingMinutes"] if stats["SpentReadingMinutes"].present?
+      reading.spent_reading_minutes     = stats["SpentReadingMinutes"]     if stats["SpentReadingMinutes"].present?
+      reading.remaining_time_minutes    = stats["RemainingTimeMinutes"]    if stats["RemainingTimeMinutes"].present?
     end
   end
 end
