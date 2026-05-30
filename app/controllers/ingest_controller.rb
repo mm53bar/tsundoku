@@ -1,6 +1,4 @@
 class IngestController < ApplicationController
-  before_action :require_admin!
-
   def index
     @ingest_path = Rails.configuration.x.ingest_path
     @pending_files = pending_files
@@ -28,11 +26,6 @@ class IngestController < ApplicationController
   end
 
   private
-
-  def require_admin!
-    return if current_user&.can_ingest?
-    redirect_to root_path, alert: "Not allowed."
-  end
 
   def pending_files
     root = Rails.configuration.x.ingest_path
