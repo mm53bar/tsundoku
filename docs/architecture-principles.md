@@ -37,19 +37,19 @@ Examples in this app:
 
 ## 3. Authorization should stay simple
 
-This app does not currently need Pundit or CanCan.
+This app currently assumes a **trusted household environment** rather than a privileged-admin model. Most authenticated users are permitted to act broadly — Authelia gates the front door, and beyond that the boundaries that matter are ownership and explicit sharing, not a role check. This app does not currently need Pundit or CanCan, and the `admin?` predicate exists only as legacy scaffolding (see ADR `20260530-passive-authorization-and-list-ownership.md`).
 
 Preferred approach:
 
-- use ownership-scoped lookups where that is the natural privacy boundary
-  - example: `current_user.shelves.find(...)`
-- use `User` predicates for meaningful action permissions
-  - example: `can_edit_book?`, `can_manage_lists?`
+- **Ownership-scoped lookups** for owner-only writes, where the resource has a clear owner.
+  - example: `current_user.shelves.find(...)`, `current_user.lists.find(...)` for edit/update/destroy
+- **Visibility scopes** for read access when a resource can be shared. Keep visibility and write authority separate — a non-owner may be able to view a shared list, but should never be able to edit it.
+  - example: `List.visible_to(current_user)` for browsing, paired with `current_user.lists.find(...)` for writes. `List` is the reference pattern for this split.
+- **`User` capability predicates** (`can_edit_book?`, `can_edit_list?`, `can_import_library?`) as extension points. Most return `true` today; the names exist so a future, less-trusted deployment has one place to tighten without touching every callsite.
 
 Guidelines:
 
-- predicates should describe real actions
-- avoid predicates for UI fragments or presentation details
+- predicates should describe real actions, not UI fragments or presentation details
 - keep authorization readable at the callsite
 - if rules become substantially more complex later, revisit — do not prebuild a framework now
 
