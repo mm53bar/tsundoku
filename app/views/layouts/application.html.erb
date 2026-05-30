@@ -32,8 +32,16 @@
             <span>Tsundoku</span>
           <% end %>
           <% if signed_in? %>
+            <% reading_count = current_user.readings.where(status: :currently_reading).count %>
             <nav class="hidden sm:flex items-center gap-5 text-sm text-stone-600">
-              <%= link_to "Library", root_path, class: "hover:text-stone-900 #{"text-stone-900 font-medium" if controller_name == "library"}" %>
+              <%= link_to "Library", root_path, class: "hover:text-stone-900 #{"text-stone-900 font-medium" if controller_name == "library" && params[:filter].blank?}" %>
+              <% if reading_count.positive? %>
+                <%= link_to root_path(filter: "currently_reading"),
+                      class: "hover:text-stone-900 inline-flex items-center gap-1 #{"text-stone-900 font-medium" if params[:filter] == "currently_reading"}" do %>
+                  Reading
+                  <span class="inline-flex items-center justify-center min-w-[1.25rem] px-1 text-xs rounded-full bg-amber-100 text-amber-800"><%= reading_count %></span>
+                <% end %>
+              <% end %>
               <%= link_to "Authors", authors_path, class: "hover:text-stone-900 #{"text-stone-900 font-medium" if controller_name == "authors"}" %>
               <%= link_to "Series",  series_index_path, class: "hover:text-stone-900 #{"text-stone-900 font-medium" if controller_name == "series"}" %>
               <%= link_to "Shelves", shelves_path, class: "hover:text-stone-900 #{"text-stone-900 font-medium" if controller_name == "shelves"}" %>

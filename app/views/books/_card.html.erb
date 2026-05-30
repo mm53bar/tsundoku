@@ -1,9 +1,12 @@
-<%# Locals: book (required) %>
+<%# Locals: book (required), reading (optional — per-user Reading record
+    for the progress strip; pass nil when the card is rendered outside a
+    user-scoped context). %>
+<% reading ||= nil %>
 <div class="group flex flex-col"
      data-library-filter-target="card"
      data-searchable="<%= book_searchable_text(book) %>">
   <%= link_to book_path(book), class: "block" do %>
-    <div class="aspect-[2/3] bg-stone-200 rounded-md overflow-hidden shadow-sm group-hover:shadow-xl transition-shadow ring-1 ring-stone-200/60">
+    <div class="relative aspect-[2/3] bg-stone-200 rounded-md overflow-hidden shadow-sm group-hover:shadow-xl transition-shadow ring-1 ring-stone-200/60">
       <% if book.cover_available? %>
         <img src="<%= cover_book_path(book, v: book.updated_at.to_i) %>"
              alt="<%= book.title %>"
@@ -12,6 +15,12 @@
       <% else %>
         <div class="w-full h-full flex items-center justify-center p-3 bg-gradient-to-br from-stone-100 to-stone-200">
           <span class="text-center text-xs font-medium text-stone-700 line-clamp-6"><%= book.title %></span>
+        </div>
+      <% end %>
+
+      <% if reading&.currently_reading? && reading.progress_percent.to_i.positive? %>
+        <div class="absolute bottom-0 left-0 right-0 h-1 bg-black/30">
+          <div class="h-full bg-amber-500" style="width: <%= [ reading.progress_percent.to_i, 100 ].min %>%"></div>
         </div>
       <% end %>
     </div>

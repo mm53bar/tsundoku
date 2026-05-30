@@ -77,6 +77,26 @@
       <div class="mt-4">
         <%= render "readings/status_picker", book: @book, reading: @reading %>
       </div>
+      <% if @reading && (@reading.progress_percent.to_i.positive? || @reading.spent_reading_minutes.to_i.positive?) %>
+        <div class="mt-3">
+          <% if @reading.progress_percent.to_i.positive? %>
+            <div class="h-1.5 w-full max-w-xs bg-stone-200 rounded-full overflow-hidden">
+              <div class="h-full bg-amber-600" style="width: <%= [ @reading.progress_percent.to_i, 100 ].min %>%"></div>
+            </div>
+          <% end %>
+          <p class="text-xs text-stone-500 mt-1.5 flex flex-wrap gap-x-3">
+            <% if @reading.progress_percent.to_i.positive? %>
+              <span><%= @reading.progress_percent %>% read</span>
+            <% end %>
+            <% if (remaining = format_reading_time(@reading.remaining_time_minutes)) %>
+              <span><%= remaining %> left</span>
+            <% end %>
+            <% if (spent = format_reading_time(@reading.spent_reading_minutes)) %>
+              <span><%= spent %> spent</span>
+            <% end %>
+          </p>
+        </div>
+      <% end %>
       <div class="mt-3">
         <%= render "shelves/chip_row", book: @book, user: current_user %>
       </div>
