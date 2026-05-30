@@ -1,0 +1,63 @@
+<% content_for :title, "Tools" %>
+
+<h1 class="text-2xl font-semibold tracking-tight text-stone-900 mb-2">Tools</h1>
+<p class="text-sm text-stone-500 mb-8 max-w-2xl">
+  Ongoing maintenance. Re-sync Calibre, scan the ingest folder manually, run KEPUB
+  conversions. For first-time setup, see
+  <%= link_to "Setup", setup_path, class: "underline hover:text-stone-700" %>.
+</p>
+
+<div class="space-y-8 max-w-2xl">
+  <%# Re-sync from Calibre. %>
+  <% if @calibre_db_available %>
+    <section class="border border-stone-200 rounded-lg p-6 bg-white">
+      <h2 class="text-base font-semibold text-stone-900 mb-2">Re-sync from Calibre</h2>
+      <p class="text-sm text-stone-600 mb-4">
+        Picks up any books you've added to Calibre since the last sync. The import is
+        idempotent — books already in Tsundoku update in place, nothing is created twice.
+      </p>
+      <% if @calibre_import_in_progress %>
+        <p class="text-sm text-amber-700">An import is already running.</p>
+      <% else %>
+        <%= button_to "Re-sync from Calibre",
+              library_import_path,
+              method: :post,
+              form: { data: { turbo_confirm: "Re-sync the Calibre library now?" } },
+              class: "inline-flex items-center px-3 py-1.5 bg-white border border-stone-300 text-stone-700 text-sm font-medium rounded-md hover:bg-stone-50 transition cursor-pointer" %>
+      <% end %>
+    </section>
+  <% end %>
+
+  <%# Manual ingest scan. %>
+  <section class="border border-stone-200 rounded-lg p-6 bg-white">
+    <h2 class="text-base font-semibold text-stone-900 mb-2">Scan ingest folder</h2>
+    <p class="text-sm text-stone-600 mb-4">
+      Drop EPUB files into the ingest directory and Tsundoku will move them into the library.
+      Eventually this will run on a schedule; until then, the
+      <%= link_to "Ingest page", ingest_index_path, class: "underline hover:text-stone-700" %>
+      shows pending files and lets you kick off a scan.
+    </p>
+    <p class="text-sm text-stone-500">
+      <%= @pending_ingest_count %> <%= "file".pluralize(@pending_ingest_count) %> waiting.
+    </p>
+  </section>
+
+  <%# KEPUB rake commands — documented, not executed. %>
+  <section class="border border-stone-200 rounded-lg p-6 bg-white">
+    <h2 class="text-base font-semibold text-stone-900 mb-2">KEPUB conversion</h2>
+    <p class="text-sm text-stone-600 mb-4">
+      Tsundoku converts EPUBs to KEPUB automatically on ingest so the Kobo gets paragraph-level
+      reading progress. These rake commands cover the edge cases:
+    </p>
+    <ul class="space-y-3 text-sm text-stone-700">
+      <li>
+        <p class="mb-1">Backfill missing KEPUBs (e.g. after enabling the feature for an existing library):</p>
+        <pre class="bg-stone-900 text-stone-100 text-xs p-3 rounded-md overflow-x-auto"><code>docker exec -it &lt;container&gt; bin/rails kepub:backfill</code></pre>
+      </li>
+      <li>
+        <p class="mb-1">Force re-convert every book (after a kepubify version bump):</p>
+        <pre class="bg-stone-900 text-stone-100 text-xs p-3 rounded-md overflow-x-auto"><code>docker exec -it &lt;container&gt; bin/rails kepub:reconvert_all</code></pre>
+      </li>
+    </ul>
+  </section>
+</div>

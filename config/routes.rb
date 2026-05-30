@@ -57,6 +57,13 @@ Rails.application.routes.draw do
   get  "/ingest",      to: "ingest#index", as: :ingest_index
   post "/ingest/scan", to: "ingest#scan",  as: :ingest_scan
 
+  # Setup and Tools — surfaces for rare/one-time actions (initial Calibre
+  # import, CWA migration docs) and ongoing maintenance (re-sync,
+  # ingest, KEPUB conversion docs). Linked from the user menu, not
+  # primary nav, since they're not part of daily use.
+  get "/setup", to: "setup#show", as: :setup
+  get "/tools", to: "tools#show", as: :tools
+
   # User-facing "Sync with Kobo" settings page. Authelia-protected as normal.
   get  "/kobo-sync",            to: "kobo_sync#show",       as: :kobo_sync
   post "/kobo-sync/regenerate", to: "kobo_sync#regenerate", as: :regenerate_kobo_sync
