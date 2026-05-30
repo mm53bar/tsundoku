@@ -30,8 +30,8 @@ class IngestController < ApplicationController
   private
 
   def require_admin!
-    return if current_user&.admin?
-    redirect_to root_path, alert: "Admins only."
+    return if current_user&.can_ingest?
+    redirect_to root_path, alert: "Not allowed."
   end
 
   def pending_files

@@ -6,7 +6,7 @@
     <p class="text-stone-600 text-sm mt-1"><%= pluralize(@lists.length, "list") %></p>
   </div>
 
-  <% if current_user&.admin? %>
+  <% if current_user&.can_manage_lists? %>
     <%= link_to new_list_path,
           class: "inline-flex items-center gap-2 px-4 py-2 bg-stone-900 text-white text-sm font-medium rounded-md hover:bg-stone-700 transition" do %>
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -24,7 +24,7 @@
       Lists are a way to track curated collections like "Oprah's Book Club" or "The Greatest Books"
       and see at a glance which ones you already have in your library.
     </p>
-    <% if current_user&.admin? %>
+    <% if current_user&.can_manage_lists? %>
       <%= link_to "Create your first list →", new_list_path, class: "inline-block mt-4 text-amber-700 hover:text-amber-800 underline" %>
     <% end %>
   </div>
