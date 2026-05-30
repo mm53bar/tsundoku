@@ -60,4 +60,67 @@ class UserTest < ActiveSupport::TestCase
     user = User.new(name: nil, username: "mmcclenaghan")
     assert_equal "mmcclenaghan", user.display_name
   end
+
+  # find_or_provision_from_proxy is the identity boundary for the proxy-
+  # auth flow: every request injects Remote-User and we look up or create
+  # a user. These tests pin the rules so the boundary stays stable.
+  test "provisions a new user from proxy headers" do
+    User.where(username: "newcomer").destroy_all
+    user = User.find_or_provision_from_proxy(
+      username: "newcomer",
+      email:    "newcomer@example.com",
+      name:     "New Comer"
+    )
+    assert user.persisted?
+    assert_equal "newcomer", user.username
+    assert_equal "newcomer@example.com", user.email
+    assert_equal "New Comer", user.name
+  end
+
+  test "first ever provisioned user gets the admin role" do
+    User.destroy_all
+    user = User.find_or_provision_from_proxy(username: "first", email: nil, name: nil)
+    assert user.admin?
+  end
+
+  test "subsequent provisioned users default to reader" do
+    User.destroy_all
+    User.create!(username: "existing", role: :admin)
+    user = User.find_or_provision_from_proxy(username: "second", email: nil, name: nil)
+    refute user.admin?
+    assert user.reader?
+  end
+
+  test "name defaults to titleized username when blank" do
+    User.where(username: "yetanother").destroy_all
+    user = User.find_or_provision_from_proxy(username: "yetanother", email: nil, name: nil)
+    assert_equal "Yetanother", user.name
+  end
+
+  test "updates email and name on subsequent lookups when they change" do
+    User.where(username: "returning").destroy_all
+    User.create!(username: "returning", email: "old@example.com", name: "Old Name", role: :reader)
+    user = User.find_or_provision_from_proxy(
+      username: "returning",
+      email:    "new@example.com",
+      name:     "New Name"
+    )
+    assert_equal "new@example.com", user.email
+    assert_equal "New Name",        user.name
+  end
+
+  test "preserves existing email/name when the proxy doesn't send them" do
+    User.where(username: "sticky").destroy_all
+    User.create!(username: "sticky", email: "keep@example.com", name: "Keep Me", role: :reader)
+    user = User.find_or_provision_from_proxy(username: "sticky", email: nil, name: nil)
+    assert_equal "keep@example.com", user.email
+    assert_equal "Keep Me",          user.name
+  end
+
+  test "does not change the role on subsequent lookups" do
+    User.where(username: "rolesticky").destroy_all
+    admin = User.create!(username: "rolesticky", role: :admin)
+    User.find_or_provision_from_proxy(username: "rolesticky", email: nil, name: nil)
+    assert admin.reload.admin?
+  end
 end
