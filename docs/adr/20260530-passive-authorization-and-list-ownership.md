@@ -75,7 +75,7 @@ Schema:
 Model:
 
 - `List belongs_to :user`
-- `List.visible_to(user)` returns owned + shared lists.
+- `List.for(user)` returns owned + shared lists.
 - `User#can_edit_list?(list)` becomes a real ownership check
   (`list.user_id == user.id`), not passive.
 

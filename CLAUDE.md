@@ -9,7 +9,7 @@ Prefer Rails conventions over architecture-heavy patterns. For rationale and exa
 - Extract nouns, not verbs. Prefer names like `BookAssets` or `MetadataProposal` over `SomethingService`.
 - Keep controllers focused on HTTP concerns: load records, check permissions, choose responses.
 - Authorization assumes a trusted household: most authenticated users are permitted broadly. Do not introduce an admin-role assumption unless explicitly requested — ownership and explicit sharing are the primary boundaries.
-- For shared resources, keep visibility and write authority separate. Use visibility scopes for reads (`List.visible_to(user)`) and ownership-scoped lookups for writes (`current_user.lists.find(...)`). The List model is the reference pattern.
+- Two concerns, two mechanisms: model scopes named `.for(user)` answer *what records this user may read in normal app flow*; `User#can_X?` predicates answer *what actions this user may take on a specific record*. Add `.for(user)` only on models with user-relative access semantics; use `current_user.<assoc>.find(...)` for owner-only writes. `List` is the reference pattern. Do not build a generic policy-scope DSL.
 - `User` capability predicates (`can_edit_book?`, `can_edit_list?`) are extension points for future tightening — keep them action-oriented, not UI-oriented. Today most return `true`; the names exist so a future, less-trusted deployment has one place to refine.
 - All book file/path access must go through `book.assets`. Do not compute book file paths inline in controllers, jobs, or views.
 - `BookAssets` owns safe path resolution, file availability, cover MIME type, and cleanup for book-owned files on disk. If a change goes beyond that boundary, stop and identify the real concept before extending it.

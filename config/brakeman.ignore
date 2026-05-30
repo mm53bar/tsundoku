@@ -25,7 +25,7 @@
       "note": "Series#hardcover_url is built from a literal Hardcover.app URL prefix plus a URL-encoded hardcover_slug. The slug is set only by BookEnricher from Hardcover's GraphQL response (not user input) and is URL-encoded via ERB::Util.url_encode in the model accessor."
     },
     {
-      "fingerprint": "1074948aeb9606b32d2ade6226d82ffa90e0ac5a5fd18e46273bd9e584978df2",
+      "fingerprint": "9c2fe95c7149b2ebd53aa7ce60b1ef2967cb3cccf169b72696dba82f12dc8e68",
       "check_name": "LinkToHref",
       "message": "Potentially unsafe model attribute in `link_to` href",
       "file": "app/views/lists/show.html.erb",

@@ -37,15 +37,29 @@ Examples in this app:
 
 ## 3. Authorization should stay simple
 
-This app currently assumes a **trusted household environment** rather than a privileged-admin model. Most authenticated users are permitted to act broadly — Authelia gates the front door, and beyond that the boundaries that matter are ownership and explicit sharing, not a role check. This app does not currently need Pundit or CanCan, and the `admin?` predicate exists only as legacy scaffolding (see ADR `20260530-passive-authorization-and-list-ownership.md`).
+This app currently assumes a **trusted household environment** rather than a privileged-admin model. Most authenticated users are permitted to act broadly — Authelia gates the front door, and beyond that the boundaries that matter are ownership and explicit sharing, not a role check. This app does not currently need Pundit or CanCan.
 
-Preferred approach:
+The model splits authorization into two concerns:
 
-- **Ownership-scoped lookups** for owner-only writes, where the resource has a clear owner.
-  - example: `current_user.shelves.find(...)`, `current_user.lists.find(...)` for edit/update/destroy
-- **Visibility scopes** for read access when a resource can be shared. Keep visibility and write authority separate — a non-owner may be able to view a shared list, but should never be able to edit it.
-  - example: `List.visible_to(current_user)` for browsing, paired with `current_user.lists.find(...)` for writes. `List` is the reference pattern for this split.
-- **`User` capability predicates** (`can_edit_book?`, `can_edit_list?`, `can_import_library?`) as extension points. Most return `true` today; the names exist so a future, less-trusted deployment has one place to tighten without touching every callsite.
+| Concern | Mechanism | Example |
+|---|---|---|
+| What records are in play for this user? | Model scope, named `.for(user)` | `List.for(current_user)` |
+| What action may this user take on a specific record? | `User` capability predicate | `current_user.can_edit_list?(list)` |
+
+Plus ownership-scoped associations as the natural write boundary where one exists:
+
+- `current_user.lists.find(...)` — owner-only writes
+- `current_user.shelves.find(...)` — same shape
+
+### Naming and meaning
+
+- **`.for(user)`** means "records this user may read in normal app flow." That's the only meaning. Don't overload it with editability, relevance, or recency — those are separate predicates if they exist at all. Use the scope only on models that have user-relative access semantics; most models don't need it (Books are shared globally; Authors / Series / Publishers are shared globally; Readings are already per-user via association).
+- **`current_user.<assoc>`** is the ownership-scoped path for writes. Cheaper than a separate scope when ownership is the natural privacy boundary.
+- **`User` capability predicates** (`can_edit_book?`, `can_edit_list?`, `can_import_library?`) are extension points. Most return `true` today; the names exist so a future, less-trusted deployment has one place to tighten without touching every callsite. `User.role` is part of that future extension point — it's set during provisioning (first user → admin, rest → reader) and used cosmetically (the "Admin" badge on the user menu), but it doesn't gate any action today.
+
+### Where this pattern fits
+
+`List` is the reference: `List.for(user)` for browse, `current_user.lists.find(...)` for write. Apply the same shape to other models *only* when they have user-relative access semantics — don't make `.for(user)` a universal requirement, and don't build a generic policy-scope DSL on top of it.
 
 Guidelines:
 
