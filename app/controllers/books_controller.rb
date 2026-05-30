@@ -80,9 +80,12 @@ class BooksController < ApplicationController
     @book = Book.find(params[:id])
   end
 
+  # Single gate for the actions in the only-list above. Each predicate
+  # answers the same question today (admin?), but reading "can_edit_book?"
+  # at the callsite is more honest than "require_admin!".
   def require_admin!
-    return if current_user&.admin?
-    redirect_to @book, alert: "Admins only."
+    return if current_user&.can_edit_book?(@book)
+    redirect_to @book, alert: "Not allowed."
   end
 
   # Find the task, verify it belongs to this book, and mark it reviewed.

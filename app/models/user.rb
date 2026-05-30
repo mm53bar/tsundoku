@@ -40,4 +40,46 @@ class User < ApplicationRecord
   def display_name
     name.presence || username
   end
+
+  # Authorization predicates — readable names for action-permission
+  # checks, used by controllers and views. Today every gated action
+  # collapses to `admin?` (single-role homelab), but naming the
+  # capability at the callsite makes the intent explicit and gives
+  # us a single place to refine if a role ever sits between
+  # reader and admin.
+  #
+  # Pattern (per docs/reviews/rails-code-review.md §2):
+  #   - controllers call `current_user&.can_X?` before destructive or
+  #     admin-only actions
+  #   - views use the same predicate to decide whether to render the
+  #     action's button/link
+  #   - ownership-scoped lookups (`current_user.shelves.find(...)`)
+  #     stay as-is — they're already the right Rails idiom
+  def can_import_library?
+    admin?
+  end
+
+  def can_ingest?
+    admin?
+  end
+
+  def can_edit_book?(_book = nil)
+    admin?
+  end
+
+  def can_destroy_book?(_book = nil)
+    admin?
+  end
+
+  def can_enrich_book?(_book = nil)
+    admin?
+  end
+
+  def can_manage_lists?
+    admin?
+  end
+
+  def can_edit_list?(_list = nil)
+    admin?
+  end
 end

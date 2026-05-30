@@ -41,7 +41,7 @@ class LibraryController < ApplicationController
   private
 
   def require_admin!
-    return if current_user&.admin?
-    redirect_to root_path, alert: "Admins only."
+    return if current_user&.can_import_library?
+    redirect_to root_path, alert: "Not allowed."
   end
 end

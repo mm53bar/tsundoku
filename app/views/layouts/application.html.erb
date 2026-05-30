@@ -46,7 +46,7 @@
               <%= link_to "Series",  series_index_path, class: "hover:text-stone-900 #{"text-stone-900 font-medium" if controller_name == "series"}" %>
               <%= link_to "Shelves", shelves_path, class: "hover:text-stone-900 #{"text-stone-900 font-medium" if controller_name == "shelves"}" %>
               <%= link_to "Lists",   lists_path, class: "hover:text-stone-900 #{"text-stone-900 font-medium" if controller_name == "lists"}" %>
-              <% if current_user&.admin? %>
+              <% if current_user&.can_ingest? %>
                 <%= link_to "Ingest",  ingest_index_path, class: "hover:text-stone-900 #{"text-stone-900 font-medium" if controller_name == "ingest"}" %>
               <% end %>
             </nav>

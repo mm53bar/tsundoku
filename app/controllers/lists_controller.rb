@@ -96,8 +96,8 @@ class ListsController < ApplicationController
   end
 
   def require_admin!
-    return if current_user&.admin?
-    redirect_to lists_path, alert: "Admins only."
+    return if current_user&.can_manage_lists?
+    redirect_to lists_path, alert: "Not allowed."
   end
 
   def list_params

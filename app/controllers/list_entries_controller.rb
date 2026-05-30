@@ -42,7 +42,7 @@ class ListEntriesController < ApplicationController
   end
 
   def require_admin!
-    return if current_user&.admin?
-    redirect_to lists_path, alert: "Admins only."
+    return if current_user&.can_edit_list?(@list)
+    redirect_to lists_path, alert: "Not allowed."
   end
 end
