@@ -7,7 +7,9 @@ class Author < ApplicationRecord
 
   scope :by_name, -> { order(Arel.sql("COALESCE(NULLIF(sort_name, ''), name) COLLATE NOCASE ASC")) }
 
-  HONORIFIC_TRAILING = /\s+(Ph\.?D\.?|M\.?D\.?|D\.?D\.?S\.?|Esq\.?|Jr\.?|Sr\.?|II|III|IV)\.?\s*\z/i
+  # Allows an optional comma before the honorific so "Jane Goodall, Ph.D."
+  # strips to "Jane Goodall" (the old regex left the comma stranded).
+  HONORIFIC_TRAILING = /,?\s+(Ph\.?D\.?|M\.?D\.?|D\.?D\.?S\.?|Esq\.?|Jr\.?|Sr\.?|II|III|IV)\.?\s*\z/i
 
   # Canonical form for cross-source matching. Lowercases, strips trailing
   # academic / generational honorifics, drops dots, and merges consecutive

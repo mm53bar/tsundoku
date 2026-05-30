@@ -18,12 +18,9 @@ class AuthorTest < ActiveSupport::TestCase
     assert_equal "jane goodall", Author.normalize_name("Jane Goodall Ph.D.")
   end
 
-  # KNOWN GAP: a comma before the honorific isn't part of HONORIFIC_TRAILING,
-  # so it survives normalization. "Jane Goodall, Ph.D." and "Jane Goodall"
-  # currently hash to different forms — they shouldn't. Captured here so a
-  # future fix has an asserting test ready to flip.
-  test "comma before honorific leaks through (known gap)" do
-    assert_equal "jane goodall,", Author.normalize_name("Jane Goodall, Ph.D.")
+  test "strips trailing honorific even with a preceding comma" do
+    assert_equal "jane goodall", Author.normalize_name("Jane Goodall, Ph.D.")
+    assert_equal "homer s",      Author.normalize_name("Homer S, Jr.")
   end
 
   test "strips trailing Jr/Sr/II/III/IV" do
