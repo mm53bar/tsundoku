@@ -83,3 +83,4 @@ Rails 8.1 · Ruby 3.4 · SQLite (WAL) · Tailwind v4 · Hotwire (Turbo + Stimulu
   - [`20260530-proxy-auth-trust-model.md`](docs/adr/20260530-proxy-auth-trust-model.md) — forward-auth via proxy headers
   - [`20260530-passive-authorization-and-list-ownership.md`](docs/adr/20260530-passive-authorization-and-list-ownership.md) — passive predicates + list ownership
   - [`20260530-reading-status-derived-from-progress.md`](docs/adr/20260530-reading-status-derived-from-progress.md) — drop the status enum, derive from progress
+  - [`20260530-auto-ingest-via-recurring-job.md`](docs/adr/20260530-auto-ingest-via-recurring-job.md) — Solid Queue recurring scan for the ingest folder
