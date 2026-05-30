@@ -10,6 +10,13 @@
 #     schedule: at 5am every day
 
 production:
+  # Scan INGEST_PATH for new EPUBs every couple of minutes. Quiet
+  # when nothing's there; emits a task tray entry and queues per-file
+  # IngestFileJobs when files do show up. See AutoIngestScanJob.
+  auto_ingest_scan:
+    class: AutoIngestScanJob
+    schedule: every 2 minutes
+
   clear_solid_queue_finished_jobs:
     command: "SolidQueue::Job.clear_finished_in_batches(sleep_between_batches: 0.3)"
     schedule: every hour at minute 12

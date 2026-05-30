@@ -55,6 +55,9 @@ class Task < ApplicationRecord
       else
         "Ingesting new book"
       end
+    when "auto_ingest_scan"
+      count = result&.dig("queued_count") || 0
+      "Auto-ingest: queued #{count} #{'file'.pluralize(count)}"
     else
       kind.humanize
     end
