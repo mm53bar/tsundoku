@@ -3,6 +3,13 @@
 Amends 20260528-reading-state-model.md (the `SYNCABLE_STATUSES` rule
 described there is replaced by what follows).
 
+> **Further extended by `20260530-reading-status-derived-from-progress.md`.**
+> This ADR introduced `sync_to_device` and kept `status` as a manual
+> progress signal. The follow-up ADR drops the `status` enum entirely
+> and derives state from `progress_percent` + `finished_at`. The split
+> recorded here still holds; the "transitional callback" and "status
+> picker UI" pieces no longer apply.
+
 ## Context
 
 The original `Reading` model conflated two orthogonal concepts into the

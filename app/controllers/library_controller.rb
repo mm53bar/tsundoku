@@ -8,8 +8,7 @@ class LibraryController < ApplicationController
 
     scope = (@sort == "recently_added") ? Book.recently_added : Book.by_title
     if @filter == "currently_reading" && current_user
-      reading_book_ids = current_user.readings.where(status: :currently_reading).select(:book_id)
-      scope = scope.where(id: reading_book_ids)
+      scope = scope.where(id: current_user.readings.in_progress.select(:book_id))
     end
     @books = scope.includes(:authors, :series, :lists)
 

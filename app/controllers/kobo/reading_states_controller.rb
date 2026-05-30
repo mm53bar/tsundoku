@@ -50,26 +50,20 @@ module Kobo
       reading.save!
     end
 
-    # Status transition rules from design doc §6. The device is
-    # authoritative for transitions seen during active reading, but we
-    # preserve Tsundoku-local nuances where they don't contradict.
+    # The Kobo's Status field is informational — our progress_state is
+    # derived from progress_percent + finished_at. We mostly ignore the
+    # value except for one case worth catching:
+    #   * Long-pressing a book on the device and tapping "Mark as
+    #     finished" sends Status="Finished" without touching progress.
+    #     Stamp finished_at so the book derives correctly on our side.
+    # Re-read transitions (device reports Reading after a previously-
+    # finished book) are handled by the Reading model's
+    # stamp_progress_timestamps callback when progress drops back
+    # below the threshold.
     def apply_status(reading, status_info)
-      return unless status_info && status_info["Status"]
-
-      new_status = Reading.tsundoku_status_for(status_info["Status"])
-      return unless new_status
-
-      old_status = reading.status
-      reading.status = new_status
-
-      case new_status
-      when "currently_reading"
-        reading.started_at ||= Time.current
-        # Re-reading case: device says Reading on a previously-finished book.
-        reading.finished_at = nil if old_status == "read"
-      when "read"
-        reading.finished_at ||= Time.current
-      end
+      return unless status_info && status_info["Status"] == "Finished"
+      reading.finished_at      ||= Time.current
+      reading.progress_percent   = 100 if (reading.progress_percent || 0) < Reading::FINISHED_THRESHOLD_PCT
     end
 
     def apply_bookmark(reading, bookmark)

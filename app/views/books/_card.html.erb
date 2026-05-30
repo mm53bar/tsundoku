@@ -18,7 +18,7 @@
         </div>
       <% end %>
 
-      <% if reading&.currently_reading? %>
+      <% if reading&.in_progress? %>
         <%# Always-visible track on currently-reading cards so the user sees
             "in progress" at a glance even when the fill is <2px wide. White
             track with a stone outline carries enough contrast against any

@@ -42,7 +42,7 @@ module Kobo
 
     # Books the @kobo_user has opted to sync to their Kobo. Union of two
     # signals (see ADR 20260528-shelf-wins-sync-conflict.md):
-    #   - reading status in want_to_read / currently_reading
+    #   - a Reading with sync_to_device: true
     #   - membership in a shelf with sync_to_kobo = true
     # Returns an ActiveRecord::Relation so callers can chain includes/limit.
     def syncable_books
