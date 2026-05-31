@@ -19,7 +19,10 @@ class Shelf < ApplicationRecord
   validates :name, presence: true, uniqueness: { scope: :user_id }
   validates :kobo_uuid, presence: true, uniqueness: true
 
-  scope :by_name,         -> { order(Arel.sql("name COLLATE NOCASE ASC")) }
+  # Starred shelf first (per-user default), then alphabetical. Makes
+  # the picker always lead with the star-toggle target so it's the
+  # first row the user sees.
+  scope :by_name,         -> { order(default_for_star: :desc).order(Arel.sql("name COLLATE NOCASE ASC")) }
   scope :syncing,         -> { where(sync_to_kobo: true) }
   # Tags-on-Kobo are emitted for syncing shelves that aren't the user's
   # default Starred shelf. Starred intentionally doesn't appear as a

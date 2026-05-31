@@ -54,7 +54,7 @@
         <%= render "shelves/quick_add",
               book: book,
               user: current_user,
-              **local_assigns.slice(:all_shelves, :member_ids) %>
+              **local_assigns.slice(:all_shelves, :member_ids, :starred_shelf_id) %>
       </div>
     <% end %>
   </div>
