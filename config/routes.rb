@@ -62,7 +62,8 @@ Rails.application.routes.draw do
   # ingest, KEPUB conversion docs). Linked from the user menu, not
   # primary nav, since they're not part of daily use.
   get "/setup", to: "setup#show", as: :setup
-  get "/tools", to: "tools#show", as: :tools
+  get  "/tools",                  to: "tools#show",            as: :tools
+  post "/tools/cleanup_authors",  to: "tools#cleanup_authors",  as: :cleanup_authors_tools
 
   # User-facing "Sync with Kobo" settings page. Authelia-protected as normal.
   get  "/kobo-sync",            to: "kobo_sync#show",       as: :kobo_sync
