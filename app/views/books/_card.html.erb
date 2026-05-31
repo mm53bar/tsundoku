@@ -33,12 +33,13 @@
       </div>
     <% end %>
 
-    <%# Shelf quick-add. Sibling of the cover link — a button inside an
-        anchor is invalid HTML — absolute-positioned over the cover.
-        Hidden until the card is hovered (or focused, for keyboard
-        users) to keep the grid clean. %>
+    <%# Shelf quick-add. Sibling of the cover link (a button inside an
+        anchor is invalid HTML), absolute-positioned over the cover.
+        Always visible — hover-only would be desktop-only and the
+        primary user is on iPad. The button itself is styled subtle by
+        default and brightens on hover/focus for desktop feedback. %>
     <% if signed_in? %>
-      <div class="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+      <div class="absolute top-2 right-2 z-10">
         <%= render "shelves/quick_add",
               book: book,
               user: current_user,
