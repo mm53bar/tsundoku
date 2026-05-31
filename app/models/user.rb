@@ -42,18 +42,30 @@ class User < ApplicationRecord
     name.presence || username
   end
 
-  # Books currently synced to this user's Kobo. Union of two signals
-  # (see ADR 20260528-shelf-wins-sync-conflict.md):
-  #   * a Reading with sync_to_device: true
-  #   * membership in a shelf with sync_to_kobo = true
-  # Returns an ActiveRecord::Relation so callers can chain .count,
-  # .includes, .order, etc. Used by the navbar pill ("On your Kobo
-  # (N)"), the library index's on_kobo filter, and Kobo::BaseController
-  # for the device-facing sync set.
+  # Books currently synced to this user's Kobo — the union of every
+  # syncing-shelf's membership. The "Starred" shelf is the default
+  # target of the star icon on book cards (one per user, flagged
+  # default_for_star). Returns an ActiveRecord::Relation so callers can
+  # chain .count, .includes, .order, etc.
+  #
+  # Previously this was a union of two paths (Reading.sync_to_device OR
+  # shelf membership). The sync_to_device path was retired in favor of
+  # the always-via-shelf model — see the data migration that creates
+  # the per-user Starred shelf and the parallel drop of the
+  # sync_to_device column.
   def on_kobo_books
-    via_reading = readings.where(sync_to_device: true).select(:book_id)
     via_shelves = ShelfEntry.joins(:shelf).where(shelves: { user_id: id, sync_to_kobo: true }).select(:book_id)
-    Book.where(id: via_reading).or(Book.where(id: via_shelves))
+    Book.where(id: via_shelves)
+  end
+
+  # The user's Starred shelf — single tap on the star icon adds/removes
+  # a book from it. Created lazily so users who never tap a star never
+  # accumulate an unused row. sync_to_kobo is locked true (the Shelf
+  # model enforces this); default_for_star marks it as exempt from Kobo
+  # Tag emission so it doesn't appear as a redundant collection.
+  def starred_shelf
+    shelves.find_by(default_for_star: true) ||
+      shelves.create!(name: "Starred", default_for_star: true, sync_to_kobo: true)
   end
 
   # Authorization predicates — readable names for action-permission

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_31_163302) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_31_195001) do
   create_table "authors", force: :cascade do |t|
     t.integer "calibre_id"
     t.datetime "created_at", null: false
@@ -202,6 +202,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_31_163302) do
 
   create_table "shelves", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.boolean "default_for_star", default: false, null: false
     t.text "description"
     t.string "kobo_uuid"
     t.string "name", null: false
@@ -210,6 +211,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_31_163302) do
     t.integer "user_id", null: false
     t.index ["kobo_uuid"], name: "index_shelves_on_kobo_uuid", unique: true
     t.index ["sync_to_kobo"], name: "index_shelves_on_sync_to_kobo"
+    t.index ["user_id", "default_for_star"], name: "index_shelves_default_for_star_per_user", unique: true, where: "default_for_star = 1"
     t.index ["user_id", "name"], name: "index_shelves_on_user_id_and_name", unique: true
     t.index ["user_id"], name: "index_shelves_on_user_id"
   end
