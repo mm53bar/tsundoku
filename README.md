@@ -85,3 +85,4 @@ Rails 8.1 · Ruby 3.4 · SQLite (WAL) · Tailwind v4 · Hotwire (Turbo + Stimulu
   - [`20260530-reading-status-derived-from-progress.md`](docs/adr/20260530-reading-status-derived-from-progress.md) — drop the status enum, derive from progress
   - [`20260530-auto-ingest-via-recurring-job.md`](docs/adr/20260530-auto-ingest-via-recurring-job.md) — Solid Queue recurring scan for the ingest folder
   - [`20260530-shelfmark-url-handoff.md`](docs/adr/20260530-shelfmark-url-handoff.md) — link to Shelfmark with pre-filled search, defer server-side API
+  - [`20260530-enrichment-no-isbn-fallback.md`](docs/adr/20260530-enrichment-no-isbn-fallback.md) — fall back to title+author search when the ingested book has no ISBN

@@ -22,13 +22,13 @@ class IngestFileJob < ApplicationJob
         "title" => result.book.title
       })
 
-      # Auto-enqueue enrichment if there's an ISBN to look up. The enrichment
-      # task is reviewable and will surface in the banner as a pending review
-      # the way every other enrichment does.
-      if result.book.isbn.present?
-        enrich_task = Task.create!(kind: "metadata_enrichment", subject: result.book, status: :queued)
-        EnrichBookJob.perform_later(enrich_task.id)
-      end
+      # Always enqueue enrichment. BookEnricher uses the ISBN path when
+      # one is present and falls back to a title+author search otherwise;
+      # either way the proposal is reviewable and surfaces in the banner
+      # the same way. If nothing matches, the task auto-clears via the
+      # proposal_actionable? check in EnrichBookJob.
+      enrich_task = Task.create!(kind: "metadata_enrichment", subject: result.book, status: :queued)
+      EnrichBookJob.perform_later(enrich_task.id)
 
       # Convert to KEPUB so the Kobo gets paragraph-level reading-progress
       # fidelity. Background job — the sync controller serves KEPUB when

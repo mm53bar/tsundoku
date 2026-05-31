@@ -24,10 +24,17 @@ class BookEnricher
   #     "cover"      => { "url" => ..., "width" => ..., "height" => ... } # only if different from existing
   #   }
   def build_proposal
-    return base_proposal(matched: false) unless HardcoverClient.available? && @book.isbn.present?
+    return base_proposal(matched: false) unless HardcoverClient.available?
 
-    client = HardcoverClient.new
-    edition = client.find_edition_by_isbn(@book.isbn)
+    client  = HardcoverClient.new
+    edition = if @book.isbn.present?
+      client.find_edition_by_isbn(@book.isbn)
+    else
+      # No ISBN — fall back to title+author search. find_book_by_search
+      # wraps its result in an edition-shaped hash (with nil ISBN/ASIN)
+      # so the downstream logic doesn't have to branch.
+      client.find_book_by_search(title: @book.title, author: clean_author_name(@book.authors.first&.name))
+    end
     return base_proposal(matched: false) unless edition
 
     book_data = edition["book"] || {}
