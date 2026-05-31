@@ -91,18 +91,33 @@ module Kobo
     # local library (e.g. when the user manually wipes books on the
     # Kobo, the device fires a burst of these — one per book it had).
     #
-    # We treat the call as "this device no longer has this book." We
-    # destroy the user's KoboSyncedBook row for that uuid so the next
-    # sync's diff sees a missing snapshot and re-emits NewEntitlement
-    # (assuming the book is still in syncable_books for this user).
-    # That's auto-recovery for the manual-wipe scenario — no
-    # Force-Full-Resync click needed.
+    # We treat the call as "this device no longer has this book":
+    #   1. Destroy the user's KoboSyncedBook row for that uuid so the
+    #      next sync's diff sees a missing snapshot and re-emits
+    #      NewEntitlement (assuming the book is still in syncable_books
+    #      for this user). That's auto-recovery for the manual-wipe
+    #      scenario — no Force-Full-Resync click needed.
+    #   2. Touch any non-Starred syncing shelves the book was on, so
+    #      the next sync re-emits a ChangedTag for those shelves with
+    #      the items list. Without this, the device's collection sits
+    #      empty after the wipe-and-restore because Tsundoku thinks
+    #      "the shelf hasn't changed" and emits nothing. Skip Starred
+    #      (default_for_star) — it doesn't emit as a Tag anyway.
     #
     # Idempotent: a DELETE for an unknown uuid returns 200 with no
     # state change. The device doesn't care about the response body;
     # it just wants a non-error status.
     def destroy_library_entry
       @kobo_user.kobo_synced_books.where(kobo_uuid: params[:book_uuid]).destroy_all
+
+      if (book = Book.find_by(kobo_uuid: params[:book_uuid]))
+        @kobo_user.shelves
+                  .emitting_as_tag
+                  .joins(:shelf_entries)
+                  .where(shelf_entries: { book_id: book.id })
+                  .find_each(&:touch)
+      end
+
       render json: {}
     end
 
