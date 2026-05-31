@@ -1,0 +1,30 @@
+<%# Locals: book (required), user (required), all_shelves (optional),
+    member_ids (optional).
+
+    A floating "+ shelf" button + picker panel designed for grid cards
+    on the library index where the full chip_row would be too dense.
+    Reuses the existing shelf-picker Stimulus controller and
+    picker_panel partial; toggles update the panel rows in place via
+    the same turbo_streams as chip_row.
+
+    The button itself sits in a relative wrapper so its panel
+    positions correctly. Caller (book card) decides where to absolute-
+    position the wrapper. %>
+<div data-controller="shelf-picker" class="relative">
+  <button type="button"
+          data-action="shelf-picker#toggle"
+          title="Add to shelf"
+          class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-white/95 hover:bg-white border border-stone-200 text-stone-700 hover:text-stone-900 shadow-sm transition cursor-pointer">
+    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+    </svg>
+  </button>
+
+  <div data-shelf-picker-target="panel"
+       class="hidden absolute top-full right-0 mt-1 w-64 bg-white border border-stone-200 rounded-md shadow-lg z-20">
+    <%= render "shelves/picker_panel",
+          book: book,
+          user: user,
+          **local_assigns.slice(:all_shelves, :member_ids) %>
+  </div>
+</div>
