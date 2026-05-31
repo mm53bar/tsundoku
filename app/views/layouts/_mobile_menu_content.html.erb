@@ -1,0 +1,36 @@
+<%# Locals: on_kobo_count (Integer).
+    Mobile-only nav content — the panel the Rails Blocks navbar's
+    built-in hamburger opens. Visible only on phones; on sm+ the inline
+    nav and standalone Help icon cover the same ground. Mirrors the
+    desktop nav structure but flattens the Library split-button into
+    three discrete rows (Library / Authors / Series) since there's no
+    space pressure to combine them on a vertical menu.
+
+    User-menu content (Setup / Tools / Sign out) is also included here
+    because the desktop user-menu trigger is mobile_hidden — better to
+    keep the mobile flow inside one panel than make Sheila chase two
+    different dropdowns. %>
+<nav class="-m-2 py-1 w-72">
+  <%= link_to "Library", root_path,
+        class: "block px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-100 #{"bg-stone-50 font-medium text-stone-900" if controller_name == "library" && params[:filter].blank?}" %>
+  <%= link_to "Authors", authors_path,
+        class: "block px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-100 #{"bg-stone-50 font-medium text-stone-900" if controller_name == "authors"}" %>
+  <%= link_to "Series", series_index_path,
+        class: "block px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-100 #{"bg-stone-50 font-medium text-stone-900" if controller_name == "series"}" %>
+  <% if on_kobo_count.positive? %>
+    <%= link_to root_path(filter: "on_kobo"),
+          class: "flex items-center justify-between gap-3 px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-100 #{"bg-stone-50 font-medium text-stone-900" if params[:filter] == "on_kobo"}" do %>
+      <span>On your Kobo</span>
+      <span class="inline-flex items-center justify-center min-w-[1.25rem] px-1 text-xs rounded-full bg-amber-100 text-amber-800"><%= on_kobo_count %></span>
+    <% end %>
+  <% end %>
+  <%= link_to "Shelves", shelves_path,
+        class: "block px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-100 #{"bg-stone-50 font-medium text-stone-900" if controller_name == "shelves"}" %>
+  <%= link_to "Lists", lists_path,
+        class: "block px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-100 #{"bg-stone-50 font-medium text-stone-900" if controller_name == "lists"}" %>
+  <div class="border-t border-stone-100 my-1"></div>
+  <%= link_to "Help", help_path,
+        class: "block px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-100 #{"bg-stone-50 font-medium text-stone-900" if controller_name == "help"}" %>
+  <div class="border-t border-stone-100 my-1"></div>
+  <%= render "layouts/user_menu_content" %>
+</nav>

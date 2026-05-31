@@ -28,8 +28,11 @@
       <div class="container mx-auto px-6 py-4 flex items-center justify-between gap-6">
         <div class="flex items-center gap-8">
           <%= link_to root_path, class: "flex items-center gap-2.5 text-xl font-semibold tracking-tight" do %>
-            <%= image_tag "/favicon-96.png", alt: "", class: "w-10 h-10" %>
-            <span>Tsundoku</span>
+            <%= image_tag "/favicon-96.png", alt: "Tsundoku", class: "w-10 h-10" %>
+            <%# Wordmark hidden on phone — the favicon is enough of an
+                identifier; the extra width matters when the hamburger
+                and tray icons share a narrow row. %>
+            <span class="hidden sm:inline">Tsundoku</span>
           <% end %>
           <% if signed_in? %>
             <% on_kobo_count = current_user.on_kobo_books.count %>
@@ -96,27 +99,37 @@
         <% end %>
         <div class="flex items-center">
           <% if signed_in? %>
-            <%# Discoverable shortcut for non-technical users — Sheila ran
-                into a few "what does this do?" moments and a single
-                always-visible ? icon answers them in one click. %>
+            <%# Help icon on desktop only — the Rails Blocks navbar's
+                built-in hamburger (enabled below) handles mobile, and
+                the mobile-menu-content panel includes a Help row. %>
             <%= link_to help_path,
                   title: "Help",
                   aria: { label: "Help" },
-                  class: "inline-flex items-center justify-center w-9 h-9 mr-1 rounded-md text-stone-500 hover:text-stone-900 hover:bg-stone-100 transition #{"text-stone-900 bg-stone-100" if controller_name == "help"}" do %>
+                  class: "hidden sm:inline-flex items-center justify-center w-9 h-9 mr-1 rounded-md text-stone-500 hover:text-stone-900 hover:bg-stone-100 transition #{"text-stone-900 bg-stone-100" if controller_name == "help"}" do %>
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.5M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z"/>
               </svg>
             <% end %>
+            <%# show_mobile_menu turns on the Rails Blocks navbar's
+                built-in hamburger (sm:hidden in its own template).
+                Tapping it opens the mobile-menu-content panel
+                populated below — the only way to reach
+                Library/Authors/Series/Kobo/Shelves/Lists/Help on a
+                phone, since the inline nav above is hidden. The
+                user-menu item is mobile_hidden because Setup/Tools/
+                Sign out are duplicated inside the mobile menu. %>
             <%= render "shared/components/navbar/navbar",
                   variant: "transparent",
-                  show_mobile_menu: false,
+                  show_mobile_menu: true,
+                  mobile_menu_content_id: "mobile-menu-content",
                   items: [
                     { label: render("tasks/tray_trigger_label"), dropdown: true, content_id: "tasks-tray", align: "end" },
-                    { label: current_user.display_name,         dropdown: true, content_id: "user-menu",   align: "end" }
+                    { label: current_user.display_name,         dropdown: true, content_id: "user-menu",   align: "end", mobile_hidden: true }
                   ],
                   dropdown_contents: [
                     { id: "tasks-tray", width: "w-80", content: capture { render "tasks/tray", tasks: Task.visible.order(:created_at) } },
-                    { id: "user-menu",  width: "w-56", content: capture { render "layouts/user_menu_content" } }
+                    { id: "user-menu",  width: "w-56", content: capture { render "layouts/user_menu_content" } },
+                    { id: "mobile-menu-content", width: "w-72", content: capture { render "layouts/mobile_menu_content", on_kobo_count: on_kobo_count } }
                   ] %>
           <% end %>
         </div>
