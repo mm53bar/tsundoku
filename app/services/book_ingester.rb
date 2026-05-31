@@ -116,12 +116,21 @@ class BookIngester
     book
   end
 
-  def attach_authors(book, names)
-    return if names.empty?
+  # Each raw name from the OPF gets passed through AuthorNameNormalizer
+  # first — OPF strings are commonly dirty (multi-author joined by `|`
+  # or `;`, surname-first as "Bock| Laszlo", trailing punctuation,
+  # placeholders like "Unknown Author"). The normalizer can return zero
+  # (placeholder → dropped), one, or multiple names per raw input; we
+  # flatten and dedupe before linking.
+  def attach_authors(book, raw_names)
+    return if raw_names.empty?
+
+    cleaned = raw_names.flat_map { |raw| AuthorNameNormalizer.normalize(raw) }.uniq
+    return if cleaned.empty?
 
     normalized_to_author = Author.all.index_by { |a| Author.normalize_name(a.name) }
 
-    names.each_with_index do |name, position|
+    cleaned.each_with_index do |name, position|
       key = Author.normalize_name(name)
       author = normalized_to_author[key] || Author.create!(name: name).tap { |a| normalized_to_author[key] = a }
       book.book_authors.create!(author: author, position: position)
