@@ -5,7 +5,11 @@ class Author < ApplicationRecord
   validates :name, presence: true
   validates :calibre_id, uniqueness: true, allow_nil: true
 
-  scope :by_name, -> { order(Arel.sql("COALESCE(NULLIF(sort_name, ''), name) COLLATE NOCASE ASC")) }
+  # Plain display-name sort. Surname-first sorting was dropped in
+  # favor of search-driven find — both the library and authors
+  # indexes carry a substring filter, so scanning by surname stopped
+  # being load-bearing. Matches Hardcover's flat-name convention.
+  scope :by_name, -> { order(Arel.sql("name COLLATE NOCASE ASC")) }
 
   # Allows an optional comma before the honorific so "Jane Goodall, Ph.D."
   # strips to "Jane Goodall" (the old regex left the comma stranded).
