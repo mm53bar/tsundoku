@@ -42,17 +42,10 @@ class User < ApplicationRecord
     name.presence || username
   end
 
-  # Books currently synced to this user's Kobo — the union of every
-  # syncing-shelf's membership. The "Starred" shelf is the default
-  # target of the star icon on book cards (one per user, flagged
-  # default_for_star). Returns an ActiveRecord::Relation so callers can
-  # chain .count, .includes, .order, etc.
-  #
-  # Previously this was a union of two paths (Reading.sync_to_device OR
-  # shelf membership). The sync_to_device path was retired in favor of
-  # the always-via-shelf model — see the data migration that creates
-  # the per-user Starred shelf and the parallel drop of the
-  # sync_to_device column.
+  # Books currently flagged for this user's Kobo — books on any
+  # syncing shelf, including the per-user Starred shelf the star icon
+  # drives. Returns an ActiveRecord::Relation so callers can chain
+  # .count, .includes, .order, etc.
   def on_kobo_books
     via_shelves = ShelfEntry.joins(:shelf).where(shelves: { user_id: id, sync_to_kobo: true }).select(:book_id)
     Book.where(id: via_shelves)

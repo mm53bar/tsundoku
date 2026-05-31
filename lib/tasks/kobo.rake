@@ -41,17 +41,17 @@ namespace :kobo do
     end
   end
 
-  # Replicate CWA's per-user sync state into Tsundoku — both the
-  # kobo_synced_books rows (so deletes can tombstone) and a Reading
-  # record with sync_to_device: true plus any progress/bookmark/timing
-  # data CWA captured.
+  # Replicate CWA's per-user sync state into Tsundoku — kobo_synced_books
+  # rows (so deletes can tombstone), a ShelfEntry on the user's Starred
+  # shelf (so the book stays in syncable_books), and a Reading record
+  # carrying any progress/bookmark/timing data CWA captured.
   #
-  # The sync_to_device flag is the important bit: without it the next
-  # sync would immediately tombstone every imported book that doesn't
-  # have a Tsundoku-side status — which is the wrong default for a
-  # migration. Users opt *out* explicitly later (toggle off, delete);
-  # they shouldn't have to opt back *in* for books CWA was already
-  # pushing.
+  # Putting the book on the Starred shelf is the important bit: without
+  # it the next sync would immediately tombstone every imported book
+  # that doesn't have a Tsundoku-side shelf membership — which is the
+  # wrong default for a migration. Users opt *out* explicitly later
+  # (un-star, or remove from the shelf); they shouldn't have to opt
+  # back *in* for books CWA was already pushing.
   #
   # Usage:
   #   bin/rails 'kobo:import_sync_state_from_cwa[mike,smoketest]'
@@ -108,17 +108,24 @@ namespace :kobo do
         synced_created  += 1
       end
 
-      # 2. Reading record (so the book is syncable + carries progress)
+      # 2. Star the book so it lands in syncable_books (this is what
+      # the sync controller diffs against). Adds to the user's Starred
+      # shelf, idempotent for re-runs.
+      starred = tsundoku_user.starred_shelf
+      starred.shelf_entries.find_or_create_by!(book: book) do |entry|
+        entry.position = (starred.shelf_entries.maximum(:position) || -1) + 1
+      end
+
+      # 3. Reading record (so progress carries over)
       progress = cwa_helpers.reading_state(cwa, cwa_user_id, calibre_id)
       reading  = tsundoku_user.readings.find_or_initialize_by(book: book)
       was_new  = reading.new_record?
 
-      # Status is derived from progress_percent + finished_at now (no
-      # enum to set). The before_save callback on Reading stamps
-      # started_at / finished_at when progress changes — but we override
-      # those with CWA's last_modified timestamp where available so the
+      # Status is derived from progress_percent + finished_at (no enum
+      # to set). The before_save callback on Reading stamps started_at
+      # / finished_at when progress changes — but we override those
+      # with CWA's last_modified timestamp where available so the
       # history reflects when the user actually read, not "now."
-      reading.sync_to_device   = true
       reading.progress_percent = progress[:percent].to_i  if progress[:percent].present?
       reading.location_source        = progress[:location_source]    if progress[:location_source]
       reading.location_type          = progress[:location_type]      if progress[:location_type]

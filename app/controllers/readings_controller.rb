@@ -2,11 +2,6 @@ class ReadingsController < ApplicationController
   before_action :set_book
 
   # PATCH /books/:book_id/reading
-  # Drives the three controls on the status_picker partial:
-  #
-  #   reading[sync_to_device] = "true" | "false"
-  #       Flip the Kobo sync intent. Creating a Reading is a side
-  #       effect of toggling sync on for a book that has none yet.
   #
   #   reading[mark_finished] = "1" | "0"
   #       Manually stamp / clear finished_at. "1" forces progress to
@@ -14,12 +9,12 @@ class ReadingsController < ApplicationController
   #       book reads as in_progress or not_started again (whichever
   #       the current progress_percent encodes).
   #
-  # Both can be present; sync flips before status mark so a single
-  # request could in principle do both.
+  # Sync intent used to be controlled here via reading[sync_to_device];
+  # that path was retired in favor of the star icon driving the
+  # default-for-star shelf. The mark_finished controls remain.
   def update
     reading = current_user.readings.find_or_initialize_by(book: @book)
 
-    apply_sync_flag(reading)
     apply_finished_mark(reading)
 
     reading.save! if reading.changed? || reading.new_record?
@@ -50,11 +45,6 @@ class ReadingsController < ApplicationController
 
   def set_book
     @book = Book.find(params[:book_id])
-  end
-
-  def apply_sync_flag(reading)
-    return unless params.dig(:reading)&.key?(:sync_to_device)
-    reading.sync_to_device = ActiveModel::Type::Boolean.new.cast(params[:reading][:sync_to_device])
   end
 
   def apply_finished_mark(reading)
