@@ -1,23 +1,25 @@
 <%# Locals: book (required), user (required).
-    Inline chip cluster + "Add to shelf" picker. No outer turbo_frame —
-    the inner `<div id="shelf_chips_book_X">` is the turbo_stream target
-    for membership updates. An outer frame would intercept anything
-    link-like inside (including the chips themselves) as frame
-    navigation, producing "Content missing" responses. %>
-<div data-controller="shelf-picker" class="relative inline-flex items-start flex-wrap gap-1.5">
+    Inline chip cluster + "Add to shelf" picker for book#show.
+    The chips render whatever shelves the book is currently on; the
+    "+" button opens the same picker_panel the per-card quick-add
+    uses. Both surfaces share the shared/components/popover wrapper —
+    Floating UI handles edge-flip; the panel coordinates with other
+    open popovers via document-level events. %>
+<div class="inline-flex items-start flex-wrap gap-1.5">
   <%= render "shelves/chips", book: book, user: user %>
 
-  <button type="button"
-          data-action="shelf-picker#toggle"
-          class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full border border-dashed border-stone-300 text-stone-600 hover:text-stone-900 hover:border-stone-500 transition cursor-pointer">
-    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-    </svg>
-    Add to shelf
-  </button>
+  <%= render "shared/components/popover/popover", placement: "bottom-start", max_width: 288 do %>
+    <button type="button"
+            data-popover-target="button"
+            class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full border border-dashed border-stone-300 text-stone-600 hover:text-stone-900 hover:border-stone-500 transition cursor-pointer">
+      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      Add to shelf
+    </button>
 
-  <div data-shelf-picker-target="panel"
-       class="hidden absolute top-full left-0 mt-2 w-72 bg-white border border-stone-200 rounded-md shadow-lg z-10">
-    <%= render "shelves/picker_panel", book: book, user: user %>
-  </div>
+    <template data-popover-target="content">
+      <%= render "shelves/picker_panel", book: book, user: user %>
+    </template>
+  <% end %>
 </div>
