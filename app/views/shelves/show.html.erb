@@ -37,23 +37,20 @@
 <% if @books.empty? %>
   <div class="mt-8 bg-white border border-stone-200 rounded-lg p-8 text-center text-stone-600">
     <p class="text-sm">No books on this shelf yet.</p>
-    <p class="text-xs mt-1">Add books from their detail pages — that flow is coming in the next update.</p>
+    <p class="text-xs mt-1">Add books by clicking the + on any book cover and selecting this shelf.</p>
   </div>
 <% else %>
+  <%# Removing a book uses the same + picker the rest of the site does:
+      click the (amber) +, uncheck this shelf. Keeping the visual
+      treatment of every cover identical across the site is more
+      valuable than a dedicated "X" affordance that's a tap or two
+      shorter — Mike's call. %>
   <div class="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
     <% @books.each do |book| %>
-      <div class="relative group/card">
-        <%= render "books/card", book: book %>
-        <%= button_to remove_book_shelf_path(@shelf, book_id: book.id),
-              method: :delete,
-              form: { data: { turbo_confirm: "Remove '#{book.title}' from this shelf?" }, class: "absolute top-2 right-2 opacity-0 group-hover/card:opacity-100 transition-opacity" },
-              class: "flex items-center justify-center w-7 h-7 rounded-full bg-white/90 backdrop-blur-sm border border-stone-300 text-stone-600 hover:bg-red-50 hover:border-red-300 hover:text-red-700 shadow-sm cursor-pointer",
-              title: "Remove from this shelf" do %>
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
-        <% end %>
-      </div>
+      <%= render "books/card",
+            book: book,
+            all_shelves: @user_shelves,
+            member_ids: @shelf_member_ids_by_book[book.id] %>
     <% end %>
   </div>
 <% end %>

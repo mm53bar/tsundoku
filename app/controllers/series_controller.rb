@@ -9,6 +9,7 @@ class SeriesController < ApplicationController
   def show
     @series = Series.find(params[:id])
     @books  = @series.books.order(Arel.sql("series_index ASC NULLS LAST"), :title).includes(:authors, :series, :lists)
+    @user_shelves, @shelf_member_ids_by_book = preload_shelf_membership_for(@books)
   end
 
   # Loaded lazily by the Turbo Frame on the show page. Hits Hardcover for
