@@ -17,14 +17,4 @@ module ShelfmarkHelper
 
     "#{base.sub(%r{/\z}, '')}/?#{params.to_query}"
   end
-
-  # Render a "Find via Shelfmark" link if the helper can build a URL.
-  # Yields a block for caller-controlled markup; the block receives no
-  # args. Returns nil when no URL is available so the caller can omit
-  # surrounding markup with a simple `if`.
-  def shelfmark_link_to(title:, author: nil, isbn: nil, **link_options, &block)
-    url = shelfmark_search_url(title: title, author: author, isbn: isbn)
-    return nil unless url
-    link_to(url, target: "_blank", rel: "noopener", **link_options, &block)
-  end
 end
