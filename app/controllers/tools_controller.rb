@@ -6,7 +6,19 @@ class ToolsController < ApplicationController
   def show
     @calibre_db_available       = CalibreImporter.available?
     @calibre_import_in_progress = Task.active.where(kind: "calibre_import").exists?
+    @author_cleanup_in_progress = Task.active.where(kind: "author_cleanup").exists?
     @pending_ingest_count       = pending_ingest_count
+  end
+
+  def cleanup_authors
+    if Task.active.where(kind: "author_cleanup").exists?
+      redirect_to tools_path, alert: "An author cleanup is already running."
+      return
+    end
+
+    task = Task.create!(kind: "author_cleanup", status: :queued)
+    CleanupAuthorsJob.perform_later(task.id)
+    redirect_to tools_path, notice: "Author cleanup started — progress will appear in the task tray."
   end
 
   private

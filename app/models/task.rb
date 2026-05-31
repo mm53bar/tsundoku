@@ -58,6 +58,17 @@ class Task < ApplicationRecord
     when "auto_ingest_scan"
       count = result&.dig("queued_count") || 0
       "Auto-ingest: queued #{count} #{'file'.pluralize(count)}"
+    when "author_cleanup"
+      if succeeded? && result.is_a?(Hash)
+        bits = []
+        bits << "#{result['renamed']} renamed"   if result["renamed"].to_i.positive?
+        bits << "#{result['merged']} merged"     if result["merged"].to_i.positive?
+        bits << "#{result['split']} split"       if result["split"].to_i.positive?
+        bits << "#{result['dropped']} dropped"   if result["dropped"].to_i.positive?
+        bits.any? ? "Author cleanup: #{bits.join(', ')}" : "Author cleanup: no changes needed"
+      else
+        "Cleaning up author names"
+      end
     else
       kind.humanize
     end

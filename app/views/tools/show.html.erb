@@ -42,6 +42,30 @@
     </p>
   </section>
 
+  <%# Author-name cleanup. Walks every Author row through
+      AuthorNameNormalizer; renames the dirty ones, splits joined
+      multi-author rows, drops placeholders. %>
+  <section class="border border-stone-200 rounded-lg p-6 bg-white">
+    <h2 class="text-base font-semibold text-stone-900 mb-2">Clean up author names</h2>
+    <p class="text-sm text-stone-600 mb-4">
+      OPF metadata from some sources joins multiple authors with <code>|</code>
+      or <code>;</code>, writes names surname-first, or carries placeholders
+      like "Unknown Author". This walks every Author row through the same
+      normalizer the ingest pipeline uses and reshapes the dirty ones in
+      place — rename, split into separate authors, merge with an existing
+      match, or drop. Safe to re-run.
+    </p>
+    <% if @author_cleanup_in_progress %>
+      <p class="text-sm text-amber-700">A cleanup is already running.</p>
+    <% else %>
+      <%= button_to "Clean up author names",
+            cleanup_authors_tools_path,
+            method: :post,
+            form: { data: { turbo_confirm: "Walk every Author through the normalizer? Existing dirty rows get renamed / split / merged in place." } },
+            class: "inline-flex items-center px-3 py-1.5 bg-white border border-stone-300 text-stone-700 text-sm font-medium rounded-md hover:bg-stone-50 transition cursor-pointer" %>
+    <% end %>
+  </section>
+
   <%# Hardcover-slug backfill — documented, not executed. %>
   <section class="border border-stone-200 rounded-lg p-6 bg-white">
     <h2 class="text-base font-semibold text-stone-900 mb-2">Backfill Hardcover slugs</h2>
