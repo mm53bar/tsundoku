@@ -53,6 +53,42 @@ class BookTest < ActiveSupport::TestCase
     assert_equal calibre_uuid, book.kobo_uuid
   end
 
+  # path validation — required on create (Calibre importer's contract)
+  # but not on update. BookIngester saves a placeholder with
+  # validate: false and then back-fills path/file_name via move_file;
+  # if move_file fails the row is left with path: "", and a presence
+  # check on update would then block every subsequent enrichment edit.
+
+  test "creating a book without a path fails validation" do
+    book = Book.new(
+      title:       "No Path",
+      file_name:   "no-path",
+      file_format: "EPUB",
+      imported_at: Time.current
+    )
+    refute book.valid?
+    assert_includes book.errors.full_messages, "Path can't be blank"
+  end
+
+  test "updating a book with a blank path does not fire the path validation" do
+    # Simulate the orphan-after-failed-move state: BookIngester used
+    # save(validate: false) before the kobo_uuid fix, then move_file's
+    # update! raised — leaving the row with path: "".
+    book = Book.new(
+      title:       "Orphan",
+      path:        "",
+      file_name:   "",
+      file_format: "EPUB",
+      imported_at: Time.current
+    )
+    book.save!(validate: false)
+
+    assert_nothing_raised do
+      book.update!(title: "Orphan Renamed", description: "Enrichment lands.")
+    end
+    assert_equal "Orphan Renamed", book.reload.title
+  end
+
   test "set_kobo_uuid does not overwrite an existing value on update" do
     book = Book.create!(
       title:       "Existing",

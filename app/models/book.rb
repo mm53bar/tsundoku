@@ -44,7 +44,16 @@ class Book < ApplicationRecord
   after_commit :match_pending_list_entries, on: :create
 
   validates :calibre_id, uniqueness: true, allow_nil: true
-  validates :title, :path, :imported_at, presence: true
+  validates :title, :imported_at, presence: true
+  # Path is required on create (Calibre importer's contract), not on
+  # update. BookIngester saves a placeholder with `validate: false` and
+  # then runs move_file to backfill path/file_name; if move_file fails
+  # for any reason the row is left with path: "". A presence check on
+  # update would then block every subsequent edit (enrichment, manual
+  # metadata changes) on that row. BookAssets handles blank path
+  # gracefully — downloads return 404, sync skips — so the row stays
+  # editable without surfacing a misleading validation error.
+  validates :path, presence: true, on: :create
   validates :kobo_uuid, presence: true, uniqueness: true
 
   scope :by_title, -> { order(Arel.sql("COALESCE(NULLIF(sort_title, ''), title) COLLATE NOCASE ASC")) }
