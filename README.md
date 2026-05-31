@@ -28,6 +28,8 @@ bin/rails server
 
 Visit `http://localhost:3000`. You'll be redirected to `/dev_login` — sign in as any username. The first user created gets the `admin` role; everyone after that defaults to `reader`.
 
+To seed a realistic library for UI work — two users (Mike + Sheila), a handful of authors/series, 20 books with file stubs, varied reading progress, shelves, and lists with matched + unmatched entries — run `bin/rails dev:prime`. Idempotent; destroys + recreates the touched models. The task only loads in `development` / `test`.
+
 Run the test suite:
 
 ```bash
