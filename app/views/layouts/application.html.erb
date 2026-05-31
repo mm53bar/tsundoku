@@ -96,6 +96,17 @@
         <% end %>
         <div class="flex items-center">
           <% if signed_in? %>
+            <%# Discoverable shortcut for non-technical users — Sheila ran
+                into a few "what does this do?" moments and a single
+                always-visible ? icon answers them in one click. %>
+            <%= link_to help_path,
+                  title: "Help",
+                  aria: { label: "Help" },
+                  class: "inline-flex items-center justify-center w-9 h-9 mr-1 rounded-md text-stone-500 hover:text-stone-900 hover:bg-stone-100 transition #{"text-stone-900 bg-stone-100" if controller_name == "help"}" do %>
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.5M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z"/>
+              </svg>
+            <% end %>
             <%= render "shared/components/navbar/navbar",
                   variant: "transparent",
                   show_mobile_menu: false,

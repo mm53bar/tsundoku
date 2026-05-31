@@ -65,6 +65,10 @@ Rails.application.routes.draw do
   get  "/tools",                  to: "tools#show",            as: :tools
   post "/tools/cleanup_authors",  to: "tools#cleanup_authors",  as: :cleanup_authors_tools
 
+  # Static help page — workflow walkthroughs, color/icon reference,
+  # troubleshooting. Linked from the ? icon in the navbar.
+  get "/help", to: "help#show", as: :help
+
   # User-facing "Sync with Kobo" settings page. Authelia-protected as normal.
   get  "/kobo-sync",            to: "kobo_sync#show",       as: :kobo_sync
   post "/kobo-sync/regenerate", to: "kobo_sync#regenerate", as: :regenerate_kobo_sync
