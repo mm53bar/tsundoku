@@ -35,6 +35,13 @@ class BookEnricher
       # so the downstream logic doesn't have to branch.
       client.find_book_by_search(title: @book.title, author: clean_author_name(@book.authors.first&.name))
     end
+
+    # Stamp the attempt regardless of match outcome. enrichment:backfill_slugs
+    # filters on this column so books with no current Hardcover match
+    # don't get retried on every run — only after the cutoff window has
+    # passed and Hardcover might have caught up.
+    @book.update_columns(last_enrichment_attempted_at: Time.current)
+
     return base_proposal(matched: false) unless edition
 
     book_data = edition["book"] || {}

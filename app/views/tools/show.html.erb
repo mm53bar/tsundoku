@@ -73,8 +73,10 @@
       Stamps Hardcover's author/series slugs onto local records so the
       "More by this author" and "More in this series" sections appear. Useful
       after a Calibre import or a CWA migration where books already have
-      authors but Hardcover lookups never ran. Idempotent — re-running skips
-      records that already carry a slug.
+      authors but Hardcover lookups never ran. Paced at ~2.5s/book to stay
+      under Hardcover's 60 req/min limit; skips books last attempted within
+      30 days, so the long tail of no-match books doesn't burn quota on
+      every re-run.
     </p>
     <pre class="bg-stone-900 text-stone-100 text-xs p-3 rounded-md overflow-x-auto"><code>docker exec -it &lt;container&gt; bin/rails enrichment:backfill_slugs</code></pre>
   </section>
