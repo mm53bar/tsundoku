@@ -25,7 +25,13 @@ class Book < ApplicationRecord
   # cleanup.
   has_many :kobo_synced_books, dependent: :nullify
 
-  before_validation :set_kobo_uuid, on: :create
+  # Both hooks are required: before_validation handles normal saves, and
+  # before_save covers the BookIngester path that does
+  # Book.new(...).save!(validate: false) to persist a placeholder before
+  # move_file knows the final path. The body is idempotent (||=), so
+  # running on every save is a no-op after the UUID lands.
+  before_validation :set_kobo_uuid
+  before_save       :set_kobo_uuid
   before_destroy    :broadcast_tombstone_to_kobo_users
   before_destroy    -> { assets.delete_all! }
 
