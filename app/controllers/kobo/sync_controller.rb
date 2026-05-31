@@ -6,6 +6,8 @@ module Kobo
   # ChangedEntitlement {IsRemoved: true} for books, DeletedTag for shelves.
   class SyncController < BaseController
     def sync
+      log_sync_request_diagnostics
+
       current_books            = syncable_books.includes(:authors, :publisher, :series).select { |b| b.assets.epub_downloadable? }
       current_book_ids         = current_books.map(&:id).to_set
       uuid_by_book_id          = current_books.to_h { |b| [ b.id, b.kobo_uuid ] }
@@ -61,6 +63,8 @@ module Kobo
       end
       removed_shelf_records.destroy_all
 
+      log_sync_response_diagnostics(payload)
+
       render json: payload
     end
 
@@ -78,6 +82,38 @@ module Kobo
     end
 
     private
+
+    # Diagnostic log of inbound headers + current Tsundoku state so we
+    # can correlate real device behavior (e.g. what the sync token looks
+    # like after a manual wipe) with what we emit. INFO-level — adds two
+    # log lines per sync, which is a few per day in normal use. Remove or
+    # demote to DEBUG once we've collected enough empirical data to wire
+    # up real sync-token handling.
+    def log_sync_request_diagnostics
+      headers = request.headers.env.select { |k, _| k.start_with?("HTTP_X_KOBO") || k == "HTTP_USER_AGENT" }
+                                  .transform_keys { |k| k.sub("HTTP_", "").downcase.tr("_", "-") }
+
+      Rails.logger.info(
+        "Kobo sync REQUEST " \
+        "user=#{@kobo_user.kobo_handle} " \
+        "syncable_books=#{@kobo_user.on_kobo_books.count} " \
+        "snapshot_rows=#{@kobo_user.kobo_synced_books.count} " \
+        "headers=#{headers.to_json}"
+      )
+    end
+
+    def log_sync_response_diagnostics(payload)
+      counts = payload.each_with_object(Hash.new(0)) do |entry, acc|
+        acc[entry.keys.first] += 1
+      end
+
+      Rails.logger.info(
+        "Kobo sync RESPONSE " \
+        "user=#{@kobo_user.kobo_handle} " \
+        "total_entries=#{payload.size} " \
+        "by_kind=#{counts.to_json}"
+      )
+    end
 
     def new_entitlement(book, synced_at)
       { "NewEntitlement" => entitlement_envelope(book, synced_at) }
