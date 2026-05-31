@@ -49,13 +49,16 @@ class ApplicationController < ActionController::Base
     )
   end
 
-  # Per-page preload for the book-card shelf quick-add (the "+" button
-  # in the top-right of each cover). Returns [user_shelves,
-  # shelf_member_ids_by_book] — caller fans these out to render
-  # "books/card" without N+1 lookups inside the picker_panel. Anonymous
-  # users get empty fallbacks so the card just renders without the +.
+  # Per-page preload for the book-card shelf affordances:
+  #   - the star icon (top-left): wants to know each book's starred state
+  #   - the + picker (top-right): wants the full list of shelves and
+  #     which ones each book is on
+  # Returns [user_shelves, shelf_member_ids_by_book, starred_shelf_id]
+  # — caller fans these out to render "books/card" without N+1
+  # lookups. Anonymous users get empty fallbacks so the card just
+  # renders without the affordances.
   def preload_shelf_membership_for(books)
-    return [ [], Hash.new(Set.new) ] unless current_user
+    return [ [], Hash.new(Set.new), nil ] unless current_user
 
     shelves = current_user.shelves.by_name.to_a
     memberships = ShelfEntry.joins(:shelf)
@@ -63,6 +66,9 @@ class ApplicationController < ActionController::Base
                             .pluck(:book_id, :shelf_id)
     member_ids_by_book = memberships.group_by(&:first).transform_values { |pairs| pairs.map(&:last).to_set }
     member_ids_by_book.default = Set.new
-    [ shelves, member_ids_by_book ]
+
+    starred_shelf_id = shelves.find(&:default_for_star?)&.id
+
+    [ shelves, member_ids_by_book, starred_shelf_id ]
   end
 end

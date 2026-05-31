@@ -2,8 +2,11 @@
     record for the progress strip; pass nil when the card is rendered
     outside a user-scoped context), all_shelves (optional — the user's
     shelves preloaded by the caller), member_ids (optional — the
-    book's current shelf-id memberships). %>
+    book's current shelf-id memberships), starred_shelf_id (optional —
+    pass the user's Starred shelf id so the card can derive the star
+    state without a per-card query). %>
 <% reading ||= nil %>
+<% starred = local_assigns[:starred_shelf_id].present? && local_assigns[:member_ids]&.include?(local_assigns[:starred_shelf_id]) %>
 <div class="group flex flex-col"
      data-library-filter-target="card"
      data-searchable="<%= book_searchable_text(book) %>">
@@ -33,11 +36,19 @@
       </div>
     <% end %>
 
-    <%# Shelf quick-add. Sibling of the cover link (a button inside an
-        anchor is invalid HTML), absolute-positioned over the cover.
-        Always visible — hover-only would be desktop-only and the
-        primary user is on iPad. The button itself is styled subtle by
-        default and brightens on hover/focus for desktop feedback. %>
+    <%# Star (top-left): toggles the user's Starred shelf in a single
+        tap. Sibling of the cover link (a button in an anchor is
+        invalid HTML). %>
+    <% if signed_in? %>
+      <div class="absolute top-2 left-2 z-10">
+        <%= render "books/star_button", book: book, starred: starred %>
+      </div>
+    <% end %>
+
+    <%# Shelf picker (top-right): opens the popover with checkboxes
+        for every shelf the user owns (including Starred). Two corners
+        gives clear spatial separation between "quick star toggle"
+        and "manage every shelf for this book." %>
     <% if signed_in? %>
       <div class="absolute top-2 right-2 z-10">
         <%= render "shelves/quick_add",
