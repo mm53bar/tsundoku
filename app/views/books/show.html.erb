@@ -190,3 +190,23 @@
     <% end %>
   </div>
 </div>
+
+<%# More by the book's primary author. Reuses the same Turbo Frame
+    target as authors/show — the action lives on AuthorsController. %>
+<% primary_author = @book.authors.first %>
+<% if primary_author&.hardcover_slug.present? %>
+  <section class="mt-12 pt-8 border-t border-stone-200">
+    <h2 class="text-lg font-semibold text-stone-900 mb-1">More by <%= primary_author.name %> on Hardcover</h2>
+    <p class="text-xs text-stone-500 mb-4">Books not yet in your library.</p>
+
+    <%= turbo_frame_tag "more_by_author", src: more_books_author_path(primary_author), loading: "lazy" do %>
+      <div class="flex items-center gap-3 text-sm text-stone-500 py-8 justify-center">
+        <svg class="animate-spin w-5 h-5 text-amber-700" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+        </svg>
+        <span>Loading more by <%= primary_author.name %>…</span>
+      </div>
+    <% end %>
+  </section>
+<% end %>
