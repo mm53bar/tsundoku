@@ -24,6 +24,10 @@ Rails.application.routes.draw do
       # Single endpoint that creates the ShelfEntry if missing or destroys
       # it if present — symmetric with the way the UI's checkbox works.
       post "shelves/:shelf_id/toggle", to: "shelf_entries#toggle", as: :toggle_shelf
+      # Quick toggle on the per-user Starred shelf (the star icon on
+      # book cards). Convenience wrapper around the picker's toggle —
+      # the caller doesn't have to know the Starred shelf's id.
+      post :toggle_star, to: "shelf_entries#toggle_star"
     end
     resource :reading, only: [ :update, :destroy ]
   end

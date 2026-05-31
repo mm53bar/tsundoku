@@ -50,7 +50,8 @@
       <%= render "books/card",
             book: book,
             all_shelves: @user_shelves,
-            member_ids: @shelf_member_ids_by_book[book.id] %>
+            member_ids: @shelf_member_ids_by_book[book.id],
+            starred_shelf_id: @starred_shelf_id %>
     <% end %>
   </div>
 <% end %>

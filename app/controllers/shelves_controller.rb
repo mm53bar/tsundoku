@@ -7,7 +7,7 @@ class ShelvesController < ApplicationController
 
   def show
     @books = @shelf.books.by_title.includes(:authors, :series, :lists)
-    @user_shelves, @shelf_member_ids_by_book = preload_shelf_membership_for(@books)
+    @user_shelves, @shelf_member_ids_by_book, @starred_shelf_id = preload_shelf_membership_for(@books)
   end
 
   def new

@@ -1,0 +1,12 @@
+<%# After a star toggle: refresh the star icon. We re-render the entire
+    star-button partial so its filled/outline state flips. The +
+    button's "on at least one shelf" amber state may have flipped too
+    (if star was the only membership), but the picker_panel inside it
+    also rebuilds its checkbox row for the Starred shelf — so we
+    refresh that too where it exists. %>
+<%= turbo_stream.replace dom_id(@book, :star_button) do %>
+  <%= render "books/star_button", book: @book, starred: @starred_on %>
+<% end %>
+<%= turbo_stream.replace "membership_#{@starred.id}_for_book_#{@book.id}" do %>
+  <%= render "shelves/membership_row", book: @book, shelf: @starred, on_shelf: @starred_on %>
+<% end %>
