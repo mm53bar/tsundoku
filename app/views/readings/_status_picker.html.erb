@@ -1,33 +1,17 @@
 <%# Locals: book (required), reading (optional, nil if user hasn't engaged with the book).
-    The "status picker" name is historical — this partial used to be a single
-    dropdown that conflated sync intent with reading progress. Now it splits
-    into three controls:
-      * Sync toggle — drives sync_to_device, the user's explicit "I want this
-        on my Kobo" signal. Creating a Reading is a side-effect of flipping
-        the toggle on for a book that doesn't have one yet.
+    Two controls — the sync toggle moved to the star icon on book covers,
+    so this is now just the progress/finished controls:
       * Status chip — shows the derived progress state ("Not started" /
-        "Reading 12%" / "Finished"). Clickable when there's a Reading: toggles
-        finished/unfinished for the "I read this on paper" and "I want to
-        un-mark this" cases.
-      * Remove link — destroys the Reading record entirely (book disappears
-        from your readings; Kobo gets a tombstone on next sync).
+        "Reading 12%" / "Finished"). Clickable when there's a Reading:
+        toggles finished/unfinished for the "I read this on paper" and
+        "I want to un-mark this" cases.
+      * Remove link — destroys the Reading record entirely. Shelf
+        memberships stay; only the reading-progress data is removed.
     Wrapped in a turbo_frame so the update action can replace just this
     fragment after each change. %>
 <%= turbo_frame_tag dom_id(book, :reading) do %>
-  <div class="flex flex-wrap items-center gap-3 text-sm">
-    <%# Sync toggle — always present. Implemented as a button_to so the
-        non-JS path works; Turbo replaces the frame on submit. %>
-    <% sync_on = reading&.sync_to_device? %>
-    <%= button_to book_reading_path(book),
-          method: :patch,
-          params: { reading: { sync_to_device: !sync_on } },
-          form: { data: { turbo_frame: dom_id(book, :reading) } },
-          class: "inline-flex items-center gap-2 py-1.5 px-2.5 rounded-md border #{sync_on ? "bg-amber-50 border-amber-300 text-amber-900" : "bg-white border-stone-300 text-stone-700"} hover:border-stone-400 cursor-pointer" do %>
-      <span class="inline-block w-2 h-2 rounded-full <%= sync_on ? "bg-amber-500" : "bg-stone-300" %>"></span>
-      <%= sync_on ? "Synced to Kobo" : "Not synced" %>
-    <% end %>
-
-    <% if reading %>
+  <% if reading %>
+    <div class="flex flex-wrap items-center gap-3 text-sm">
       <%# Status chip — clickable when there's a reading. Tapping toggles
           the finished/unfinished state for manual control over the "I'm
           done with this" timestamp. %>
@@ -66,10 +50,10 @@
 
       <%= button_to book_reading_path(book),
             method: :delete,
-            form: { data: { turbo_frame: dom_id(book, :reading), turbo_confirm: "Remove this book from your readings? Your progress and sync state will be cleared." } },
+            form: { data: { turbo_frame: dom_id(book, :reading), turbo_confirm: "Remove this book from your readings? Your progress data will be cleared." } },
             class: "inline-flex items-center text-xs text-stone-500 hover:text-red-700 underline cursor-pointer" do %>
         Remove from my list
       <% end %>
-    <% end %>
-  </div>
+    </div>
+  <% end %>
 <% end %>

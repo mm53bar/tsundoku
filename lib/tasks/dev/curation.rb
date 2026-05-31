@@ -20,18 +20,19 @@ module Dev
       def create_readings(sheila, books)
         # Pick a stable set by title so the dev grid has predictable
         # state across runs. Mix of progress states exercises the
-        # "On your Kobo" filter, the progress bar on cards, and the
-        # finished derivation.
+        # progress bar on cards and the finished derivation. Sync
+        # intent is curated separately via shelf membership (see
+        # create_shelves).
         by_title = books.index_by(&:title)
 
         states = [
-          { title: "Project Hail Mary",                   progress_percent: 42, sync_to_device: true },
-          { title: "Circe",                               progress_percent: 87, sync_to_device: true },
-          { title: "The Long Way to a Small Angry Planet", progress_percent: 12, sync_to_device: true },
-          { title: "The Martian",                         progress_percent: 100, finished_at: 1.week.ago, sync_to_device: false },
-          { title: "The Song of Achilles",                progress_percent: 100, finished_at: 2.months.ago, sync_to_device: false },
-          { title: "Dune",                                progress_percent: 0,  sync_to_device: true }, # synced but unopened
-          { title: "The Catcher in the Rye",              progress_percent: 0,  sync_to_device: true }  # finished-on-paper case
+          { title: "Project Hail Mary",                   progress_percent: 42 },
+          { title: "Circe",                               progress_percent: 87 },
+          { title: "The Long Way to a Small Angry Planet", progress_percent: 12 },
+          { title: "The Martian",                         progress_percent: 100, finished_at: 1.week.ago },
+          { title: "The Song of Achilles",                progress_percent: 100, finished_at: 2.months.ago },
+          { title: "Dune",                                progress_percent: 0 },
+          { title: "The Catcher in the Rye",              progress_percent: 0 }
         ]
 
         states.each do |row|
@@ -39,14 +40,21 @@ module Dev
           sheila.readings.create!(
             book:             book,
             progress_percent: row[:progress_percent],
-            finished_at:      row[:finished_at],
-            sync_to_device:   row[:sync_to_device]
+            finished_at:      row[:finished_at]
           )
         end
       end
 
       def create_shelves(sheila, books)
         by_title = books.index_by(&:title)
+
+        # Starred — the per-user default shelf the star icon drives.
+        # Exists alongside any number of regular shelves; its books
+        # reach the Kobo but it doesn't emit a collection.
+        [ "Project Hail Mary", "Circe", "The Long Way to a Small Angry Planet", "Dune", "The Catcher in the Rye" ].each do |title|
+          next unless (book = by_title[title])
+          sheila.starred_shelf.shelf_entries.create!(book: book)
+        end
 
         bedside = sheila.shelves.create!(name: "Bedside", sync_to_kobo: true)
         [ "Project Hail Mary", "Circe", "The Long Way to a Small Angry Planet", "The Fifth Season" ].each_with_index do |title, i|

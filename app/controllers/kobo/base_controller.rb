@@ -40,11 +40,11 @@ module Kobo
       head :unauthorized unless @kobo_user
     end
 
-    # Books the @kobo_user has opted to sync to their Kobo. The union
-    # of `readings.sync_to_device` and syncing-shelf membership lives
-    # on User (per ADR 20260528-shelf-wins-sync-conflict.md); this
-    # method just delegates so the device-facing sync set and the
-    # web-facing "On your Kobo" navbar always agree on the same query.
+    # Books the @kobo_user has opted to sync to their Kobo. The set
+    # lives on User (books on any syncing shelf, including the
+    # per-user Starred shelf the star icon drives); this method just
+    # delegates so the device-facing sync set and the web-facing "On
+    # your Kobo" navbar always agree on the same query.
     def syncable_books
       @kobo_user.on_kobo_books
     end
