@@ -33,8 +33,36 @@
           <% end %>
           <% if signed_in? %>
             <% on_kobo_count = current_user.on_kobo_books.count %>
+            <% in_library_group = %w[library authors series].include?(controller_name) && params[:filter].blank? %>
             <nav class="hidden sm:flex items-center gap-5 text-sm text-stone-600">
-              <%= link_to "Library", root_path, class: "hover:text-stone-900 #{"text-stone-900 font-medium" if controller_name == "library" && params[:filter].blank?}" %>
+              <%# Library is a split-button: the label is a direct link to
+                  Books (single-click), the chevron beside it opens a popover
+                  with the catalog sub-views. Authors/Series are inside the
+                  group because they're lenses on the same set of books, not
+                  peers of the library itself. %>
+              <div class="inline-flex items-center gap-0.5">
+                <%= link_to "Library", root_path,
+                      class: "hover:text-stone-900 #{"text-stone-900 font-medium" if in_library_group}" %>
+                <%= render "shared/components/popover/popover", placement: "bottom-start", max_width: 180 do %>
+                  <button type="button"
+                          data-popover-target="button"
+                          aria-label="More library views"
+                          class="p-0.5 -my-0.5 text-stone-500 hover:text-stone-900 rounded cursor-pointer">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                  </button>
+                  <template data-popover-target="content">
+                    <nav class="py-1 min-w-[10rem]">
+                      <%= link_to "Authors", authors_path,
+                            class: "block px-4 py-1.5 text-sm text-stone-700 hover:bg-stone-100 hover:text-stone-900" %>
+                      <%= link_to "Series",  series_index_path,
+                            class: "block px-4 py-1.5 text-sm text-stone-700 hover:bg-stone-100 hover:text-stone-900" %>
+                    </nav>
+                  </template>
+                <% end %>
+              </div>
+
               <% if on_kobo_count.positive? %>
                 <%= link_to root_path(filter: "on_kobo"),
                       class: "hover:text-stone-900 inline-flex items-center gap-1 #{"text-stone-900 font-medium" if params[:filter] == "on_kobo"}" do %>
@@ -42,8 +70,6 @@
                   <span class="inline-flex items-center justify-center min-w-[1.25rem] px-1 text-xs rounded-full bg-amber-100 text-amber-800"><%= on_kobo_count %></span>
                 <% end %>
               <% end %>
-              <%= link_to "Authors", authors_path, class: "hover:text-stone-900 #{"text-stone-900 font-medium" if controller_name == "authors"}" %>
-              <%= link_to "Series",  series_index_path, class: "hover:text-stone-900 #{"text-stone-900 font-medium" if controller_name == "series"}" %>
               <%= link_to "Shelves", shelves_path, class: "hover:text-stone-900 #{"text-stone-900 font-medium" if controller_name == "shelves"}" %>
               <%= link_to "Lists",   lists_path, class: "hover:text-stone-900 #{"text-stone-900 font-medium" if controller_name == "lists"}" %>
             </nav>
