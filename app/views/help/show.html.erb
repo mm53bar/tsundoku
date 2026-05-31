@@ -179,13 +179,13 @@
       <div>
         <dt class="font-semibold text-stone-900">I wiped my Kobo and the books didn't come back on the next sync.</dt>
         <dd class="text-sm mt-1">
-          When you delete books on the Kobo directly, the device clears them locally
-          but Tsundoku still remembers having sent them — so the next sync sees
-          "nothing to do." To force Tsundoku to re-send everything, go to
+          When you delete books on the Kobo, the device tells Tsundoku
+          which ones it removed, and Tsundoku automatically re-sends
+          them on the next sync. If a book is still missing after two
+          syncs, go to
           <%= link_to "Sync with Kobo", kobo_sync_path, class: "text-amber-700 underline hover:text-amber-800" %>
-          (in the user menu) and click <strong>Force full re-sync</strong>. Then tap
-          Sync on your Kobo. Every book currently flagged for the device gets pushed
-          back as if it were brand new.
+          (in the user menu) and click <strong>Force full re-sync</strong>
+          — that's the manual escape hatch.
         </dd>
       </div>
     </dl>

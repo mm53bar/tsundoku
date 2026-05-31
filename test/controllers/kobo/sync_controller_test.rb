@@ -209,6 +209,67 @@ class Kobo::SyncControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  # DELETE /v1/library/:book_uuid — auto-recovery for manual device wipes.
+  # The device announces each book it just removed; we remove the matching
+  # KoboSyncedBook snapshot so the next sync diff re-emits NewEntitlement
+  # for books that are still in syncable_books. Sheila's "I wiped my Kobo
+  # and it didn't restore everything" scenario from 2026-05-31 is the
+  # motivating case.
+
+  test "DELETE library/:book_uuid removes the snapshot row for that uuid" do
+    book = downloadable_book(title: "About to be wiped")
+    @user.readings.create!(book: book, sync_to_device: true)
+    @user.kobo_synced_books.create!(book: book)
+
+    assert_difference -> { @user.kobo_synced_books.count }, -1 do
+      delete "/kobo/#{@user.kobo_handle}/v1/library/#{book.kobo_uuid}"
+    end
+    assert_response :success
+  end
+
+  test "DELETE library/:book_uuid is idempotent for an unknown uuid" do
+    # Device sometimes sends DELETEs for UUIDs we never tracked
+    # (cross-Kobo state mismatch). Don't 404, don't blow up.
+    assert_no_difference -> { @user.kobo_synced_books.count } do
+      delete "/kobo/#{@user.kobo_handle}/v1/library/00000000-0000-0000-0000-000000000000"
+    end
+    assert_response :success
+  end
+
+  test "DELETE library/:book_uuid leaves snapshots for other books alone" do
+    keep   = downloadable_book(title: "Keep me")
+    wipe   = downloadable_book(title: "Wipe me")
+    @user.readings.create!(book: keep, sync_to_device: true)
+    @user.readings.create!(book: wipe, sync_to_device: true)
+    @user.kobo_synced_books.create!(book: keep)
+    @user.kobo_synced_books.create!(book: wipe)
+
+    delete "/kobo/#{@user.kobo_handle}/v1/library/#{wipe.kobo_uuid}"
+    assert_response :success
+
+    assert @user.kobo_synced_books.exists?(book: keep), "the other snapshot should survive"
+    refute @user.kobo_synced_books.exists?(book: wipe)
+  end
+
+  test "DELETE then sync emits a NewEntitlement for the still-syncable book (full wipe-recovery loop)" do
+    book = downloadable_book(title: "Wipe and restore")
+    @user.readings.create!(book: book, sync_to_device: true)
+    @user.kobo_synced_books.create!(book: book)
+
+    # Simulate the device wiping the book locally.
+    delete "/kobo/#{@user.kobo_handle}/v1/library/#{book.kobo_uuid}"
+    assert_response :success
+
+    # The very next sync should re-emit NewEntitlement so the device
+    # downloads the book back.
+    get sync_path
+    assert_response :success
+
+    new_envelopes = response_json.filter_map { |entry| entry["NewEntitlement"] }
+    assert new_envelopes.any? { |env| env.dig("BookEntitlement", "Id") == book.kobo_uuid },
+           "expected a NewEntitlement for the just-deleted book after the next sync"
+  end
+
   private
 
   def sync_path
