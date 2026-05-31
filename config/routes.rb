@@ -93,6 +93,16 @@ Rails.application.routes.draw do
         as:          :book_metadata,
         constraints: { book_uuid: /\h{8}-\h{4}-\h{4}-\h{4}-\h{12}/ }
 
+    # The device fires a burst of these when the user manually wipes
+    # books from the Kobo. We treat it as a "device no longer has
+    # this" signal — destroy the user's KoboSyncedBook row so the next
+    # sync diff sees a missing snapshot and re-emits NewEntitlement
+    # (assuming the book is still in syncable_books). Auto-recovery
+    # without a manual Force-Full-Resync click.
+    delete "v1/library/:book_uuid",
+        to:          "sync#destroy_library_entry",
+        constraints: { book_uuid: /\h{8}-\h{4}-\h{4}-\h{4}-\h{12}/ }
+
     # Phase D: reading state.
     get "v1/library/:book_uuid/state",
         to:          "reading_states#show",

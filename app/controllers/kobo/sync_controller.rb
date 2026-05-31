@@ -81,6 +81,26 @@ module Kobo
       render json: [ book_metadata(book, book.kobo_uuid) ]
     end
 
+    # DELETE /kobo/:handle/v1/library/:book_uuid
+    # The device sends this for each book it has just removed from its
+    # local library (e.g. when the user manually wipes books on the
+    # Kobo, the device fires a burst of these — one per book it had).
+    #
+    # We treat the call as "this device no longer has this book." We
+    # destroy the user's KoboSyncedBook row for that uuid so the next
+    # sync's diff sees a missing snapshot and re-emits NewEntitlement
+    # (assuming the book is still in syncable_books for this user).
+    # That's auto-recovery for the manual-wipe scenario — no
+    # Force-Full-Resync click needed.
+    #
+    # Idempotent: a DELETE for an unknown uuid returns 200 with no
+    # state change. The device doesn't care about the response body;
+    # it just wants a non-error status.
+    def destroy_library_entry
+      @kobo_user.kobo_synced_books.where(kobo_uuid: params[:book_uuid]).destroy_all
+      render json: {}
+    end
+
     private
 
     # Diagnostic log of inbound headers + current Tsundoku state so we
