@@ -42,6 +42,19 @@
     </p>
   </section>
 
+  <%# Hardcover-slug backfill — documented, not executed. %>
+  <section class="border border-stone-200 rounded-lg p-6 bg-white">
+    <h2 class="text-base font-semibold text-stone-900 mb-2">Backfill Hardcover slugs</h2>
+    <p class="text-sm text-stone-600 mb-4">
+      Stamps Hardcover's author/series slugs onto local records so the
+      "More by this author" and "More in this series" sections appear. Useful
+      after a Calibre import or a CWA migration where books already have
+      authors but Hardcover lookups never ran. Idempotent — re-running skips
+      records that already carry a slug.
+    </p>
+    <pre class="bg-stone-900 text-stone-100 text-xs p-3 rounded-md overflow-x-auto"><code>docker exec -it &lt;container&gt; bin/rails enrichment:backfill_slugs</code></pre>
+  </section>
+
   <%# KEPUB rake commands — documented, not executed. %>
   <section class="border border-stone-200 rounded-lg p-6 bg-white">
     <h2 class="text-base font-semibold text-stone-900 mb-2">KEPUB conversion</h2>
