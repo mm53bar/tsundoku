@@ -1,15 +1,16 @@
-<%# Locals: book (required), user (required).
-    The dropdown panel content that lists all the user's shelves with
-    checkbox toggles. Each row is its own Turbo Stream form so toggling
-    one doesn't reload the others.
+<%# Locals: book (required), user (required), all_shelves (optional),
+    member_ids (optional). all_shelves and member_ids override the
+    per-card queries — pass them from the index so a grid of cards
+    doesn't fan out one query per book. Without the overrides we fall
+    back to the original per-render lookup so the existing chip_row
+    call sites (book#show) work unchanged.
 
-    Lives inside the chip_row's container; it doesn't have its own
-    turbo_frame because we replace individual rows (via dom_id'd frames)
-    rather than the whole panel. %>
-<% all_shelves = user.shelves.by_name %>
+    No outer turbo_frame; the rows below are replaced individually via
+    dom_id'd targets when the toggle endpoint streams back. %>
+<% all_shelves = local_assigns[:all_shelves] || user.shelves.by_name %>
 <div class="max-h-72 overflow-y-auto py-1">
   <% if all_shelves.any? %>
-    <% member_ids = book.shelves_for(user).pluck(:id).to_set %>
+    <% member_ids = local_assigns[:member_ids] || book.shelves_for(user).pluck(:id).to_set %>
     <% all_shelves.each do |shelf| %>
       <%= render "shelves/membership_row", book: book, shelf: shelf, on_shelf: member_ids.include?(shelf.id) %>
     <% end %>

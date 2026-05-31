@@ -20,6 +20,22 @@ class LibraryController < ApplicationController
       {}
     end
 
+    # Per-card quick-add-to-shelf picker needs both the user's shelves
+    # (constant across cards) and the set of shelves each book is
+    # already on (per card). Preload both so the index render doesn't
+    # do a query per card.
+    if current_user
+      @user_shelves = current_user.shelves.by_name.to_a
+      memberships   = ShelfEntry.joins(:shelf)
+                                .where(book_id: @books.map(&:id), shelves: { user_id: current_user.id })
+                                .pluck(:book_id, :shelf_id)
+      @shelf_member_ids_by_book = memberships.group_by(&:first).transform_values { |pairs| pairs.map(&:last).to_set }
+      @shelf_member_ids_by_book.default = Set.new
+    else
+      @user_shelves = []
+      @shelf_member_ids_by_book = {}
+    end
+
     @calibre_db_available = CalibreImporter.available?
   end
 
