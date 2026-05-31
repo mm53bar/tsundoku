@@ -10,12 +10,23 @@
     The button itself sits in a relative wrapper so its panel
     positions correctly. Caller (book card) decides where to absolute-
     position the wrapper. %>
+<%
+  on_a_shelf = local_assigns[:member_ids].present? && local_assigns[:member_ids].any?
+  button_classes =
+    if on_a_shelf
+      # Amber state matches the existing "On your Kobo" pill and Shelfmark
+      # links — signals "this book is already curated."
+      "inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 hover:bg-amber-200 focus:bg-amber-200 border border-amber-300 text-amber-700 hover:text-amber-900 shadow-sm transition cursor-pointer"
+    else
+      "inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/70 hover:bg-white focus:bg-white border border-stone-200/70 hover:border-stone-300 text-stone-600 hover:text-stone-900 shadow-sm transition cursor-pointer"
+    end
+%>
 <div data-controller="shelf-picker" class="relative">
   <button type="button"
           data-action="shelf-picker#toggle"
-          title="Add to shelf"
-          aria-label="Add this book to a shelf"
-          class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/70 hover:bg-white focus:bg-white border border-stone-200/70 hover:border-stone-300 text-stone-600 hover:text-stone-900 shadow-sm transition cursor-pointer">
+          title="<%= on_a_shelf ? "On a shelf — click to manage" : "Add to shelf" %>"
+          aria-label="<%= on_a_shelf ? "Manage this book's shelves" : "Add this book to a shelf" %>"
+          class="<%= button_classes %>">
     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
     </svg>
