@@ -70,8 +70,9 @@ Rails.application.routes.draw do
   get "/help", to: "help#show", as: :help
 
   # User-facing "Sync with Kobo" settings page. Authelia-protected as normal.
-  get  "/kobo-sync",            to: "kobo_sync#show",       as: :kobo_sync
-  post "/kobo-sync/regenerate", to: "kobo_sync#regenerate", as: :regenerate_kobo_sync
+  get  "/kobo-sync",                to: "kobo_sync#show",         as: :kobo_sync
+  post "/kobo-sync/regenerate",     to: "kobo_sync#regenerate",   as: :regenerate_kobo_sync
+  post "/kobo-sync/force_full_sync", to: "kobo_sync#force_full_sync", as: :force_full_kobo_sync
 
   # Kobo device endpoints. Authelia bypass is configured at NPM; auth is
   # by mnemonic handle in the URL (see Kobo::BaseController). Anything we
