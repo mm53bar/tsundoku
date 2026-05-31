@@ -1,14 +1,23 @@
 <%# Locals: book (required), user (required), all_shelves (optional),
-    member_ids (optional).
+    member_ids (optional), starred_shelf_id (optional).
 
     Floating "+ shelf" button anchored on a book-card cover. The
     Floating UI–backed popover handles positioning (auto-flip when
     the card is near the viewport edge), outside-click + Escape
-    dismissal, and mutex coordination with other popovers (opening
-    one closes any other). Same panel content the chip_row picker
-    uses on book#show. %>
+    dismissal, and mutex coordination with other popovers. Same panel
+    content the chip_row picker uses on book#show.
+
+    The outer dom_id wrapper lets toggle.turbo_stream.erb re-render
+    the button when shelf membership changes (so the amber state on
+    the + reflects "on a non-Starred shelf" accurately). %>
 <%
-  on_a_shelf = local_assigns[:member_ids].present? && local_assigns[:member_ids].any?
+  # The + button signals "this book is on a named collection" —
+  # specifically a NON-Starred shelf. The Starred membership is already
+  # signaled by the star icon at top-left, so counting it here too
+  # would double-up the same information.
+  starred_id    = local_assigns[:starred_shelf_id]
+  on_a_shelf    = local_assigns[:member_ids].present? &&
+                  local_assigns[:member_ids].any? { |id| id != starred_id }
   button_classes =
     if on_a_shelf
       # Strong amber with white glyph against the cover — at thumbnail
@@ -20,21 +29,23 @@
     end
 %>
 
-<%= render "shared/components/popover/popover", placement: "bottom-end", max_width: 256 do %>
-  <button type="button"
-          data-popover-target="button"
-          title="<%= on_a_shelf ? "On a shelf — click to manage" : "Add to shelf" %>"
-          aria-label="<%= on_a_shelf ? "Manage this book's shelves" : "Add this book to a shelf" %>"
-          class="<%= button_classes %>">
-    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
-    </svg>
-  </button>
+<%= tag.div id: dom_id(book, :quick_add), class: "contents" do %>
+  <%= render "shared/components/popover/popover", placement: "bottom-end", max_width: 256 do %>
+    <button type="button"
+            data-popover-target="button"
+            title="<%= on_a_shelf ? "On a shelf — click to manage" : "Add to a shelf" %>"
+            aria-label="<%= on_a_shelf ? "Manage this book's shelves" : "Add this book to a shelf" %>"
+            class="<%= button_classes %>">
+      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+      </svg>
+    </button>
 
-  <template data-popover-target="content">
-    <%= render "shelves/picker_panel",
-          book: book,
-          user: user,
-          **local_assigns.slice(:all_shelves, :member_ids) %>
-  </template>
+    <template data-popover-target="content">
+      <%= render "shelves/picker_panel",
+            book: book,
+            user: user,
+            **local_assigns.slice(:all_shelves, :member_ids) %>
+    </template>
+  <% end %>
 <% end %>

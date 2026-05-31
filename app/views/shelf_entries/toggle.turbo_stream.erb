@@ -1,6 +1,8 @@
-<%# After a shelf-membership toggle, refresh two regions:
+<%# After a shelf-membership toggle, refresh three regions:
     1. The chips inside the chip row (chip appears/disappears + sync indicator)
     2. The row inside the picker panel (checkbox flips state)
+    3. The quick_add wrapper (the + button's amber state may flip if
+       this was the user's only / last non-Starred shelf for the book)
     Important: we replace the CHIPS sub-frame, not the whole chip_row.
     Replacing the outer chip_row would destroy the picker panel — and
     therefore the form's parent frame — while the form's response is
@@ -10,4 +12,15 @@
 <% end %>
 <%= turbo_stream.replace "membership_#{@shelf.id}_for_book_#{@book.id}" do %>
   <%= render "shelves/membership_row", book: @book, shelf: @shelf, on_shelf: @on_shelf %>
+<% end %>
+<%# Quick-add wrapper only exists on book-card surfaces (library,
+    authors, series, shelves indexes). Targeting it by id on book#show
+    is a silent no-op — Turbo Streams ignore IDs that don't exist. %>
+<%= turbo_stream.replace dom_id(@book, :quick_add) do %>
+  <%= render "shelves/quick_add",
+        book: @book,
+        user: current_user,
+        all_shelves: @user_shelves,
+        member_ids: @shelf_member_ids_by_book[@book.id],
+        starred_shelf_id: @starred_shelf_id %>
 <% end %>

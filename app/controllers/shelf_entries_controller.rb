@@ -16,6 +16,8 @@ class ShelfEntriesController < ApplicationController
       @on_shelf = true
     end
 
+    @user_shelves, @shelf_member_ids_by_book, @starred_shelf_id = preload_shelf_membership_for([ @book ])
+
     respond_to do |format|
       format.turbo_stream
       format.html { redirect_to @book }
