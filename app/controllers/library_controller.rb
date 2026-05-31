@@ -1,14 +1,14 @@
 class LibraryController < ApplicationController
   ALLOWED_SORTS   = %w[title recently_added].freeze
-  ALLOWED_FILTERS = %w[currently_reading].freeze
+  ALLOWED_FILTERS = %w[on_kobo].freeze
 
   def index
     @sort   = ALLOWED_SORTS.include?(params[:sort])     ? params[:sort]   : "title"
     @filter = ALLOWED_FILTERS.include?(params[:filter]) ? params[:filter] : nil
 
     scope = (@sort == "recently_added") ? Book.recently_added : Book.by_title
-    if @filter == "currently_reading" && current_user
-      scope = scope.where(id: current_user.readings.in_progress.select(:book_id))
+    if @filter == "on_kobo" && current_user
+      scope = scope.where(id: current_user.on_kobo_books.select(:id))
     end
     @books = scope.includes(:authors, :series, :lists)
 

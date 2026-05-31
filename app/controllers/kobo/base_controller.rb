@@ -40,15 +40,13 @@ module Kobo
       head :unauthorized unless @kobo_user
     end
 
-    # Books the @kobo_user has opted to sync to their Kobo. Union of two
-    # signals (see ADR 20260528-shelf-wins-sync-conflict.md):
-    #   - a Reading with sync_to_device: true
-    #   - membership in a shelf with sync_to_kobo = true
-    # Returns an ActiveRecord::Relation so callers can chain includes/limit.
+    # Books the @kobo_user has opted to sync to their Kobo. The union
+    # of `readings.sync_to_device` and syncing-shelf membership lives
+    # on User (per ADR 20260528-shelf-wins-sync-conflict.md); this
+    # method just delegates so the device-facing sync set and the
+    # web-facing "On your Kobo" navbar always agree on the same query.
     def syncable_books
-      via_reading = @kobo_user.readings.where(sync_to_device: true).select(:book_id)
-      via_shelves = ShelfEntry.joins(:shelf).where(shelves: { user: @kobo_user, sync_to_kobo: true }).select(:book_id)
-      Book.where(id: via_reading).or(Book.where(id: via_shelves))
+      @kobo_user.on_kobo_books
     end
 
     # Indexed reverse lookup: kobo_uuid -> Book. Filtered to syncable

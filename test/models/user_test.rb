@@ -123,4 +123,71 @@ class UserTest < ActiveSupport::TestCase
     User.find_or_provision_from_proxy(username: "rolesticky", email: nil, name: nil)
     assert admin.reload.admin?
   end
+
+  # on_kobo_books — the union of (readings.sync_to_device) and
+  # (entries on shelves with sync_to_kobo). Powers both the device-
+  # facing sync set (Kobo::BaseController#syncable_books) and the
+  # web-facing navbar pill. Tests pin each contributor and the union
+  # semantics so a future split between the two callers can't drift.
+
+  test "on_kobo_books is empty when nothing is set to sync" do
+    user = users(:reader)
+    user.readings.create!(book: make_book("None"), sync_to_device: false)
+    assert_equal 0, user.on_kobo_books.count
+  end
+
+  test "on_kobo_books includes books from a sync_to_device reading" do
+    user = users(:reader)
+    book = make_book("Via reading")
+    user.readings.create!(book: book, sync_to_device: true)
+    assert_includes user.on_kobo_books.pluck(:id), book.id
+  end
+
+  test "on_kobo_books includes books from a syncing shelf" do
+    user  = users(:reader)
+    book  = make_book("Via shelf")
+    shelf = user.shelves.create!(name: "Bedside", sync_to_kobo: true)
+    shelf.shelf_entries.create!(book: book)
+    assert_includes user.on_kobo_books.pluck(:id), book.id
+  end
+
+  test "on_kobo_books deduplicates a book that's reachable via both paths" do
+    user  = users(:reader)
+    book  = make_book("Both paths")
+    user.readings.create!(book: book, sync_to_device: true)
+    shelf = user.shelves.create!(name: "Backed-up", sync_to_kobo: true)
+    shelf.shelf_entries.create!(book: book)
+
+    ids = user.on_kobo_books.pluck(:id)
+    assert_equal 1, ids.count(book.id)
+  end
+
+  test "on_kobo_books excludes books from non-syncing shelves" do
+    user  = users(:reader)
+    book  = make_book("Quiet shelf")
+    shelf = user.shelves.create!(name: "Wishlist", sync_to_kobo: false)
+    shelf.shelf_entries.create!(book: book)
+    refute_includes user.on_kobo_books.pluck(:id), book.id
+  end
+
+  test "on_kobo_books does not leak books from other users' shelves" do
+    a    = users(:admin)
+    b    = users(:reader)
+    book = make_book("A's book")
+    a.shelves.create!(name: "Mine", sync_to_kobo: true).shelf_entries.create!(book: book)
+
+    refute_includes b.on_kobo_books.pluck(:id), book.id
+  end
+
+  private
+
+  def make_book(label)
+    Book.create!(
+      title:       label,
+      path:        "test/#{label.parameterize}-#{SecureRandom.hex(3)}",
+      file_name:   label.parameterize,
+      file_format: "EPUB",
+      imported_at: Time.current
+    )
+  end
 end

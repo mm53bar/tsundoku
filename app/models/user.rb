@@ -42,6 +42,20 @@ class User < ApplicationRecord
     name.presence || username
   end
 
+  # Books currently synced to this user's Kobo. Union of two signals
+  # (see ADR 20260528-shelf-wins-sync-conflict.md):
+  #   * a Reading with sync_to_device: true
+  #   * membership in a shelf with sync_to_kobo = true
+  # Returns an ActiveRecord::Relation so callers can chain .count,
+  # .includes, .order, etc. Used by the navbar pill ("On your Kobo
+  # (N)"), the library index's on_kobo filter, and Kobo::BaseController
+  # for the device-facing sync set.
+  def on_kobo_books
+    via_reading = readings.where(sync_to_device: true).select(:book_id)
+    via_shelves = ShelfEntry.joins(:shelf).where(shelves: { user_id: id, sync_to_kobo: true }).select(:book_id)
+    Book.where(id: via_reading).or(Book.where(id: via_shelves))
+  end
+
   # Authorization predicates — readable names for action-permission
   # checks. In this homelab deployment every household member is
   # trusted (Authelia gates the front door), so the predicates that
