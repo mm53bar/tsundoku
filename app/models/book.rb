@@ -35,6 +35,14 @@ class Book < ApplicationRecord
   before_destroy    :broadcast_tombstone_to_kobo_users
   before_destroy    -> { assets.delete_all! }
 
+  # After a newly-ingested book commits, re-run BookMatcher against any
+  # ListEntry rows that didn't have a library match at list-import time.
+  # Auto-ingest from Shelfmark is the motivating case: a list shows the
+  # book as "Not in library", Shelfmark drops the file, the next scan
+  # creates the Book — this hook closes the loop without the user having
+  # to click "Re-import".
+  after_commit :match_pending_list_entries, on: :create
+
   validates :calibre_id, uniqueness: true, allow_nil: true
   validates :title, :path, :imported_at, presence: true
   validates :kobo_uuid, presence: true, uniqueness: true
@@ -98,5 +106,27 @@ class Book < ApplicationRecord
   # get a fresh random UUID.
   def set_kobo_uuid
     self.kobo_uuid ||= uuid.presence || SecureRandom.uuid
+  end
+
+  # Pre-filter unmatched ListEntry rows by title (exact or
+  # subtitle-tolerant prefix), then defer to BookMatcher for the actual
+  # match — same logic that ran at list-import time, just re-run against
+  # the new book. The pre-filter keeps the cost bounded by entries that
+  # *could plausibly* match this title; for entries that survive it we
+  # call BookMatcher exactly once each.
+  def match_pending_list_entries
+    return if title.blank?
+
+    base = title.split(/[:\-—]/).first.to_s.strip
+    patterns = [ title.downcase ]
+    patterns << "#{base.downcase}%" if base.length >= 4
+
+    sql = patterns.map { "LOWER(title) LIKE ?" }.join(" OR ")
+    candidates = ListEntry.where(book_id: nil).where(sql, *patterns)
+
+    candidates.find_each do |entry|
+      next unless BookMatcher.match(title: entry.title, author: entry.author_name)&.id == id
+      entry.update_column(:book_id, id)
+    end
   end
 end
