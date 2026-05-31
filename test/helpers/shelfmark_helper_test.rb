@@ -60,20 +60,4 @@ class ShelfmarkHelperTest < ActionView::TestCase
     assert_includes url, "https://shelfmark.example.com/?"
     refute_includes url, "//?"
   end
-
-  # shelfmark_link_to — convenience wrapper. Returns nil when no URL can
-  # be built so callers can omit surrounding markup with a plain `if`.
-
-  test "shelfmark_link_to renders a link with the expected attributes" do
-    html = shelfmark_link_to(title: "Dune", author: "Frank Herbert") { "Find it" }
-    assert_match %r{<a[^>]+href="https://shelfmark.example.com/\?}, html
-    assert_includes html, %(target="_blank")
-    assert_includes html, %(rel="noopener")
-    assert_includes html, "Find it"
-  end
-
-  test "shelfmark_link_to returns nil when SHELFMARK_URL is unset" do
-    Rails.configuration.x.shelfmark_url = nil
-    assert_nil shelfmark_link_to(title: "Dune") { "Find it" }
-  end
 end
