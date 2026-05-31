@@ -14,6 +14,56 @@ class HardcoverClient
   ENDPOINT = "https://api.hardcover.app/v1/graphql".freeze
   TIMEOUT_SECONDS = 30
 
+  # The full book selection set that BookEnricher consumes. Shared by
+  # both find_edition_by_isbn (nested under edition.book) and
+  # find_book_by_id (top level) so the two paths produce identical
+  # downstream shapes.
+  BOOK_PAYLOAD_GQL = <<~GQL.freeze
+    id
+    title
+    subtitle
+    slug
+    headline
+    description
+    rating
+    pages
+    release_date
+    literary_type_id
+    cached_image
+    images { id url width height }
+    default_cover_edition {
+      id
+      cached_image
+      images { id url width height }
+    }
+    editions(limit: 30) {
+      id
+      cached_image
+    }
+    canonical {
+      id
+      cached_image
+      images { id url width height }
+      default_cover_edition {
+        id
+        cached_image
+        images { id url width height }
+      }
+      editions(limit: 30) {
+        id
+        cached_image
+      }
+    }
+    contributions {
+      contribution
+      author { id name slug }
+    }
+    book_series {
+      position
+      series { id name slug }
+    }
+  GQL
+
   def self.available?
     ENV["HARDCOVER_APP_API_TOKEN"].present?
   end
@@ -136,51 +186,7 @@ class HardcoverClient
           edition_format
           publisher { name }
           language { language }
-          book {
-            id
-            title
-            subtitle
-            slug
-            headline
-            description
-            rating
-            pages
-            release_date
-            literary_type_id
-            cached_image
-            images { id url width height }
-            default_cover_edition {
-              id
-              cached_image
-              images { id url width height }
-            }
-            editions(limit: 30) {
-              id
-              cached_image
-            }
-            canonical {
-              id
-              cached_image
-              images { id url width height }
-              default_cover_edition {
-                id
-                cached_image
-                images { id url width height }
-              }
-              editions(limit: 30) {
-                id
-                cached_image
-              }
-            }
-            contributions {
-              contribution
-              author { id name slug }
-            }
-            book_series {
-              position
-              series { id name slug }
-            }
-          }
+          book { #{BOOK_PAYLOAD_GQL} }
         }
       }
     GQL
@@ -197,7 +203,87 @@ class HardcoverClient
     edition
   end
 
+  # ISBN-less fallback. Search by title (+ author when known), keep
+  # hits whose title is bidirectionally contained in the local title,
+  # take the first, and fetch the full book payload by id. Wraps the
+  # result in the same edition-shaped hash that find_edition_by_isbn
+  # returns so BookEnricher's downstream logic doesn't need to branch
+  # on which path produced the data. ISBN/ASIN fields are left nil —
+  # we don't have them, by definition of this path.
+  def find_book_by_search(title:, author: nil)
+    return nil unless @token.present? && title.to_s.strip.present?
+
+    query_string = [ title, author ].compact.map(&:to_s).map(&:strip).reject(&:empty?).join(" ")
+    hits = search_books(query_string, per_page: 10)
+    return nil if hits.empty?
+
+    matched = first_title_matching_hit(hits, title)
+    if matched.nil?
+      Rails.logger.info("HardcoverClient: no title-matching hit for #{title.inspect} (#{hits.size} raw hits)")
+      return nil
+    end
+
+    book_id = matched["id"]
+    return nil if book_id.blank?
+
+    book = find_book_by_id(book_id)
+    return nil unless book
+
+    default_edition = book["default_cover_edition"].is_a?(Hash) ? book["default_cover_edition"] : nil
+    {
+      "id"           => default_edition&.dig("id"),
+      "isbn_13"      => nil,
+      "isbn_10"      => nil,
+      "asin"         => nil,
+      "release_date" => book["release_date"],
+      "cached_image" => default_edition&.dig("cached_image") || book["cached_image"],
+      "publisher"    => nil,
+      "book"         => book
+    }
+  end
+
+  # Fetch a full book payload by Hardcover book id. Returns the same
+  # shape that edition.book has from find_edition_by_isbn.
+  def find_book_by_id(book_id)
+    return nil unless @token.present? && book_id.present?
+
+    query = <<~GQL
+      query BookById($book_id: Int!) {
+        books(where: { id: { _eq: $book_id } }, limit: 1) {
+          #{BOOK_PAYLOAD_GQL}
+        }
+      }
+    GQL
+
+    response = post(query: query, variables: { book_id: book_id.to_i })
+    return nil unless response
+
+    book = response.dig("data", "books", 0)
+    if book.nil?
+      Rails.logger.info("HardcoverClient: no book found for id #{book_id}")
+    else
+      Rails.logger.info("HardcoverClient: fetched book #{book['id']} (#{book['title']}) by id")
+    end
+    book
+  end
+
   private
+
+  # Bidirectional title containment, matching BookEnricher.matching_search_hits.
+  # Returns the first hit whose title (or any alternative title) contains the
+  # needle or is contained by it.
+  def first_title_matching_hit(hits, needle_title)
+    needle = needle_title.to_s.downcase.strip
+    return nil if needle.empty?
+
+    hits.find do |hit|
+      titles = [ hit["title"], *Array(hit["alternative_titles"]) ].compact
+      titles.any? do |t|
+        normalized = t.to_s.downcase.strip
+        normalized.present? && (normalized.include?(needle) || needle.include?(normalized))
+      end
+    end
+  end
 
   def post(query:, variables: {})
     uri = URI(ENDPOINT)
