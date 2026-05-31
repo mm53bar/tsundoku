@@ -39,7 +39,7 @@ class Kobo::SyncControllerTest < ActionDispatch::IntegrationTest
 
   test "sync emits NewEntitlement and creates a tracking row for a fresh syncable book" do
     book = downloadable_book(title: "Fresh Book")
-    @user.readings.create!(book: book, sync_to_device: true)
+    make_syncable(book)
 
     assert_difference -> { @user.kobo_synced_books.count }, 1 do
       get sync_path
@@ -57,21 +57,27 @@ class Kobo::SyncControllerTest < ActionDispatch::IntegrationTest
 
   test "sync emits nothing for a previously-synced book whose updated_at hasn't moved" do
     book = downloadable_book(title: "Already Synced")
-    @user.readings.create!(book: book, sync_to_device: true)
+    make_syncable(book)
     @user.kobo_synced_books.create!(book: book)
     # Force the snapshot row's updated_at to be after the book's.
     @user.kobo_synced_books.find_by(book: book).touch
 
     get sync_path
     assert_response :success
-    assert_empty response_json
+    # The Starred shelf doesn't emit a NewTag (default_for_star), but
+    # the helper shelf the tests use is a regular syncing shelf, so
+    # a NewTag for it does land in the payload on first sync. The
+    # interesting assertion here is "no entitlement payload for this
+    # book," not the absolute response shape.
+    refute response_json.any? { |entry| entry["NewEntitlement"] || (entry["ChangedEntitlement"] && entry.dig("ChangedEntitlement", "BookEntitlement", "IsRemoved") != true) },
+           "expected no live entitlement for an unchanged book"
   end
 
   # Changed — book.updated_at > record.updated_at.
 
   test "sync emits ChangedEntitlement and touches the snapshot when the book moves forward" do
     book = downloadable_book(title: "Touched")
-    @user.readings.create!(book: book, sync_to_device: true)
+    make_syncable(book)
     record = @user.kobo_synced_books.create!(book: book)
     # Reading is touched on every save and bumps book.updated_at via
     # the touch: true association — simulate that.
@@ -137,7 +143,7 @@ class Kobo::SyncControllerTest < ActionDispatch::IntegrationTest
       file_format: "EPUB",
       imported_at: Time.current
     )
-    @user.readings.create!(book: book, sync_to_device: true)
+    make_syncable(book)
 
     get sync_path
     assert_response :success
@@ -179,7 +185,7 @@ class Kobo::SyncControllerTest < ActionDispatch::IntegrationTest
 
   test "metadata returns the book payload for a syncable book by kobo_uuid" do
     book = downloadable_book(title: "Detail")
-    @user.readings.create!(book: book, sync_to_device: true)
+    make_syncable(book)
 
     get "/kobo/#{@user.kobo_handle}/v1/library/#{book.kobo_uuid}/metadata"
     assert_response :success
@@ -218,7 +224,7 @@ class Kobo::SyncControllerTest < ActionDispatch::IntegrationTest
 
   test "DELETE library/:book_uuid removes the snapshot row for that uuid" do
     book = downloadable_book(title: "About to be wiped")
-    @user.readings.create!(book: book, sync_to_device: true)
+    make_syncable(book)
     @user.kobo_synced_books.create!(book: book)
 
     assert_difference -> { @user.kobo_synced_books.count }, -1 do
@@ -239,8 +245,8 @@ class Kobo::SyncControllerTest < ActionDispatch::IntegrationTest
   test "DELETE library/:book_uuid leaves snapshots for other books alone" do
     keep   = downloadable_book(title: "Keep me")
     wipe   = downloadable_book(title: "Wipe me")
-    @user.readings.create!(book: keep, sync_to_device: true)
-    @user.readings.create!(book: wipe, sync_to_device: true)
+    make_syncable(keep)
+    make_syncable(wipe)
     @user.kobo_synced_books.create!(book: keep)
     @user.kobo_synced_books.create!(book: wipe)
 
@@ -253,7 +259,7 @@ class Kobo::SyncControllerTest < ActionDispatch::IntegrationTest
 
   test "DELETE then sync emits a NewEntitlement for the still-syncable book (full wipe-recovery loop)" do
     book = downloadable_book(title: "Wipe and restore")
-    @user.readings.create!(book: book, sync_to_device: true)
+    make_syncable(book)
     @user.kobo_synced_books.create!(book: book)
 
     # Simulate the device wiping the book locally.
@@ -278,6 +284,16 @@ class Kobo::SyncControllerTest < ActionDispatch::IntegrationTest
 
   def response_json
     JSON.parse(response.body)
+  end
+
+  # Drop a book onto a regular syncing shelf so it shows up in
+  # syncable_books. The shelf is created lazily and reused across calls
+  # within a single test. NOT the Starred shelf — those tests that
+  # specifically want to exercise default_for_star behavior create it
+  # explicitly.
+  def make_syncable(book)
+    @sync_shelf ||= @user.shelves.create!(name: "Test syncing shelf", sync_to_kobo: true)
+    @sync_shelf.shelf_entries.create!(book: book)
   end
 
   # Create a Book whose .assets.epub_downloadable? is true — i.e. a real

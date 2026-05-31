@@ -124,23 +124,15 @@ class UserTest < ActiveSupport::TestCase
     assert admin.reload.admin?
   end
 
-  # on_kobo_books — the union of (readings.sync_to_device) and
-  # (entries on shelves with sync_to_kobo). Powers both the device-
-  # facing sync set (Kobo::BaseController#syncable_books) and the
-  # web-facing navbar pill. Tests pin each contributor and the union
-  # semantics so a future split between the two callers can't drift.
+  # on_kobo_books — books on any syncing shelf (including the Starred
+  # shelf). Powers the device-facing sync set
+  # (Kobo::BaseController#syncable_books) and the navbar pill.
 
-  test "on_kobo_books is empty when nothing is set to sync" do
+  test "on_kobo_books is empty when nothing is on a syncing shelf" do
     user = users(:reader)
-    user.readings.create!(book: make_book("None"), sync_to_device: false)
+    user.shelves.create!(name: "Wishlist", sync_to_kobo: false)
+      .shelf_entries.create!(book: make_book("None"))
     assert_equal 0, user.on_kobo_books.count
-  end
-
-  test "on_kobo_books includes books from a sync_to_device reading" do
-    user = users(:reader)
-    book = make_book("Via reading")
-    user.readings.create!(book: book, sync_to_device: true)
-    assert_includes user.on_kobo_books.pluck(:id), book.id
   end
 
   test "on_kobo_books includes books from a syncing shelf" do
@@ -151,15 +143,20 @@ class UserTest < ActiveSupport::TestCase
     assert_includes user.on_kobo_books.pluck(:id), book.id
   end
 
-  test "on_kobo_books deduplicates a book that's reachable via both paths" do
-    user  = users(:reader)
-    book  = make_book("Both paths")
-    user.readings.create!(book: book, sync_to_device: true)
-    shelf = user.shelves.create!(name: "Backed-up", sync_to_kobo: true)
-    shelf.shelf_entries.create!(book: book)
+  test "on_kobo_books includes books on the Starred shelf" do
+    user = users(:reader)
+    book = make_book("Starred book")
+    user.starred_shelf.shelf_entries.create!(book: book)
+    assert_includes user.on_kobo_books.pluck(:id), book.id
+  end
 
-    ids = user.on_kobo_books.pluck(:id)
-    assert_equal 1, ids.count(book.id)
+  test "on_kobo_books deduplicates a book on multiple syncing shelves" do
+    user = users(:reader)
+    book = make_book("Two shelves")
+    user.starred_shelf.shelf_entries.create!(book: book)
+    user.shelves.create!(name: "Bedside", sync_to_kobo: true).shelf_entries.create!(book: book)
+
+    assert_equal 1, user.on_kobo_books.pluck(:id).count(book.id)
   end
 
   test "on_kobo_books excludes books from non-syncing shelves" do
@@ -177,6 +174,38 @@ class UserTest < ActiveSupport::TestCase
     a.shelves.create!(name: "Mine", sync_to_kobo: true).shelf_entries.create!(book: book)
 
     refute_includes b.on_kobo_books.pluck(:id), book.id
+  end
+
+  # starred_shelf — lazily created, locked sync_to_kobo, flagged
+  # default_for_star so it's exempt from Kobo Tag emission.
+
+  test "starred_shelf is created lazily on first access" do
+    user = users(:reader)
+    assert_difference -> { user.shelves.count }, 1 do
+      assert user.starred_shelf.default_for_star?
+    end
+  end
+
+  test "starred_shelf is reused on subsequent access" do
+    user  = users(:reader)
+    first = user.starred_shelf
+    assert_no_difference -> { user.shelves.count } do
+      assert_equal first.id, user.starred_shelf.id
+    end
+  end
+
+  test "starred_shelf is always sync_to_kobo, even after a manual edit attempts to disable it" do
+    user = users(:reader)
+    shelf = user.starred_shelf
+    shelf.update(sync_to_kobo: false)
+    assert shelf.reload.sync_to_kobo, "sync_to_kobo should snap back to true on the starred shelf"
+  end
+
+  test "starred_shelf cannot be destroyed" do
+    user = users(:reader)
+    shelf = user.starred_shelf
+    refute shelf.destroy
+    assert Shelf.exists?(shelf.id)
   end
 
   private

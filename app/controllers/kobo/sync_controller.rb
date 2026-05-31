@@ -42,7 +42,12 @@ module Kobo
       end
       removed_book_records.destroy_all
 
-      current_shelves            = @kobo_user.shelves.syncing.includes(:shelf_entries).by_name.to_a
+      # Tags-on-Kobo are emitted for syncing shelves the user *meant* as
+      # collections. The Starred shelf is the default target of the star
+      # icon — its books reach the device but it's exempt from Tag
+      # emission so the device doesn't grow a redundant collection
+      # mirroring the device's own "My Books" view.
+      current_shelves            = @kobo_user.shelves.emitting_as_tag.includes(:shelf_entries).by_name.to_a
       current_shelf_ids          = current_shelves.map(&:id).to_set
       previously_synced_shelves  = @kobo_user.kobo_synced_shelves.where(shelf_id: current_shelf_ids).index_by(&:shelf_id)
       removed_shelf_records      = @kobo_user.kobo_synced_shelves.where.not(shelf_id: current_shelf_ids)
