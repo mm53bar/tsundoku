@@ -1,36 +1,58 @@
 <%# Locals: shelf (required).
     Inline toggle for shelf.sync_to_kobo. Wrapped in a turbo_frame so the
     controller's update action can replace just this region after the
-    submit. The checkbox auto-submits on change. %>
+    submit. The checkbox auto-submits on change.
+
+    Special case: the Starred shelf (default_for_star) has sync_to_kobo
+    locked on — flipping it off would silently break the star icon. We
+    render the toggle disabled with a "Default" badge instead of the
+    usual "Active" so the user sees why they can't change it. %>
 <%= turbo_frame_tag dom_id(shelf, :sync_toggle) do %>
   <div class="flex items-center gap-3">
-    <%= form_with model: shelf, method: :patch, class: "flex items-center gap-2" do |f| %>
-      <%# Hidden field forces sync_to_kobo=false when unchecked, since
-          unchecked checkboxes don't post a value. %>
-      <%= f.hidden_field :sync_to_kobo, value: "0" %>
-      <label class="group flex items-center gap-2.5 cursor-pointer">
+    <% if shelf.default_for_star? %>
+      <%# Disabled visual — the toggle does nothing for the Starred shelf. %>
+      <div class="flex items-center gap-2.5 cursor-not-allowed" title="The Starred shelf is always synced to your Kobo — the star icon depends on it.">
         <span class="relative flex-shrink-0">
-          <%= f.check_box :sync_to_kobo,
-                class: "sr-only peer",
-                checked: shelf.sync_to_kobo,
-                onchange: "this.form.requestSubmit()" %>
-          <div class="w-10 h-6 rounded-full transition-all duration-150 ease-in-out
-                      bg-stone-200 border border-black/10
-                      group-hover:bg-stone-300
-                      peer-checked:bg-blue-600 peer-checked:group-hover:bg-blue-700 peer-checked:border-white/10
-                      peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue-600"></div>
-          <div class="absolute top-[3px] left-[3px] w-[18px] h-[18px] bg-white rounded-full shadow-sm transition-all duration-150 ease-in-out peer-checked:translate-x-4"></div>
+          <div class="w-10 h-6 rounded-full bg-blue-300 border border-black/10 opacity-60"></div>
+          <div class="absolute top-[3px] left-[3px] w-[18px] h-[18px] bg-white rounded-full shadow-sm translate-x-4 opacity-80"></div>
         </span>
-        <span class="text-sm font-medium text-stone-700">Sync to Kobo</span>
-      </label>
-    <% end %>
+        <span class="text-sm font-medium text-stone-500">Sync to Kobo</span>
+      </div>
 
-    <% if shelf.sync_to_kobo %>
       <%= render "shared/components/badge/badge",
-            text: "Active",
+            text: "Default",
             variant: "blue",
             size: "sm",
             pill: true %>
+    <% else %>
+      <%= form_with model: shelf, method: :patch, class: "flex items-center gap-2" do |f| %>
+        <%# Hidden field forces sync_to_kobo=false when unchecked, since
+            unchecked checkboxes don't post a value. %>
+        <%= f.hidden_field :sync_to_kobo, value: "0" %>
+        <label class="group flex items-center gap-2.5 cursor-pointer">
+          <span class="relative flex-shrink-0">
+            <%= f.check_box :sync_to_kobo,
+                  class: "sr-only peer",
+                  checked: shelf.sync_to_kobo,
+                  onchange: "this.form.requestSubmit()" %>
+            <div class="w-10 h-6 rounded-full transition-all duration-150 ease-in-out
+                        bg-stone-200 border border-black/10
+                        group-hover:bg-stone-300
+                        peer-checked:bg-blue-600 peer-checked:group-hover:bg-blue-700 peer-checked:border-white/10
+                        peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue-600"></div>
+            <div class="absolute top-[3px] left-[3px] w-[18px] h-[18px] bg-white rounded-full shadow-sm transition-all duration-150 ease-in-out peer-checked:translate-x-4"></div>
+          </span>
+          <span class="text-sm font-medium text-stone-700">Sync to Kobo</span>
+        </label>
+      <% end %>
+
+      <% if shelf.sync_to_kobo %>
+        <%= render "shared/components/badge/badge",
+              text: "Active",
+              variant: "blue",
+              size: "sm",
+              pill: true %>
+      <% end %>
     <% end %>
   </div>
 <% end %>
