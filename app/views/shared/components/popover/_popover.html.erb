@@ -1,0 +1,50 @@
+<%#
+  Tsundoku-flavored wrapper around the Rails Blocks Popover controller.
+  Sets up the data-attributes; the caller writes the trigger button and
+  the template[data-popover-target=content] body in the yielded block.
+  Defaults to click-triggered + interactive (the shape every current
+  call site wants).
+
+  Locals (all optional):
+    placement:    String  (default "bottom-end") — Floating UI placement.
+                  "bottom-start" / "bottom-end" / "top" etc. Floating UI
+                  flips automatically when the placement would overflow.
+    trigger:      String  (default "click") — "click" or "mouseenter focus".
+    interactive:  Boolean (default true for click, false for hover) —
+                  keep panel open while the user interacts with content.
+    offset:       Integer (default 6) — px gap between trigger and panel.
+    max_width:    Integer (default 320).
+    arrow:        Boolean (default false) — arrow looks odd on menus.
+    animation:    String  (default "fade origin").
+    classes:      String — extra classes for the wrapper.
+
+  Caller yields the inner markup directly — a trigger button (mark it
+  with data-popover-target=button to scope clicks) and a template with
+  data-popover-target=content holding the panel body.
+%>
+
+<%
+  placement   ||= "bottom-end"
+  trigger     ||= "click"
+  interactive   = local_assigns.key?(:interactive) ? local_assigns[:interactive] : (trigger == "click")
+  offset      ||= 6
+  max_width   ||= 320
+  arrow         = local_assigns.key?(:arrow) ? local_assigns[:arrow] : false
+  animation   ||= "fade origin"
+  classes     ||= nil
+
+  data_attrs = { controller: "popover" }
+  data_attrs[:popover_placement_value]   = placement   unless placement   == "top"
+  data_attrs[:popover_trigger_value]     = trigger     unless trigger     == "mouseenter focus"
+  data_attrs[:popover_interactive_value] = interactive if interactive
+  data_attrs[:popover_offset_value]      = offset      unless offset      == 10
+  data_attrs[:popover_max_width_value]   = max_width   unless max_width   == 300
+  data_attrs[:popover_has_arrow_value]   = false       unless arrow
+  data_attrs[:popover_animation_value]   = animation   unless animation   == "fade"
+
+  wrapper_classes = [ "relative inline-block", classes ].compact.reject(&:empty?).join(" ")
+%>
+
+<%= tag.div class: wrapper_classes, data: data_attrs do %>
+  <%= yield %>
+<% end %>
