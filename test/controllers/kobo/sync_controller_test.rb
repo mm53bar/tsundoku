@@ -276,6 +276,49 @@ class Kobo::SyncControllerTest < ActionDispatch::IntegrationTest
            "expected a NewEntitlement for the just-deleted book after the next sync"
   end
 
+  test "DELETE library/:book_uuid touches non-Starred syncing shelves the book was on" do
+    # Sheila's actual scenario from 2026-05-31: she wiped her Kobo,
+    # collections on the device stayed but emptied out. Without this
+    # touch, the next sync sees `shelf.updated_at <= snapshot.updated_at`
+    # and emits no ChangedTag — collection sits empty on the device.
+    book = downloadable_book(title: "On a collection")
+    shelf = @user.shelves.create!(name: "My collection", sync_to_kobo: true)
+    shelf.shelf_entries.create!(book: book)
+
+    @user.kobo_synced_books.create!(book: book)
+    snapshot = @user.kobo_synced_shelves.create!(shelf_id: shelf.id, kobo_uuid: shelf.kobo_uuid)
+    # Force the snapshot's updated_at past the shelf's, simulating the
+    # "we already told the device about this shelf, nothing changed
+    # since" condition.
+    shelf.update_columns(updated_at: 1.hour.ago)
+    snapshot.update_columns(updated_at: 30.minutes.ago)
+    assert shelf.reload.updated_at < snapshot.reload.updated_at
+
+    delete "/kobo/#{@user.kobo_handle}/v1/library/#{book.kobo_uuid}"
+    assert_response :success
+
+    # The shelf's updated_at should now be past the snapshot's, so the
+    # next sync's diff sees a change and emits a ChangedTag.
+    assert shelf.reload.updated_at > snapshot.reload.updated_at,
+           "expected the shelf's updated_at to be touched past the snapshot's"
+  end
+
+  test "DELETE library/:book_uuid does not touch the Starred shelf" do
+    book = downloadable_book(title: "Starred only")
+    starred = @user.starred_shelf
+    starred.shelf_entries.create!(book: book)
+
+    @user.kobo_synced_books.create!(book: book)
+    pre_touch = starred.updated_at
+
+    delete "/kobo/#{@user.kobo_handle}/v1/library/#{book.kobo_uuid}"
+    assert_response :success
+
+    # Starred doesn't emit a Tag, so there's no reason to bump its
+    # updated_at — would just be sync-log noise.
+    assert_in_delta pre_touch.to_f, starred.reload.updated_at.to_f, 0.01
+  end
+
   private
 
   def sync_path
