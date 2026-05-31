@@ -1,5 +1,19 @@
 # Kobo cloud-sync — design notes
 
+> **Historical snapshot.** This doc captures the original design at
+> the time the Kobo sync work landed. Several decisions have moved on
+> since — most notably the syncable-set rule (§5), the reading-state
+> enum (§6), and the tombstone strategy. For what's actually in the
+> code today, see the ADR series in `docs/adr/`:
+>
+> - `20260530-reading-status-derived-from-progress.md` retires the
+>   `Reading.status` enum; state is derived from progress.
+> - `20260531-star-shelf-model.md` retires `Reading.sync_to_device`;
+>   books reach the device only via shelf membership (including the
+>   per-user Starred default shelf).
+> - `20260530-kobo-tombstone-strategy.md` documents the live
+>   tombstone behavior.
+
 Phase 3 plan: pretend to be `storeapi.kobo.com` for one Kobo device so the
 device's "Sync" button pulls books, covers, shelves, and reading state from
 Tsundoku. Built on what calibre-web has been doing in production since 2019;
