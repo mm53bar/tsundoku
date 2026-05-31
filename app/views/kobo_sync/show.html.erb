@@ -58,6 +58,22 @@
     </ol>
   </div>
 
+  <div class="border-t border-stone-200 pt-6 mb-6">
+    <h2 class="text-sm font-semibold uppercase tracking-wider text-stone-500 mb-3">Force full re-sync</h2>
+    <p class="text-sm text-stone-600 mb-3">
+      Use this if you wiped your Kobo manually (or swapped to a new one) and
+      the books didn't come back on the next sync. Tsundoku's sync diff thinks
+      the device already has them; this resets that record so the next sync
+      re-sends every book currently flagged for the device.
+    </p>
+    <%= button_to force_full_kobo_sync_path,
+          method: :post,
+          form: { data: { turbo_confirm: "Reset Tsundoku's record of what's on your Kobo? Your next device sync will re-send every flagged book." } },
+          class: "inline-flex items-center px-3 py-1.5 bg-white border border-stone-300 text-stone-700 text-sm font-medium rounded-md hover:bg-stone-50 transition cursor-pointer" do %>
+      Force full re-sync
+    <% end %>
+  </div>
+
   <div class="border-t border-stone-200 pt-6">
     <h2 class="text-sm font-semibold uppercase tracking-wider text-stone-500 mb-3">Regenerate</h2>
     <p class="text-sm text-stone-600 mb-3">
