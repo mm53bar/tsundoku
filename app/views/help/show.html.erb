@@ -37,42 +37,32 @@
   <section class="mb-12">
     <h2 class="text-xl font-semibold text-stone-900 mb-3">Getting books onto your Kobo</h2>
     <p class="text-stone-700 mb-4">
-      There are two ways to mark a book for your Kobo. <strong>Both work.</strong>
-      Pick whichever fits the moment — they're not in competition.
+      Every book on your Kobo gets there through a <strong>shelf</strong>.
+      The fastest way is the <span class="text-amber-700 font-medium">star</span>
+      in the top-left of any book cover — one tap and the book lands on
+      your <strong>Starred</strong> shelf, which is set to sync to the
+      Kobo by default.
     </p>
 
-    <div class="grid sm:grid-cols-2 gap-4 mb-4">
-      <div class="border border-stone-200 rounded-lg p-4 bg-white">
-        <h3 class="font-semibold text-stone-900 mb-2">Via a shelf</h3>
-        <p class="text-sm text-stone-700 mb-2">
-          Good for <em>groups</em> of books — "everything I want to read
-          this month," "currently re-reading," etc.
-        </p>
-        <ol class="list-decimal pl-5 text-sm text-stone-700 space-y-1">
-          <li>Create a shelf and turn <strong>Sync to Kobo</strong> on for it.</li>
-          <li>Click the <span class="text-amber-700 font-medium">+</span> button in the top-right of any book cover.</li>
-          <li>Check the shelf in the picker. Done.</li>
-        </ol>
-      </div>
+    <p class="text-stone-700 mb-4">
+      For more organization (e.g., a "Currently re-reading" or "Holiday
+      reading" group), create a regular shelf and turn its <strong>Sync
+      to Kobo</strong> toggle on. Click the <span class="text-amber-700 font-medium">+</span>
+      in the top-right of a book cover to add the book to that shelf.
+    </p>
 
-      <div class="border border-stone-200 rounded-lg p-4 bg-white">
-        <h3 class="font-semibold text-stone-900 mb-2">Per book</h3>
-        <p class="text-sm text-stone-700 mb-2">
-          Good for <em>one-offs</em> — a book that doesn't fit any shelf
-          but you want on the device right now.
-        </p>
-        <ol class="list-decimal pl-5 text-sm text-stone-700 space-y-1">
-          <li>Open the book's detail page.</li>
-          <li>Toggle <strong>Sync to device</strong> in its reading status section.</li>
-        </ol>
-      </div>
-    </div>
+    <p class="text-stone-700 mb-3">
+      The difference between the two:
+    </p>
+    <ul class="list-disc pl-6 space-y-1 text-stone-700 mb-4">
+      <li><strong>Starred</strong> books sync to the Kobo but don't show up as a separate collection on the device — the Kobo's "My Books" view already covers "everything that's on here."</li>
+      <li><strong>Custom syncing shelves</strong> show up on the Kobo as named collections — books on "Holiday reading" appear in a "Holiday reading" collection on the device.</li>
+    </ul>
 
     <p class="text-stone-700">
-      Either way, the book shows up on your Kobo the next time the device
-      checks in (which it does automatically when it has Wi-Fi). There's
-      no <strong>Sync now</strong> button on Tsundoku itself — the Kobo
-      does the asking.
+      Either way, books show up on your Kobo the next time the device
+      checks in (automatic when it has Wi-Fi). No <strong>Sync now</strong>
+      button on Tsundoku — the Kobo does the asking.
     </p>
   </section>
 
@@ -87,7 +77,9 @@
     </p>
     <p class="text-stone-700">
       To turn syncing on or off for a whole shelf, open the shelf itself
-      and flip its <strong>Sync to Kobo</strong> toggle there.
+      and flip its <strong>Sync to Kobo</strong> toggle there. The
+      Starred shelf is the one exception — its sync can't be turned
+      off, because the star icon depends on it.
     </p>
   </section>
 
@@ -96,14 +88,38 @@
     <h2 class="text-xl font-semibold text-stone-900 mb-3">What the colors and icons mean</h2>
     <dl class="space-y-3 text-stone-700">
       <div class="flex items-start gap-3">
+        <span class="shrink-0 w-6 h-6 inline-flex items-center justify-center rounded-full bg-amber-500 text-white shadow-sm" aria-hidden="true">
+          <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2l2.998 6.97L22 9.97l-5.5 5.06L18 22l-6-3.7L6 22l1.5-6.97L2 9.97l7.002-1.0L12 2z"/>
+          </svg>
+        </span>
+        <div>
+          <dt class="font-semibold text-stone-900">Filled amber star (top-left of a book cover)</dt>
+          <dd class="text-sm">This book is on your Starred shelf — it'll sync to your Kobo. Tap to remove.</dd>
+        </div>
+      </div>
+
+      <div class="flex items-start gap-3">
+        <span class="shrink-0 w-6 h-6 inline-flex items-center justify-center rounded-full bg-white border border-stone-300 text-stone-500 shadow-sm" aria-hidden="true">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 2l2.998 6.97L22 9.97l-5.5 5.06L18 22l-6-3.7L6 22l1.5-6.97L2 9.97l7.002-1.0L12 2z"/>
+          </svg>
+        </span>
+        <div>
+          <dt class="font-semibold text-stone-900">Outline star (top-left of a book cover)</dt>
+          <dd class="text-sm">This book isn't on the Starred shelf yet. Tap to add — it'll sync to your Kobo on the next sync.</dd>
+        </div>
+      </div>
+
+      <div class="flex items-start gap-3">
         <span class="shrink-0 w-6 h-6 inline-flex items-center justify-center rounded-full bg-amber-600 text-white shadow-sm" aria-hidden="true">
           <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
           </svg>
         </span>
         <div>
-          <dt class="font-semibold text-stone-900">Amber + on a book cover</dt>
-          <dd class="text-sm">This book is on at least one of your shelves. Click to manage which shelves.</dd>
+          <dt class="font-semibold text-stone-900">Amber + (top-right of a book cover)</dt>
+          <dd class="text-sm">This book is on at least one of your shelves. Click to manage all shelf memberships (including Starred).</dd>
         </div>
       </div>
 
@@ -114,8 +130,8 @@
           </svg>
         </span>
         <div>
-          <dt class="font-semibold text-stone-900">White + on a book cover</dt>
-          <dd class="text-sm">This book isn't on any shelf yet. Click to add it to one.</dd>
+          <dt class="font-semibold text-stone-900">White + (top-right of a book cover)</dt>
+          <dd class="text-sm">This book isn't on any shelf yet. Click to open the picker and add it to one.</dd>
         </div>
       </div>
 
@@ -123,7 +139,7 @@
         <span class="shrink-0 inline-flex items-center justify-center min-w-[1.5rem] px-1.5 text-xs rounded-full bg-amber-100 text-amber-800 font-medium" aria-hidden="true">3</span>
         <div>
           <dt class="font-semibold text-stone-900">"On your Kobo" pill in the navbar</dt>
-          <dd class="text-sm">How many books are currently flagged for your Kobo — counts books on syncing shelves <em>and</em> books marked per-book.</dd>
+          <dd class="text-sm">How many books are currently flagged for your Kobo — books on the Starred shelf plus any custom syncing shelves.</dd>
         </div>
       </div>
 
