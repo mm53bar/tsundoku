@@ -10,6 +10,13 @@ described there is replaced by what follows).
 > recorded here still holds; the "transitional callback" and "status
 > picker UI" pieces no longer apply.
 
+> **Superseded by `20260531-star-shelf-model.md`.**
+> The sync axis introduced here (`Reading.sync_to_device`) has been
+> dropped. Books reach the Kobo only via shelf membership; the
+> per-book quick toggle now lives on a default Starred shelf instead
+> of on the Reading record. Read this ADR for the historical context
+> of why the split was made; read the newer one for what's true now.
+
 ## Context
 
 The original `Reading` model conflated two orthogonal concepts into the

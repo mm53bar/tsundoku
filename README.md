@@ -79,7 +79,7 @@ Rails 8.1 · Ruby 3.4 · SQLite (WAL) · Tailwind v4 · Hotwire (Turbo + Stimulu
   - [`20260528-reading-state-model.md`](docs/adr/20260528-reading-state-model.md) — `Reading` model + three-state status (partially superseded)
   - [`20260528-shelf-wins-sync-conflict.md`](docs/adr/20260528-shelf-wins-sync-conflict.md) — shelves win on sync conflicts
   - [`20260528-shelves-as-parallel-curation.md`](docs/adr/20260528-shelves-as-parallel-curation.md) — shelves alongside readings
-  - [`20260530-reading-sync-intent-split.md`](docs/adr/20260530-reading-sync-intent-split.md) — `sync_to_device` separated from progress
+  - [`20260530-reading-sync-intent-split.md`](docs/adr/20260530-reading-sync-intent-split.md) — `sync_to_device` separated from progress (superseded)
   - [`20260530-kobo-tombstone-strategy.md`](docs/adr/20260530-kobo-tombstone-strategy.md) — tombstones survive `Book#destroy`
   - [`20260530-book-assets-boundary.md`](docs/adr/20260530-book-assets-boundary.md) — `BookAssets` PORO as the file/path boundary
   - [`20260530-proxy-auth-trust-model.md`](docs/adr/20260530-proxy-auth-trust-model.md) — forward-auth via proxy headers
@@ -88,3 +88,4 @@ Rails 8.1 · Ruby 3.4 · SQLite (WAL) · Tailwind v4 · Hotwire (Turbo + Stimulu
   - [`20260530-auto-ingest-via-recurring-job.md`](docs/adr/20260530-auto-ingest-via-recurring-job.md) — Solid Queue recurring scan for the ingest folder
   - [`20260530-shelfmark-url-handoff.md`](docs/adr/20260530-shelfmark-url-handoff.md) — link to Shelfmark with pre-filled search, defer server-side API
   - [`20260530-enrichment-no-isbn-fallback.md`](docs/adr/20260530-enrichment-no-isbn-fallback.md) — fall back to title+author search when the ingested book has no ISBN
+  - [`20260531-star-shelf-model.md`](docs/adr/20260531-star-shelf-model.md) — drop `Reading.sync_to_device`; every book reaches the Kobo via shelf membership; introduce the per-user Starred default shelf
