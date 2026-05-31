@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_31_162552) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_31_163302) do
   create_table "authors", force: :cascade do |t|
     t.integer "calibre_id"
     t.datetime "created_at", null: false
@@ -62,6 +62,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_31_162552) do
     t.datetime "imported_at", null: false
     t.string "kobo_uuid"
     t.datetime "last_enriched_at"
+    t.datetime "last_enrichment_attempted_at"
     t.datetime "last_modified"
     t.string "path", null: false
     t.datetime "pubdate"
@@ -76,6 +77,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_31_162552) do
     t.index ["calibre_id"], name: "index_books_on_calibre_id", unique: true
     t.index ["kobo_uuid"], name: "index_books_on_kobo_uuid", unique: true
     t.index ["last_enriched_at"], name: "index_books_on_last_enriched_at"
+    t.index ["last_enrichment_attempted_at"], name: "index_books_on_last_enrichment_attempted_at"
     t.index ["publisher_id"], name: "index_books_on_publisher_id"
     t.index ["series_id"], name: "index_books_on_series_id"
     t.index ["title"], name: "index_books_on_title"
