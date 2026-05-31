@@ -61,12 +61,13 @@ class CalibreImporter
 
   def import_authors(db)
     map = {}
-    db.execute("SELECT id, name, sort FROM authors").each do |row|
+    # Calibre's `sort` column (surname-first) is intentionally ignored —
+    # Tsundoku drops surname-first sorting and relies on search.
+    db.execute("SELECT id, name FROM authors").each do |row|
       stats.authors_seen += 1
       author = Author.find_or_initialize_by(calibre_id: row["id"])
       created = author.new_record?
       author.name = row["name"]
-      author.sort_name = row["sort"]
       author.save!
       stats.authors_created += 1 if created
       map[row["id"]] = author.id
