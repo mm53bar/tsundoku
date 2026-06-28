@@ -61,7 +61,9 @@ query Match($t: String!) {
 class HardcoverClient
   ENDPOINT = "https://api.hardcover.app/v1/graphql"
 
-  def initialize(token: ENV.fetch("HARDCOVER_APP_API_TOKEN"))
+  # Token comes from encrypted credentials (hardcover_app_api_token), with the
+  # HARDCOVER_APP_API_TOKEN env var as a fallback. See HardcoverClient.api_token.
+  def initialize(token: self.class.api_token)
     @auth = token.start_with?("Bearer") ? token : "Bearer #{token}"
   end
 

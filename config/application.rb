@@ -23,6 +23,18 @@ module Tsundoku
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 8.1
 
+    # Secrets (master.key + credentials.yml.enc) can live in a single
+    # bind-mounted directory, config/secrets/, so they stay out of the published
+    # image and `rails credentials:edit` persists across container recreation.
+    # content_path/key_path take a single path (no built-in fallback list), so
+    # we probe: use config/secrets/ when it's populated (production/Docker),
+    # otherwise leave Rails' conventional config/ location (local dev).
+    secrets_dir = Rails.root.join("config/secrets")
+    if secrets_dir.directory? && (secrets_dir.join("credentials.yml.enc").exist? || secrets_dir.join("master.key").exist?)
+      config.credentials.content_path = secrets_dir.join("credentials.yml.enc")
+      config.credentials.key_path     = secrets_dir.join("master.key")
+    end
+
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
     # Common ones are `templates`, `generators`, or `middleware`, for example.
