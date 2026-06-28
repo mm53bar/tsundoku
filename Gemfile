@@ -37,12 +37,12 @@ gem "bootsnap", require: false
 gem "thruster", require: false
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
-gem "image_processing", "~> 1.2"
+gem "image_processing", "~> 2.0"
 
 # Read EPUB metadata. EPUBs are ZIP archives containing an OPF
 # (Dublin Core) metadata file; rubyzip is the minimal way to crack
 # them open during ingest.
-gem "rubyzip", "~> 2.4"
+gem "rubyzip", "~> 3.0"
 
 # Authentication is forward-auth: nginx-proxy-manager + Authelia gate the
 # request and inject Remote-User / Remote-Email / Remote-Groups headers. The
