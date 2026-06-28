@@ -28,6 +28,9 @@ x-tsundoku-common: &tsundoku-common
     # Persistent secrets dir holding master.key + credentials.yml.enc. These
     # are operator-owned and never baked into the published image. Mounted rw
     # so `docker compose exec tsundoku bin/rails credentials:edit` persists.
+    # SEED IT BEFORE FIRST BOOT: drop master.key + credentials.yml.enc here (or
+    # set RAILS_MASTER_KEY in the environment). An empty/unseeded dir means prod
+    # can't decrypt credentials and the container fails to boot.
     - ${SECRETS_DIR:?SECRETS_DIR must be set}:/rails/config/secrets:rw
   environment: &tsundoku-env
     TZ: ${TZ:-UTC}
