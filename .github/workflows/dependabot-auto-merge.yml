@@ -21,7 +21,9 @@ jobs:
         uses: dependabot/fetch-metadata@v2
 
       - name: Enable auto-merge for security updates
-        if: steps.meta.outputs.ghsa-id != ''
+        # ghsa-id is set on single-advisory PRs; grouped security fixes
+        # (see dependabot.yml) surface as the "security" dependency-group.
+        if: steps.meta.outputs.ghsa-id != '' || steps.meta.outputs.dependency-group == 'security'
         run: gh pr merge --auto --squash "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}

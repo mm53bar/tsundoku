@@ -5,8 +5,20 @@ updates:
   schedule:
     interval: weekly
   open-pull-requests-limit: 10
+  groups:
+    # Bundle co-occurring security fixes into one PR so bundler-audit can
+    # go green (and auto-merge) once all current advisories are resolved.
+    security:
+      applies-to: security-updates
+      patterns:
+        - "*"
 - package-ecosystem: github-actions
   directory: "/"
   schedule:
     interval: weekly
   open-pull-requests-limit: 10
+  groups:
+    security:
+      applies-to: security-updates
+      patterns:
+        - "*"
