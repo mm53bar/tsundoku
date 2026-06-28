@@ -1,9 +1,10 @@
 name: Dependabot auto-merge
 
-# Auto-merge Dependabot PRs that fix a security advisory (CVE/GHSA).
-# Plain version-bump PRs are left open for manual review; only updates
-# carrying a security advisory are merged automatically, and only after
-# the required CI checks on `main` pass (enforced by branch protection).
+# Auto-merge low-risk Dependabot PRs: security advisories (CVE/GHSA) and the
+# routine grouped version updates (gem-updates = minor/patch gems,
+# action-updates = GitHub Actions). Major gem bumps are ungrouped and left for
+# manual review. Everything still waits on the required CI checks on `main`
+# (enforced by branch protection) before merging.
 
 on: pull_request
 
@@ -20,10 +21,15 @@ jobs:
         id: meta
         uses: dependabot/fetch-metadata@21025c705c08248db411dc16f3619e6b5f9ea21a # v2
 
-      - name: Enable auto-merge for security updates
-        # ghsa-id is set on single-advisory PRs; grouped security fixes
-        # (see dependabot.yml) surface as the "security" dependency-group.
-        if: steps.meta.outputs.ghsa-id != '' || steps.meta.outputs.dependency-group == 'security'
+      - name: Enable auto-merge
+        # ghsa-id is set on single-advisory PRs; grouped updates (see
+        # dependabot.yml) surface via dependency-group. Majors are ungrouped,
+        # so they fall through to manual review.
+        if: >-
+          steps.meta.outputs.ghsa-id != '' ||
+          steps.meta.outputs.dependency-group == 'security' ||
+          steps.meta.outputs.dependency-group == 'gem-updates' ||
+          steps.meta.outputs.dependency-group == 'action-updates'
         run: gh pr merge --auto --squash "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
