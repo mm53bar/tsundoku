@@ -25,6 +25,9 @@ class AutoIngestScanJob < ApplicationJob
     root = Rails.configuration.x.ingest_path
     return if root.blank? || !Dir.exist?(root)
 
+    # Dir.glob skips dot-directories by default (no FNM_DOTMATCH), so files
+    # IngestFileJob parks in .duplicates/ and .failed/ are intentionally
+    # excluded here — that's what stops finished files from re-ingesting.
     pending_paths = Dir.glob(File.join(root, "**/*.epub")).sort
     return if pending_paths.empty?
 
