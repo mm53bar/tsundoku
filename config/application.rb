@@ -42,8 +42,11 @@ module Tsundoku
 
     config.time_zone = ENV.fetch("TZ", "UTC")
 
-    config.x.library_path = ENV.fetch("LIBRARY_PATH") { Rails.root.join("storage/library_dev").to_s }
-    config.x.ingest_path  = ENV.fetch("INGEST_PATH")  { Rails.root.join("storage/ingest_dev").to_s }
+    # Production containers mount the library/ingest dirs at these conventional
+    # paths, so prod defaults to them and the deploy needs no LIBRARY_PATH /
+    # INGEST_PATH env. Dev/test fall back to local storage dirs.
+    config.x.library_path = ENV.fetch("LIBRARY_PATH") { Rails.env.production? ? "/library" : Rails.root.join("storage/library_dev").to_s }
+    config.x.ingest_path  = ENV.fetch("INGEST_PATH")  { Rails.env.production? ? "/ingest"  : Rails.root.join("storage/ingest_dev").to_s }
 
     # Shelfmark base URL (e.g. https://shelfmark.example.com). When set,
     # ShelfmarkHelper renders "Find via Shelfmark" links on surfaces that

@@ -47,9 +47,6 @@
 # Bundler installs gems here when bundle config sets path=vendor/bundle.
 /vendor/bundle/
 
-# Keep the env template in the repo.
-!/.env.example
-
 # Tailwind Plus templates are licensed for use, not redistribution.
 /oatmeal-taupe-instrument.zip
 /oatmeal-taupe-instrument/

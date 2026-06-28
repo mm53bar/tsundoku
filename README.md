@@ -38,14 +38,11 @@ bin/rails test
 
 Tsundoku expects to live behind a reverse proxy that handles authentication and injects identity headers (`Remote-User`, `Remote-Email`, `Remote-Name`). **It must not be exposed directly to clients** — anyone reaching the container directly can spoof the headers. See [`docs/adr/20260530-proxy-auth-trust-model.md`](docs/adr/20260530-proxy-auth-trust-model.md).
 
-1. Copy `.env.example` to `.env` (or set the equivalents in your container stack) and fill in the host-specific values — library/ingest/config paths, `APP_URL`, and `SECRETS_DIR`.
-2. Provide your own secrets. The published image ships none, so **forks must generate their own** Rails master key + encrypted credentials:
-   ```bash
-   EDITOR=true bin/rails credentials:edit
-   ```
-   Mount the resulting `master.key` + `credentials.yml.enc` at `SECRETS_DIR` (→ `config/secrets/`), and store your Hardcover API token there under `hardcover_app_api_token`. (Simplest alternative: set `RAILS_MASTER_KEY` and `HARDCOVER_APP_API_TOKEN` as env vars instead.) See `.env.example` for details.
-3. Configure your reverse proxy (NPM, Caddy, Traefik) to authenticate the host and forward the `Remote-*` headers. With Authelia, forward-auth via the proxy is the typical setup.
-4. `docker compose up -d`.
+1. Copy `compose.yaml` into your stack (Portainer/Arcane or plain `docker compose`) and edit it for your host: the three volume paths, the `user:` UID:GID that owns them, and `SECRET_KEY_BASE` (generate with `openssl rand -hex 64`).
+2. Configure your reverse proxy (NPM, Caddy, Traefik) to authenticate the host and forward the `Remote-*` headers. With Authelia, forward-auth via the proxy is the typical setup.
+3. `docker compose up -d`.
+
+Secrets are read from the environment: **`SECRET_KEY_BASE`** (required) and **`HARDCOVER_APP_API_TOKEN`** (optional — enables Hardcover enrichment). If you'd rather not keep them in the compose file, provide them via Docker secrets, or mount a `config/secrets/` directory containing your own `master.key` + `credentials.yml.enc` (the app auto-detects it). Background jobs run inside the web container via Solid Queue, so there's no separate worker to deploy.
 
 The image is built by GitHub Actions and published to `ghcr.io/mm53bar/tsundoku:latest` (and `:<short-sha>` for pinning). If you're running a fork, point the `image:` line in `compose.yaml` at your own registry.
 

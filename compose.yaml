@@ -1,69 +1,39 @@
-# Tsundoku — Docker Compose
+# Tsundoku — Docker Compose template.
 #
-# Authentication: the app trusts Remote-User / Remote-Email / Remote-Name headers
-# injected by the upstream proxy (nginx-proxy-manager + Authelia forward-auth).
-# It MUST be reached only via the proxy. Do not expose port directly to clients.
-
-x-tsundoku-common: &tsundoku-common
-  # Image is built by .github/workflows/build.yml on every push to main.
-  # Pin to a specific :sha tag if you want to lock to a known build instead
-  # of following main.
-  image: ghcr.io/mm53bar/tsundoku:latest
-  # The image is host-agnostic; set the runtime UID/GID here to match the
-  # owner of LIBRARY_DIR / INGEST_DIR / CONFIG_DIR on the host (Synology
-  # shared folders are typically 1027:100).
-  user: "${UID:-1000}:${GID:-1000}"
-  restart: unless-stopped
-  pull_policy: always
-  volumes:
-    - ${LIBRARY_DIR:?LIBRARY_DIR must be set}:/library:rw
-    - ${INGEST_DIR:?INGEST_DIR must be set}:/ingest:rw
-    - ${CONFIG_DIR:?CONFIG_DIR must be set}:/rails/storage:rw
-    # Point CWA_CONFIG_DIR at your existing CWA config directory (the one
-    # CWA itself uses at /config) to let the `kobo:import_sync_state_from_cwa`
-    # rake task auto-discover app.db. If unset, the repo's empty/ directory
-    # is mounted instead — harmless, the rake task will just error out with
-    # "CWA db not found" if invoked.
-    - ${CWA_CONFIG_DIR:-./empty}:/cwa-config:ro
-    # Persistent secrets dir holding master.key + credentials.yml.enc. These
-    # are operator-owned and never baked into the published image. Mounted rw
-    # so `docker compose exec tsundoku bin/rails credentials:edit` persists.
-    # SEED IT BEFORE FIRST BOOT: drop master.key + credentials.yml.enc here (or
-    # set RAILS_MASTER_KEY in the environment). An empty/unseeded dir means prod
-    # can't decrypt credentials and the container fails to boot.
-    - ${SECRETS_DIR:?SECRETS_DIR must be set}:/rails/config/secrets:rw
-  environment: &tsundoku-env
-    TZ: ${TZ:-UTC}
-    LIBRARY_PATH: /library
-    INGEST_PATH: /ingest
-    APP_URL: ${APP_URL:?APP_URL must be set, e.g. https://tsundoku.example.com}
-    AUTHELIA_LOGOUT_URL: ${AUTHELIA_LOGOUT_URL:-}
-    RAILS_LOG_TO_STDOUT: "1"
-    # Secrets are NOT env vars. The Rails master key and the Hardcover API token
-    # (metadata enrichment) live in SECRETS_DIR: drop master.key in, and add the
-    # token via `bin/rails credentials:edit` under key `hardcover_app_api_token`.
-    # (Setting RAILS_MASTER_KEY / HARDCOVER_APP_API_TOKEN as env still works as a
-    # fallback if you prefer env-based config.)
-    # Optional — Shelfmark instance URL. When set, the UI renders
-    # "Find via Shelfmark" links next to books not in the local library;
-    # Shelfmark downloads land in INGEST_DIR and AutoIngestScanJob ingests
-    # them. Unset → no links rendered.
-    SHELFMARK_URL: ${SHELFMARK_URL:-}
+# Tsundoku trusts Remote-User / Remote-Email / Remote-Name headers from an
+# upstream auth proxy (e.g. nginx-proxy-manager + Authelia forward-auth) and
+# MUST be reached only through it — never expose the port directly to clients.
+#
+# This is a template: copy it into your stack (Portainer/Arcane or plain
+# `docker compose`) and edit the volume paths, the `user:` UID:GID, and
+# SECRET_KEY_BASE for your host. Background jobs run inside the web container
+# (Solid Queue in Puma), so there's a single service — no separate worker.
 
 services:
   tsundoku:
-    <<: *tsundoku-common
+    image: ghcr.io/mm53bar/tsundoku:latest   # pin to :<short-sha> to lock a build
+    user: "1000:1000"                          # UID:GID that owns the dirs below (Synology: often 1027:100)
+    restart: unless-stopped
+    pull_policy: always
     ports:
-      - "${HOST_PORT:-3000}:8080"
+      - "3000:8080"                            # host:container — the container port is fixed at 8080
+    volumes:
+      - /path/to/library:/library:rw           # your Calibre / ebook library
+      - /path/to/ingest:/ingest:rw             # drop-folder watched for new EPUBs
+      - /path/to/config:/rails/storage:rw      # SQLite DBs + caches — must persist
+      # Optional, only for migrating from Calibre-Web-Automated:
+      # - /path/to/cwa-config:/cwa-config:ro
     environment:
-      <<: *tsundoku-env
-      # Thruster listens here. Container runs as non-root, so it can't bind :80.
-      HTTP_PORT: "8080"
+      # Required. Generate once with: openssl rand -hex 64
+      SECRET_KEY_BASE: "replace-with-64-byte-hex"
+      # Optional — set to enable Hardcover metadata enrichment:
+      # HARDCOVER_APP_API_TOKEN: "your-hardcover-jwt"
+      # Optional (defaults shown):
+      # TZ: "UTC"
+      # AUTHELIA_LOGOUT_URL: "https://auth.example.com/logout"   # where "Sign out" redirects
+      # SHELFMARK_URL: "https://shelfmark.example.com"           # enables "Find via Shelfmark" links
 
-  worker:
-    <<: *tsundoku-common
-    # Runs background jobs (Calibre import, Phase 2 metadata enrichment) via
-    # Solid Queue. Same image, no web server, no port.
-    command: [ "bundle", "exec", "rake", "solid_queue:start" ]
-    depends_on:
-      - tsundoku
+# Prefer to keep secrets out of this file? Set SECRET_KEY_BASE /
+# HARDCOVER_APP_API_TOKEN via Docker secrets, or mount a directory at
+# /rails/config/secrets containing your own master.key + credentials.yml.enc
+# (the app auto-detects it and reads the Hardcover token from credentials).
