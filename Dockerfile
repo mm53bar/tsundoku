@@ -93,6 +93,11 @@ COPY --from=build /rails /rails
 RUN mkdir -p tmp/pids tmp/cache tmp/sockets log && \
     chmod -R 0777 tmp log
 
+# Non-root runtime users have no writable HOME (it defaults to /), so Bundler
+# falls back to a temp dir and logs a warning on every command. Point HOME at
+# the world-writable tmp dir to keep that noise out of the logs.
+ENV HOME="/rails/tmp"
+
 # Entrypoint prepares the database.
 ENTRYPOINT ["/rails/bin/docker-entrypoint"]
 
