@@ -8,7 +8,7 @@ module ShelfmarkHelper
   # mount (see calibrain/shelfmark
   # src/frontend/src/utils/parseUrlSearchParams.ts).
   def shelfmark_search_url(title:, author: nil, isbn: nil)
-    base = Rails.configuration.x.shelfmark_url
+    base = Setting.current.effective_shelfmark_url
     return nil if base.blank? || title.blank?
 
     params = { title: title, content_type: "ebook" }

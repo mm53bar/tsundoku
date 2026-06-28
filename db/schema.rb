@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_31_195848) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_28_212932) do
   create_table "authors", force: :cascade do |t|
     t.integer "calibre_id"
     t.datetime "created_at", null: false
@@ -184,6 +184,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_31_195848) do
     t.index ["calibre_id"], name: "index_series_on_calibre_id", unique: true
     t.index ["hardcover_slug"], name: "index_series_on_hardcover_slug"
     t.index ["name"], name: "index_series_on_name"
+  end
+
+  create_table "settings", force: :cascade do |t|
+    t.string "authelia_logout_url"
+    t.datetime "created_at", null: false
+    t.string "shelfmark_url"
+    t.datetime "updated_at", null: false
   end
 
   create_table "shelf_entries", force: :cascade do |t|

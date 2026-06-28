@@ -2,26 +2,25 @@ require "test_helper"
 
 class ShelfmarkHelperTest < ActionView::TestCase
   setup do
-    @original = Rails.configuration.x.shelfmark_url
-    Rails.configuration.x.shelfmark_url = "https://shelfmark.example.com"
-  end
-
-  teardown do
-    Rails.configuration.x.shelfmark_url = @original
+    Setting.current.update!(shelfmark_url: "https://shelfmark.example.com")
   end
 
   # shelfmark_search_url — the URL builder. Pins the param shape Shelfmark
   # expects (calibrain/shelfmark parseUrlSearchParams.ts) so a future
   # refactor doesn't silently drop a query field.
 
-  test "returns nil when SHELFMARK_URL is unset" do
-    Rails.configuration.x.shelfmark_url = nil
-    assert_nil shelfmark_search_url(title: "Anything")
+  test "returns nil when the Shelfmark URL is unset" do
+    Setting.current.update!(shelfmark_url: nil)
+    with_env("SHELFMARK_URL", nil) do
+      assert_nil shelfmark_search_url(title: "Anything")
+    end
   end
 
-  test "returns nil when SHELFMARK_URL is blank" do
-    Rails.configuration.x.shelfmark_url = ""
-    assert_nil shelfmark_search_url(title: "Anything")
+  test "returns nil when the Shelfmark URL is blank" do
+    Setting.current.update!(shelfmark_url: "")
+    with_env("SHELFMARK_URL", nil) do
+      assert_nil shelfmark_search_url(title: "Anything")
+    end
   end
 
   test "returns nil when title is blank" do
@@ -55,9 +54,19 @@ class ShelfmarkHelperTest < ActionView::TestCase
   end
 
   test "strips a single trailing slash from the configured base URL" do
-    Rails.configuration.x.shelfmark_url = "https://shelfmark.example.com/"
+    Setting.current.update!(shelfmark_url: "https://shelfmark.example.com/")
     url = shelfmark_search_url(title: "Dune")
     assert_includes url, "https://shelfmark.example.com/?"
     refute_includes url, "//?"
+  end
+
+  private
+
+  def with_env(key, value)
+    original = ENV[key]
+    value.nil? ? ENV.delete(key) : ENV[key] = value
+    yield
+  ensure
+    original.nil? ? ENV.delete(key) : ENV[key] = original
   end
 end
