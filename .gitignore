@@ -56,3 +56,7 @@ Gemini_Generated_Image_*.png
 # CWA's data dir, when checked out locally for the migration. Contains
 # personal reading history; never commit.
 /calibre-web/
+
+# Conductor: per-machine personal settings (symlinked into each workspace).
+# The shared .conductor/settings.toml IS committed.
+/.conductor/settings.local.toml

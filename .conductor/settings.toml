@@ -1,0 +1,23 @@
+#:schema https://conductor.build/schemas/settings.repo.schema.json
+
+# Copy gitignored files from the root checkout into each new workspace (a fresh
+# worktree never contains gitignored files). config/master.key lets workspaces
+# decrypt Rails credentials; .env* carries any local config. Setting this
+# overrides Conductor's default .env* pattern, so .env* is listed explicitly.
+file_include_globs = ".env*\nconfig/master.key\n"
+
+[scripts]
+# Fresh worktrees: trust + install the pinned mise toolchain (non-interactive
+# zsh doesn't auto-activate mise), then run the repo's own idempotent setup
+# (bundle install + db:prepare on this workspace's own SQLite under storage/).
+# --skip-server so setup finishes instead of launching the dev server.
+setup = 'mise trust && mise install && mise exec -- bin/setup --skip-server'
+
+# Rails server + Tailwind watcher via foreman (Procfile.dev). bin/dev honours
+# PORT; CONDUCTOR_PORT gives each workspace its own port. foreman keeps web+css
+# in one process group so Conductor can stop them cleanly.
+run = 'PORT="$CONDUCTOR_PORT" mise exec -- bin/dev'
+
+# Per-workspace SQLite + own port, no shared Redis/Docker/DB, so multiple
+# workspaces can run at the same time.
+run_mode = "concurrent"
