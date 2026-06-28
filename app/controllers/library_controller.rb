@@ -3,7 +3,7 @@ class LibraryController < ApplicationController
   ALLOWED_FILTERS = %w[on_kobo].freeze
 
   def index
-    @sort   = ALLOWED_SORTS.include?(params[:sort])     ? params[:sort]   : "title"
+    @sort   = ALLOWED_SORTS.include?(params[:sort])     ? params[:sort]   : "recently_added"
     @filter = ALLOWED_FILTERS.include?(params[:filter]) ? params[:filter] : nil
 
     scope = (@sort == "recently_added") ? Book.recently_added : Book.by_title
