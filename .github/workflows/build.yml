@@ -3,6 +3,11 @@ name: Build and publish image
 on:
   push:
     branches: [ main ]
+  schedule:
+    # Nightly rebuild so :latest picks up dependency PRs that auto-merged via
+    # GITHUB_TOKEN — those merges don't trigger the push-based build above.
+    # 08:00 UTC ≈ 01:00–02:00 America/Edmonton.
+    - cron: "0 8 * * *"
   workflow_dispatch:
 
 jobs:
