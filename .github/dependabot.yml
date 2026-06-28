@@ -6,10 +6,19 @@ updates:
     interval: weekly
   open-pull-requests-limit: 10
   groups:
-    # Bundle co-occurring security fixes into one PR so bundler-audit can
-    # go green (and auto-merge) once all current advisories are resolved.
+    # Co-occurring security fixes in one PR so bundler-audit can go green
+    # (and auto-merge) once all current advisories are resolved.
     security:
       applies-to: security-updates
+      patterns:
+        - "*"
+    # Routine minor/patch bumps batched into a single PR to cut noise.
+    # Major bumps stay individual PRs (they can carry breaking changes).
+    gem-updates:
+      applies-to: version-updates
+      update-types:
+        - "minor"
+        - "patch"
       patterns:
         - "*"
 - package-ecosystem: github-actions
@@ -20,5 +29,10 @@ updates:
   groups:
     security:
       applies-to: security-updates
+      patterns:
+        - "*"
+    # All action updates in one PR — they're CI-gated and low-risk.
+    action-updates:
+      applies-to: version-updates
       patterns:
         - "*"
