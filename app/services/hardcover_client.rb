@@ -64,11 +64,19 @@ class HardcoverClient
     }
   GQL
 
-  def self.available?
-    ENV["HARDCOVER_APP_API_TOKEN"].present?
+  # Token source: encrypted credentials (`hardcover_app_api_token`) preferred,
+  # falling back to the legacy HARDCOVER_APP_API_TOKEN env var so older
+  # env-based deploys keep working during the cutover.
+  def self.api_token
+    Rails.application.credentials.hardcover_app_api_token.presence ||
+      ENV["HARDCOVER_APP_API_TOKEN"].presence
   end
 
-  def initialize(token: ENV["HARDCOVER_APP_API_TOKEN"])
+  def self.available?
+    api_token.present?
+  end
+
+  def initialize(token: self.class.api_token)
     @token = token
   end
 

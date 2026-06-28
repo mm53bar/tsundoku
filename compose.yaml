@@ -25,16 +25,22 @@ x-tsundoku-common: &tsundoku-common
     # is mounted instead — harmless, the rake task will just error out with
     # "CWA db not found" if invoked.
     - ${CWA_CONFIG_DIR:-./empty}:/cwa-config:ro
+    # Persistent secrets dir holding master.key + credentials.yml.enc. These
+    # are operator-owned and never baked into the published image. Mounted rw
+    # so `docker compose exec tsundoku bin/rails credentials:edit` persists.
+    - ${SECRETS_DIR:?SECRETS_DIR must be set}:/rails/config/secrets:rw
   environment: &tsundoku-env
     TZ: ${TZ:-UTC}
     LIBRARY_PATH: /library
     INGEST_PATH: /ingest
     APP_URL: ${APP_URL:?APP_URL must be set, e.g. https://tsundoku.example.com}
     AUTHELIA_LOGOUT_URL: ${AUTHELIA_LOGOUT_URL:-}
-    RAILS_MASTER_KEY: ${RAILS_MASTER_KEY:?RAILS_MASTER_KEY must be set}
     RAILS_LOG_TO_STDOUT: "1"
-    # Phase 2 metadata enrichment. Optional — unset means Hardcover lookups are skipped.
-    HARDCOVER_APP_API_TOKEN: ${HARDCOVER_APP_API_TOKEN:-}
+    # Secrets are NOT env vars. The Rails master key and the Hardcover API token
+    # (metadata enrichment) live in SECRETS_DIR: drop master.key in, and add the
+    # token via `bin/rails credentials:edit` under key `hardcover_app_api_token`.
+    # (Setting RAILS_MASTER_KEY / HARDCOVER_APP_API_TOKEN as env still works as a
+    # fallback if you prefer env-based config.)
     # Optional — Shelfmark instance URL. When set, the UI renders
     # "Find via Shelfmark" links next to books not in the local library;
     # Shelfmark downloads land in INGEST_DIR and AutoIngestScanJob ingests
