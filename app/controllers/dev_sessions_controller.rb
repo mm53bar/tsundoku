@@ -7,7 +7,7 @@ class DevSessionsController < ApplicationController
   end
 
   def create
-    username = params[:as].to_s.strip.presence || "mike"
+    username = params[:as].to_s.strip.presence || "alex"
     user = User.find_or_provision_from_proxy(
       username: username,
       email:    "#{username}@dev.local",

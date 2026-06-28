@@ -218,9 +218,8 @@ class Kobo::SyncControllerTest < ActionDispatch::IntegrationTest
   # DELETE /v1/library/:book_uuid — auto-recovery for manual device wipes.
   # The device announces each book it just removed; we remove the matching
   # KoboSyncedBook snapshot so the next sync diff re-emits NewEntitlement
-  # for books that are still in syncable_books. Sheila's "I wiped my Kobo
-  # and it didn't restore everything" scenario from 2026-05-31 is the
-  # motivating case.
+  # for books that are still in syncable_books. The "I wiped my Kobo
+  # and it didn't restore everything" scenario is the motivating case.
 
   test "DELETE library/:book_uuid removes the snapshot row for that uuid" do
     book = downloadable_book(title: "About to be wiped")
@@ -277,7 +276,7 @@ class Kobo::SyncControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "DELETE library/:book_uuid touches non-Starred syncing shelves the book was on" do
-    # Sheila's actual scenario from 2026-05-31: she wiped her Kobo,
+    # The scenario: a user wiped their Kobo,
     # collections on the device stayed but emptied out. Without this
     # touch, the next sync sees `shelf.updated_at <= snapshot.updated_at`
     # and emits no ChangedTag — collection sits empty on the device.

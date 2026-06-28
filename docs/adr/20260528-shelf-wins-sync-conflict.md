@@ -14,7 +14,7 @@ These can disagree. The interesting case is:
 > A book is marked `read` (status says don't sync) AND is on a shelf with
 > `sync_to_kobo = true` (shelf says do sync).
 
-Example: Mike finished *Foundation* years ago. He maintains an "All-time
+Example: Alex finished *Foundation* years ago. He maintains an "All-time
 greats" shelf with `sync_to_kobo = true` so he can pick something to
 re-read on the Kobo. Marking the book `read` should not silently kick it
 off the device — but a naive "status wins" rule would.

@@ -35,7 +35,7 @@ Find the `[OneStoreServices]` section and replace one line:
 
 ```
 [OneStoreServices]
-api_endpoint=https://tsundoku.backson.boo/kobo/<handle>
+api_endpoint=https://tsundoku.example.com/kobo/<handle>
 ```
 
 Eject the device, tap **Sync** on the home screen. That's it — no factory
@@ -59,7 +59,7 @@ validate certs against the system trust store, so:
   with a real cert. We already do this; nothing new needed.
 
 Note: the hostname needs a publicly-signed cert, but does **not** need to be
-internet-reachable. `tsundoku.backson.boo` resolves only on the LAN — the
+internet-reachable. `tsundoku.example.com` resolves only on the LAN — the
 public CA cert is what Kobo's TLS validation cares about, not the routability
 of the IP. The Kobo only syncs when it's on the home WiFi, which is fine.
 
@@ -73,7 +73,7 @@ file, requires a generation UI and a revocation flow) for security value
 that's effectively zero in this deployment.
 
 But we don't want to use the raw username either: a houseguest on the LAN
-who knows Mike's username could trivially probe `/kobo/mmcclenaghan` and
+who knows Alex's username could trivially probe `/kobo/alex` and
 pull the library. Slug-of-username doesn't fix that — the obscurity has to
 be independent of identity.
 
@@ -103,7 +103,7 @@ end
 URL the user puts in `eReader.conf`:
 
 ```
-api_endpoint=https://tsundoku.backson.boo/kobo/violin
+api_endpoint=https://tsundoku.example.com/kobo/violin
 ```
 
 Properties:
@@ -114,7 +114,7 @@ Properties:
   a script. The point is removing the "guess the user's name and try it"
   attack, not surviving a determined adversary.
 - **Revocable.** A "Regenerate" button on the user settings page generates a
-  new word; the old URL stops working immediately. Mike re-edits
+  new word; the old URL stops working immediately. Alex re-edits
   `eReader.conf` on the Kobo (USB, 30 seconds).
 - **Readable in NPM logs.** `kobo/violin` is meaningful in a way `kobo/<32 hex>`
   is not.
@@ -286,7 +286,7 @@ add tombstones only if it gets ugly.
 
 ## 5. What gets synced — the inclusion rule
 
-This is the meat of the decision Mike already made. Restated for the record:
+This is the meat of the decision Alex already made. Restated for the record:
 
 A book is in user U's syncable set if **any** of:
 
@@ -299,7 +299,7 @@ A book is **not** in the syncable set if:
 - No reading record AND not on any syncing shelf.
 - Reading record exists but status is `read`, AND not on any syncing shelf.
 
-The "shelf-wins" case is implicit: if Mike marks a finished book as `read`
+The "shelf-wins" case is implicit: if Alex marks a finished book as `read`
 AND adds it to a shelf called "All-time greats" with `sync_to_kobo: true`,
 the shelf wins. The book syncs. Status doesn't suppress an explicit opt-in.
 
@@ -382,10 +382,10 @@ sent to the device shouldn't appear in the shelf's items list — that
 creates a dangling reference on the device.
 
 When the device creates a shelf locally and pushes it (`POST tags`), we
-mirror it as a new `Shelf` owned by the auth-token's user. Mike's call:
+mirror it as a new `Shelf` owned by the auth-token's user. Alex's call:
 new shelves from the device default to `sync_to_kobo: true` (otherwise we'd
 create-then-immediately-stop-syncing, which is confusing) but they're
-visible in the Tsundoku UI and Mike can untoggle.
+visible in the Tsundoku UI and Alex can untoggle.
 
 ## 8. KEPUB vs EPUB
 

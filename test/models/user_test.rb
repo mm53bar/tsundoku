@@ -47,18 +47,18 @@ class UserTest < ActiveSupport::TestCase
   end
 
   test "display_name prefers name when set" do
-    user = User.new(name: "Mike", username: "mmcclenaghan")
-    assert_equal "Mike", user.display_name
+    user = User.new(name: "Alex", username: "alex")
+    assert_equal "Alex", user.display_name
   end
 
   test "display_name falls back to username when name is blank" do
-    user = User.new(name: "", username: "mmcclenaghan")
-    assert_equal "mmcclenaghan", user.display_name
+    user = User.new(name: "", username: "alex")
+    assert_equal "alex", user.display_name
   end
 
   test "display_name falls back to username when name is nil" do
-    user = User.new(name: nil, username: "mmcclenaghan")
-    assert_equal "mmcclenaghan", user.display_name
+    user = User.new(name: nil, username: "alex")
+    assert_equal "alex", user.display_name
   end
 
   # find_or_provision_from_proxy is the identity boundary for the proxy-

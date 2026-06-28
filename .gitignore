@@ -32,6 +32,9 @@
 
 # Ignore key files for decrypting credentials and more.
 /config/*.key
+# Never commit a credentials file at the conventional path — operators bring
+# their own via config/secrets/ (mounted), and dev auto-generates secret_key_base.
+/config/credentials.yml.enc
 
 # config/secrets/ is purely a runtime bind-mount location for an operator's
 # master.key + credentials.yml.enc — nothing here should ever be committed.

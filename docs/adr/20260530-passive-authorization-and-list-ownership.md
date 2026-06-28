@@ -6,7 +6,7 @@ After the first authorization pass (capability predicates on `User`,
 gating actions like book editing and Calibre import on `admin?`), the
 app had two failure modes that pulled in opposite directions.
 
-**Failure mode 1: trusted-user friction.** Sheila is a household
+**Failure mode 1: trusted-user friction.** Robin is a household
 member, not an admin. She tried to trigger Hardcover enrichment on a
 book she was reading and couldn't — `BooksController#enrich` was
 admin-only. The same friction applied to book edits, deletes, and
@@ -14,8 +14,8 @@ list management. All of these are normal household-member activity
 in this deployment.
 
 **Failure mode 2: no per-record ownership.** Lists were global. Any
-admin could edit or destroy any list. "Sheila's want-to-read with
-kids" and "Mike's all-time favourites" lived in the same pool with
+admin could edit or destroy any list. "Robin's want-to-read with
+kids" and "Alex's all-time favourites" lived in the same pool with
 the same edit authority. The role-based gate didn't capture the
 relationship.
 
@@ -99,7 +99,7 @@ points at `/setup` instead. The primary nav loses its "Ingest" link.
 
 ## Consequences
 
-- Sheila's friction case is gone. She can enrich, edit, delete books,
+- Robin's friction case is gone. She can enrich, edit, delete books,
   and create/share lists.
 - Lists carry the ownership semantics the conversation revealed they
   always wanted. "My lists" vs "things shared with me" is now a real
@@ -126,7 +126,7 @@ points at `/setup` instead. The primary nav loses its "Ingest" link.
 ## Alternatives considered (not chosen)
 
 - **Keep `admin?` gates, add "editor" role between reader and admin.**
-  Would technically solve Sheila's case but the role distinction
+  Would technically solve Robin's case but the role distinction
   doesn't carry weight in a homelab — every household member ends up
   in the same group anyway. We'd be modeling complexity that doesn't
   exist.

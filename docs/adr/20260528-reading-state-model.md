@@ -14,7 +14,7 @@ read, are reading, and have finished — independently of every other
 user. Two model shapes were plausible:
 
 1. A `status` column on `Book` itself. Simple, but global: there's only
-   one status per book, which makes no sense in a household where Mike
+   one status per book, which makes no sense in a household where Alex
    has finished a book and his son is just starting it.
 2. A separate join model between `User` and `Book` carrying the status.
 
@@ -28,7 +28,7 @@ For the status vocabulary, the candidates were:
 
 We initially shipped five. After using the app for a while, the two
 extra states (`paused`, `did_not_finish`) turned out to be theoretical:
-Mike never reached for them, and the Kobo's own behaviour ("switch to
+Alex never reached for them, and the Kobo's own behaviour ("switch to
 another book mid-read, the first stays `Reading`") already covers the
 "I'm not actively on this right now" case without a new state. The
 extra vocabulary was carrying cost (every Kobo↔Tsundoku mapping needed

@@ -78,7 +78,7 @@ class AuthorNameNormalizer
   # Heuristic: if *every* token is a single word AND there's an even
   # number of tokens, it's case (b) or (c) — pair them up and flip.
   # Otherwise treat as case (a). This is good enough for the dirty
-  # data observed in Sheila's library; the cases that fool it are rare
+  # data observed in a real Calibre library; the cases that fool it are rare
   # enough that the cleanup-button manual override is fine.
   def interpret_parts(parts)
     return parts if parts.size == 1

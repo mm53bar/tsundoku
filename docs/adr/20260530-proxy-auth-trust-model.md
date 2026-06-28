@@ -52,7 +52,7 @@ Forward-auth via proxy headers. Specifically:
 - **The deployment invariant is non-negotiable: Tsundoku MUST NOT be
   reachable except via the proxy.** If a future deployment exposes
   the container's port directly (without the proxy in front), anyone
-  on the network can `curl -H "Remote-User: mike"` and become Mike.
+  on the network can `curl -H "Remote-User: alex"` and become Alex.
   `compose.yaml` documents this with a comment at the top:
   > Authentication: the app trusts Remote-User / Remote-Email /
   > Remote-Name headers injected by the upstream proxy

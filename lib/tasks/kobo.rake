@@ -54,9 +54,9 @@ namespace :kobo do
   # back *in* for books CWA was already pushing.
   #
   # Usage:
-  #   bin/rails 'kobo:import_sync_state_from_cwa[mike,smoketest]'
+  #   bin/rails 'kobo:import_sync_state_from_cwa[alex,smoketest]'
   #     — picks up <CWA_CONFIG_PATH>/app.db (default /cwa-config/app.db)
-  #   bin/rails 'kobo:import_sync_state_from_cwa[mike,smoketest,/explicit/path.db]'
+  #   bin/rails 'kobo:import_sync_state_from_cwa[alex,smoketest,/explicit/path.db]'
   #     — overrides the auto-discovered location
   desc "Import CWA's sync state (kobo_synced_books + reading progress) for a user pair"
   task :import_sync_state_from_cwa, [ :cwa_username, :tsundoku_username, :cwa_db_path ] => :environment do |_t, args|

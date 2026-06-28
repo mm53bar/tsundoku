@@ -11,7 +11,7 @@ Active. Imports from a Calibre library, enriches metadata via Hardcover, syncs t
 ## Local development
 
 ```bash
-# Install Ruby and Node via mise (versions pinned in .mise.toml)
+# Install Ruby via mise (version pinned in .mise.toml)
 mise install
 
 # Install gems
@@ -26,9 +26,7 @@ bin/rails db:prepare
 bin/rails server
 ```
 
-Visit `http://localhost:3000`. You'll be redirected to `/dev_login` — sign in as any username. The first user created gets the `admin` role; everyone after that defaults to `reader`.
-
-To seed a realistic library for UI work — two users (Mike + Sheila), a handful of authors/series, 20 books with file stubs, varied reading progress, shelves, and lists with matched + unmatched entries — run `bin/rails dev:prime`. Idempotent; destroys + recreates the touched models. The task only loads in `development` / `test`.
+Visit `http://localhost:3000`. You'll be redirected to `/dev_login` — sign in as any username (users are auto-provisioned on first sign-in). The first user created gets the `admin` role; everyone after that defaults to `reader`. The dev database starts empty; drop a few EPUBs into `storage/library_dev/` to populate the index.
 
 Run the test suite:
 
@@ -40,9 +38,14 @@ bin/rails test
 
 Tsundoku expects to live behind a reverse proxy that handles authentication and injects identity headers (`Remote-User`, `Remote-Email`, `Remote-Name`). **It must not be exposed directly to clients** — anyone reaching the container directly can spoof the headers. See [`docs/adr/20260530-proxy-auth-trust-model.md`](docs/adr/20260530-proxy-auth-trust-model.md).
 
-1. Copy `.env.example` to `.env` and fill in the values (host paths, UID/GID matching your library volume owner, Rails master key).
-2. Configure your reverse proxy (NPM, Caddy, Traefik) to authenticate the host and forward the `Remote-*` headers. With Authelia, forward-auth via the proxy is the typical setup.
-3. `docker compose up -d`.
+1. Copy `.env.example` to `.env` (or set the equivalents in your container stack) and fill in the host-specific values — library/ingest/config paths, `APP_URL`, and `SECRETS_DIR`.
+2. Provide your own secrets. The published image ships none, so **forks must generate their own** Rails master key + encrypted credentials:
+   ```bash
+   EDITOR=true bin/rails credentials:edit
+   ```
+   Mount the resulting `master.key` + `credentials.yml.enc` at `SECRETS_DIR` (→ `config/secrets/`), and store your Hardcover API token there under `hardcover_app_api_token`. (Simplest alternative: set `RAILS_MASTER_KEY` and `HARDCOVER_APP_API_TOKEN` as env vars instead.) See `.env.example` for details.
+3. Configure your reverse proxy (NPM, Caddy, Traefik) to authenticate the host and forward the `Remote-*` headers. With Authelia, forward-auth via the proxy is the typical setup.
+4. `docker compose up -d`.
 
 The image is built by GitHub Actions and published to `ghcr.io/mm53bar/tsundoku:latest` (and `:<short-sha>` for pinning). If you're running a fork, point the `image:` line in `compose.yaml` at your own registry.
 

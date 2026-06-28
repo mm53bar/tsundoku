@@ -27,7 +27,7 @@ two problems:
    case, but the dropdown forced the user to pick a status even
    when no manual override was relevant.
 
-The conversation that led here started when Sheila joined the
+The conversation that led here started when Robin joined the
 household: she expected the "Reading" tab to reflect what she was
 actually reading on her Kobo, not whatever status someone had set
 in Tsundoku.

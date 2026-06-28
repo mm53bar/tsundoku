@@ -2,7 +2,7 @@
 
 ## Context
 
-Sheila's primary friction point when adding books to the library is the
+Robin's primary friction point when adding books to the library is the
 "books not in the library" step. The pattern repeats: she sees a title
 on a list, on an author page, or in a series block; switches to
 Shelfmark in another tab; types the title (and maybe author); confirms
@@ -19,7 +19,7 @@ Shelfmark → wait two minutes."
 Two ways to do it:
 
 **Option A — URL handoff.** Tsundoku links to Shelfmark with the search
-fields encoded as query params. Sheila lands on Shelfmark's pre-filled
+fields encoded as query params. Robin lands on Shelfmark's pre-filled
 results page, picks the right edition, downloads. One click before the
 human-in-the-loop step.
 
@@ -29,13 +29,13 @@ human-in-the-loop step at all, but only if the auto-pick is reliable.
 
 Shelfmark's search results frequently contain multiple editions for the
 same work (regional, large-print, abridged, audiobook, mismatched
-metadata). Picking the right one is the part Sheila already does well
+metadata). Picking the right one is the part Robin already does well
 and Tsundoku has no signal to do better. Going hands-off would mean
 landing wrong editions in the library and cleaning them up after, which
 is worse than the current pre-fill friction.
 
 The Shelfmark instance lives on the same LAN
-(`shelfmark.backson.boo`), and its frontend already bootstraps a search
+(`shelfmark.example.com`), and its frontend already bootstraps a search
 from URL query params on mount — see `calibrain/shelfmark`,
 `src/frontend/src/utils/parseUrlSearchParams.ts`. No Shelfmark-side
 changes are required.
@@ -67,14 +67,14 @@ Query params used:
 title         (required)
 author        (when known)
 isbn          (when known — list entries occasionally carry it)
-content_type  (always "ebook" — Sheila's universe)
+content_type  (always "ebook" — Robin's universe)
 ```
 
 ### Surfaces
 
 - **`lists/show`** — every unmatched list entry (`entry.matched? ==
   false`) gets a "Find on Shelfmark" link inline with the "Not in
-  library" badge. This is the primary surface: lists are how Sheila
+  library" badge. This is the primary surface: lists are how Robin
   imports recommendations, and the unmatched entries are by definition
   the books she's about to need.
 - **`hardcover/_book_thumb`** — the partial used by `authors#more_books`
@@ -93,7 +93,7 @@ already in the library — there's nothing to fetch.
 - The ingest pipeline becomes "click in Tsundoku → confirm in
   Shelfmark → wait ~2 minutes." `AutoIngestScanJob` was already in
   place; this just trims the user's half.
-- Sheila stays in the loop for edition selection, which is where she
+- Robin stays in the loop for edition selection, which is where she
   already adds the most value.
 - The integration is one-way and stateless: Tsundoku doesn't track
   which links were clicked, doesn't know whether Shelfmark downloaded
@@ -105,6 +105,6 @@ already in the library — there's nothing to fetch.
   link-free.
 - Option B remains available as a future addition. The decision to
   defer it is reversible — we'll have usage data from Option A
-  (anecdotal: "how often does Sheila say 'it picked the wrong edition'
+  (anecdotal: "how often does Robin say 'it picked the wrong edition'
   vs 'the first result was right'?") before committing to the
   auto-pick logic.

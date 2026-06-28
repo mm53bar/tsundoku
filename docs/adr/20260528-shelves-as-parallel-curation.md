@@ -14,7 +14,7 @@ also drive sync: did this book sync because it's on my "Currently
 Reading" shelf or my "Favourites" shelf?
 
 We also need a way to opt collections into Kobo sync that's independent
-of reading status. A book Mike marked `read` years ago might still belong
+of reading status. A book Alex marked `read` years ago might still belong
 on his "All-time greats" shelf and should stay on his Kobo.
 
 ## Decision

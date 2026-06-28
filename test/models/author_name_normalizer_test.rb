@@ -2,7 +2,7 @@ require "test_helper"
 
 class AuthorNameNormalizerTest < ActiveSupport::TestCase
   # Each test pins one observed dirty input to the cleaned output we
-  # want. The fixture inputs all come from Sheila's actual library;
+  # want. The fixture inputs are representative dirty Calibre author strings;
   # the heuristic was tuned against that distribution.
 
   # Clean inputs pass through unchanged.

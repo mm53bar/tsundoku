@@ -1,6 +1,6 @@
 # Tsundoku — Rails book-management app
 
-Self-hosted replacement for most of Calibre-Web-Automated. Rails 8 / SQLite, deployed via Docker Compose on Synology. Family of 3, ~300 books, OIDC via Authelia, Kobo cloud-sync emulation deferred to a later phase.
+Self-hosted replacement for most of Calibre-Web-Automated. Rails 8 / SQLite, deployed via Docker Compose on Synology. A small household with a few hundred books, OIDC via Authelia, Kobo cloud-sync emulation deferred to a later phase.
 
 > 積ん読 — *tsundoku*: the practice of acquiring books and letting them pile up unread.
 
@@ -11,18 +11,18 @@ Self-hosted replacement for most of Calibre-Web-Automated. Rails 8 / SQLite, dep
 - **Testing:** Minitest with fixtures. No RSpec. No factories. No mocks.
 - **Auth:** Forward-auth via Nginx Proxy Manager + Authelia. The app trusts `Remote-User` / `Remote-Email` / `Remote-Name` request headers injected by the proxy and auto-provisions users keyed on `Remote-User`. First user gets `admin`; subsequent users default to `reader`. The app never speaks OIDC itself — no client registration, no client secret. In development, `/dev_login` bypasses auth via session cookie. **Note:** `Remote-User` collides with the CGI standard `REMOTE_USER` env var, so the controller reads it via `request.headers["HTTP_REMOTE_USER"]` directly, not the friendly `request.headers["Remote-User"]` lookup (which returns nil).
 - **Deployment:** `compose build: <github-url>` from this repo. GitHub repo will be public from day one. No GHCR publish (door left open via build-args pattern but not used).
-- **UID/GID handling:** `ARG UID=1000 / ARG GID=1000` in Dockerfile, overridden per-host via compose build args. Mike's Synology overrides to `1027:100`.
+- **UID/GID handling:** `ARG UID=1000 / ARG GID=1000` in Dockerfile, overridden per-host via compose build args. Alex's Synology overrides to `1027:100`.
 - **Library access:** Rails owns its own SQLite DB. Reads Calibre `metadata.db` read-only during bulk import. Never writes to `metadata.db`. EPUB files on disk are the source of truth for content; Rails DB is the source of truth for metadata.
 - **Filesystem layout in container:** `/library` (Calibre tree, RW), `/ingest` (Shelfmark drop, RW), `/rails/storage` (Rails SQLite + Active Storage + caches).
-- **Networking:** Local domain `backson.boo`. Nginx Proxy Manager (`npm.backson.boo`) fronts the app, terminates TLS, forwards plain HTTP to the container.
+- **Networking:** Local domain `example.com`. Nginx Proxy Manager (`npm.example.com`) fronts the app, terminates TLS, forwards plain HTTP to the container.
 - **Kobo sync:** out of MVP. CWA stays running headless on the same library volume during phases 1–3. Port from `cps/kobo.py` in phase 4.
 - **In-browser reader:** out of scope.
 
 ## Open items before deployment
 
 1. **Shelfmark ingest path** on Synology — host path that will mount to `/ingest`. Set as `INGEST_DIR` in `.env`.
-2. **UID/GID on the library volume** — confirmed `1027:100` for Mike's Synology.
-3. **NPM forward-auth config** — configure `tsundoku.backson.boo` proxy host to require Authelia via forward-auth, injecting `Remote-User` / `Remote-Email` / `Remote-Name` headers. Same template the rest of the homelab uses.
+2. **UID/GID on the library volume** — confirmed `1027:100` for Alex's Synology.
+3. **NPM forward-auth config** — configure `tsundoku.example.com` proxy host to require Authelia via forward-auth, injecting `Remote-User` / `Remote-Email` / `Remote-Name` headers. Same template the rest of the homelab uses.
 4. **Oatmeal template** — unpack `oatmeal-taupe-instrument.zip` and integrate components (deferred to Phase 1 styling pass).
 
 ## Phase 0 — Spike — DONE (locally)
@@ -45,7 +45,7 @@ What's in place:
 
 Verified locally: `bin/rails server` boots, `/` redirects unauthed users to `/sign_in`, `/up` returns 200.
 
-**Exit criterion for deployment:** Mike's browser hits `https://tsundoku.backson.boo/`, gets redirected to Authelia, logs in, returns to a page that does a basic `Dir.glob` over `/library` and renders filenames.
+**Exit criterion for deployment:** Alex's browser hits `https://tsundoku.example.com/`, gets redirected to Authelia, logs in, returns to a page that does a basic `Dir.glob` over `/library` and renders filenames.
 
 ## Phase 1 — Library MVP (target: 2–3 weeks evenings)
 

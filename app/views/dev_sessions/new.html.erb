@@ -5,7 +5,7 @@
   <p class="text-stone-600 mb-6 text-sm">Stand-in for the proxy's <code>Remote-User</code> header in local development. Any username creates or signs you in as that user.</p>
 
   <%= form_with url: dev_login_path, method: :post, local: true, class: "flex gap-2" do |f| %>
-    <%= f.text_field :as, value: "mike", required: true,
+    <%= f.text_field :as, value: "alex", required: true,
           class: "flex-1 border border-stone-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400" %>
     <%= f.submit "Sign in", class: "bg-stone-900 text-white rounded px-4 py-2 hover:bg-stone-700 cursor-pointer" %>
   <% end %>

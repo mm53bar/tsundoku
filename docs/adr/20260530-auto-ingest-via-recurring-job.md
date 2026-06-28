@@ -6,7 +6,7 @@ The existing ingest flow required a person to visit `/ingest` and click
 "Scan." Files dropped into `INGEST_PATH` (by Shelfmark, by manual
 copy, by anything that writes there) sat untouched until someone
 remembered to scan. For a household where one user drops books and a
-different user reads them, that's a coordination problem — Sheila
+different user reads them, that's a coordination problem — Robin
 shouldn't have to ask "did the book I added show up in Tsundoku yet?"
 
 Three implementation strategies were on the table:
@@ -69,7 +69,7 @@ guards the mid-flight window.
 
 ## Consequences
 
-- Sheila drops a book into Shelfmark; within ~2 minutes it's in the
+- Robin drops a book into Shelfmark; within ~2 minutes it's in the
   Tsundoku library with an enrichment proposal queued.
 - The manual `/ingest` page stays as-is, both for the "do it now"
   case and for visibility into what's pending.

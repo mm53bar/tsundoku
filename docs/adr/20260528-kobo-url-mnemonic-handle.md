@@ -14,7 +14,7 @@ revocable.
 
 That's overkill for our deployment:
 
-- `tsundoku.backson.boo` resolves only on the LAN. The endpoint isn't
+- `tsundoku.example.com` resolves only on the LAN. The endpoint isn't
   internet-reachable. The realistic attackers are "a houseguest on the
   WiFi" and "a malware'd IoT device" — neither is running a brute-force
   script.
@@ -26,7 +26,7 @@ That's overkill for our deployment:
 Two simpler alternatives were considered:
 
 - **Username (or username slug) as the path segment.** Zero overhead, but
-  trivially probed by a houseguest who knows Mike's name. Removes the
+  trivially probed by a houseguest who knows Alex's name. Removes the
   obscurity layer entirely.
 - **Short mnemonic word from a curated wordlist.** Adds a tiny obscurity
   layer (a guest has to guess one of ~1626 words, not one of two known
@@ -41,7 +41,7 @@ A `kobo_handle` column on `User`, populated by random selection from the
 phonetically-distinct English words, 4–7 letters). The wordlist ships in
 the repo at `lib/data/mnemonic_wordlist.txt`.
 
-The URL is `https://tsundoku.backson.boo/kobo/<handle>` — e.g.
+The URL is `https://tsundoku.example.com/kobo/<handle>` — e.g.
 `/kobo/violin`. The handle is generated lazily on first visit to the
 user's "Sync with Kobo" settings page, and regenerable via a button on
 the same page.

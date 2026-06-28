@@ -19,7 +19,7 @@ Both worked; either-or for any given book. `User#on_kobo_books` was
 their union.
 
 The split was honest about the underlying intents but turned out to be
-confusing in practice. Sheila landed on the per-book toggle (it was
+confusing in practice. Robin landed on the per-book toggle (it was
 right there on the book page) for almost every book she wanted on her
 Kobo — 41 of 43, in the production data at the time of this writing.
 Only 3 books were on a syncing shelf, all because she'd explicitly
@@ -38,7 +38,7 @@ no visible signpost.
 `Reading.sync_to_device`. `User#on_kobo_books` becomes "books on any
 of my syncing shelves."
 
-To preserve the per-book quick-action UX (Sheila's reach for the
+To preserve the per-book quick-action UX (Robin's reach for the
 status-picker toggle was a real preference, not just an accident),
 introduce a **default Starred shelf** per user:
 
