@@ -1,6 +1,14 @@
 {
   "ignored_warnings": [
     {
+      "fingerprint": "4b97bb52d0c43f6648c7ebe7d7b3cfe9c8c9bebbe87f77bfc0a7aae0e7b26e06",
+      "check_name": "Redirect",
+      "message": "Possible unprotected redirect",
+      "file": "app/controllers/sessions_controller.rb",
+      "line": 7,
+      "note": "Intentional cross-host redirect to the operator-configured Authelia SSO logout URL (Setting#effective_authelia_logout_url). Same behavior as the prior AUTHELIA_LOGOUT_URL env var; the value is set only via the settings page (require_settings_access / can_edit_settings?), not from request params. allow_other_host is required because Authelia is on a different host."
+    },
+    {
       "fingerprint": "1b6534999e1504f3f7c4eec9c1a8b1c78d3d666379d914f8f43f5bad4b45c45c",
       "check_name": "FileAccess",
       "message": "Model attribute used in file name",

@@ -66,6 +66,9 @@ Rails.application.routes.draw do
   # ingest, KEPUB conversion docs). Linked from the user menu, not
   # primary nav, since they're not part of daily use.
   get "/setup", to: "setup#show", as: :setup
+
+  resource :settings, only: [ :show, :update ]
+
   get  "/tools",                  to: "tools#show",            as: :tools
   post "/tools/cleanup_authors",  to: "tools#cleanup_authors",  as: :cleanup_authors_tools
 

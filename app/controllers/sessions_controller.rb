@@ -3,7 +3,7 @@ class SessionsController < ApplicationController
 
   def destroy
     reset_session
-    if (logout_url = ENV["AUTHELIA_LOGOUT_URL"]).present?
+    if (logout_url = Setting.current.effective_authelia_logout_url).present?
       redirect_to logout_url, allow_other_host: true
     else
       redirect_to root_path, notice: "Signed out"

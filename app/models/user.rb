@@ -111,4 +111,8 @@ class User < ApplicationRecord
     return false unless list
     list.user_id == id
   end
+
+  def can_edit_settings?
+    true
+  end
 end

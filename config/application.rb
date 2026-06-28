@@ -48,14 +48,6 @@ module Tsundoku
     config.x.library_path = ENV.fetch("LIBRARY_PATH") { Rails.env.production? ? "/library" : Rails.root.join("storage/library_dev").to_s }
     config.x.ingest_path  = ENV.fetch("INGEST_PATH")  { Rails.env.production? ? "/ingest"  : Rails.root.join("storage/ingest_dev").to_s }
 
-    # Shelfmark base URL (e.g. https://shelfmark.example.com). When set,
-    # ShelfmarkHelper renders "Find via Shelfmark" links on surfaces that
-    # show books not in the local library (unmatched list entries,
-    # Hardcover "more by author" / "more in series" thumbs). Shelfmark
-    # downloads land in INGEST_PATH and AutoIngestScanJob picks them up.
-    # Unset → no links rendered.
-    config.x.shelfmark_url = ENV.fetch("SHELFMARK_URL", nil)
-
     # Optional read-only bind mount of CWA's config directory (the same
     # one CWA itself uses at /config in its compose). When present, the
     # CWA migration rake tasks pick up app.db automatically without
