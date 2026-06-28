@@ -35,6 +35,10 @@ Examples in this app:
 - `BookAssets` is a good PORO because "a book's on-disk assets" is a real concept
 - a future `MetadataProposal` would be a good PORO because the enrichment flow has a real proposal/review concept
 
+### `app/services/` is legacy
+
+The `app/services/` directory predates this principle — it's an early vibe-coded artifact, not a sanctioned layer. We are migrating away from it. Don't add to it. When you work in it, move durable rules onto the owning model or reshape the code into a real noun concept. Some of its contents are already fine as nouns (`HardcoverClient`, `EpubParser`); the verb-shaped ones (`BookEnricher`, `BookIngester`) are the prime candidates to dissolve into their owning models.
+
 ## 3. Authorization should stay simple
 
 This app currently assumes a **trusted household environment** rather than a privileged-admin model. Most authenticated users are permitted to act broadly — Authelia gates the front door, and beyond that the boundaries that matter are ownership and explicit sharing, not a role check. This app does not currently need Pundit or CanCan.

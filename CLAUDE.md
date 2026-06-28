@@ -6,6 +6,7 @@ Prefer Rails conventions over architecture-heavy patterns. For rationale and exa
 
 - Do not introduce Pundit, CanCan, or a policy framework unless explicitly requested.
 - Do not introduce generic service-layer indirection. Prefer rich domain models and well-named POROs.
+- `app/services/` is legacy (an early vibe-coded artifact) and we are migrating away from it. Do not add to it. When you touch code there, prefer relocating durable rules onto the owning model or reshaping into a real noun PORO. The verb-ish objects (`BookEnricher`, `BookIngester`) are the prime refactor candidates; some neighbors are already clean nouns (`HardcoverClient`, `EpubParser`).
 - Extract nouns, not verbs. Prefer names like `BookAssets` or `MetadataProposal` over `SomethingService`.
 - Keep controllers focused on HTTP concerns: load records, check permissions, choose responses.
 - Authorization assumes a trusted household: most authenticated users are permitted broadly. Do not introduce an admin-role assumption unless explicitly requested — ownership and explicit sharing are the primary boundaries.
@@ -19,5 +20,6 @@ Prefer Rails conventions over architecture-heavy patterns. For rationale and exa
   - Kobo sync and tombstone behavior
   - file serving and KEPUB selection
   - search behavior
+- Run `bin/ci` before considering work complete (the full gate — tests, rubocop, brakeman, bundler-audit — not just `bin/rails test`). If it fails, fix or surface it; do not declare work done.
 - If you introduce or materially change a significant architectural decision (a security boundary, a sync invariant, an authorization rule, an integration shape), record it as an ADR in `docs/adr/`. Match the format and tone of the existing five ADRs. Coding preferences do not need ADRs — those go here or in `docs/architecture-principles.md`.
 
