@@ -20,6 +20,7 @@ Prefer Rails conventions over architecture-heavy patterns. For rationale and exa
   - Kobo sync and tombstone behavior
   - file serving and KEPUB selection
   - search behavior
+- Test UI behavior with Rack integration tests (`ActionDispatch::IntegrationTest` + `assert_select`), authenticating via `headers_for(user)`. Do not reach for browser system tests — the app carries no Capybara/Selenium harness; genuinely-JS surfaces (Turbo/Stimulus) are manual-tested. See `docs/adr/20260803-integration-tests-over-system-tests.md`.
 - Run `bin/ci` before considering work complete (the full gate — tests, rubocop, brakeman, bundler-audit — not just `bin/rails test`). If it fails, fix or surface it; do not declare work done.
 - If you introduce or materially change a significant architectural decision (a security boundary, a sync invariant, an authorization rule, an integration shape), record it as an ADR in `docs/adr/`. Match the format and tone of the existing five ADRs. Coding preferences do not need ADRs — those go here or in `docs/architecture-principles.md`.
 

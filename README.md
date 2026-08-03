@@ -91,3 +91,4 @@ Rails 8.1 · Ruby 3.4 · SQLite (WAL) · Tailwind v4 · Hotwire (Turbo + Stimulu
   - [`20260531-star-shelf-model.md`](docs/adr/20260531-star-shelf-model.md) — drop `Reading.sync_to_device`; every book reaches the Kobo via shelf membership; introduce the per-user Starred default shelf
   - [`20260628-settings-in-database.md`](docs/adr/20260628-settings-in-database.md) — operator settings (Shelfmark/Authelia URLs) in a `Setting` row, editable in-app
   - [`20260803-secrets-from-env.md`](docs/adr/20260803-secrets-from-env.md) — secrets come from ENV; drop the `config/secrets/` mount
+  - [`20260803-integration-tests-over-system-tests.md`](docs/adr/20260803-integration-tests-over-system-tests.md) — test behavior in Rack integration tests; drop the unused browser system-test harness

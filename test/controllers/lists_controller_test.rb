@@ -1,10 +1,6 @@
 require "test_helper"
 
 class ListsControllerTest < ActionDispatch::IntegrationTest
-  def headers_for(user)
-    { "HTTP_REMOTE_USER" => user.username }
-  end
-
   setup do
     @owner = users(:admin)
     @other = users(:reader)

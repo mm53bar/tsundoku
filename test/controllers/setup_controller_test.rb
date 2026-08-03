@@ -3,10 +3,6 @@ require "fileutils"
 require "tmpdir"
 
 class SetupControllerTest < ActionDispatch::IntegrationTest
-  def headers_for(user)
-    { "HTTP_REMOTE_USER" => user.username }
-  end
-
   setup do
     @user = users(:reader)
     @tmp_library = Dir.mktmpdir("setup_test_library")

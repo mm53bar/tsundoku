@@ -1,10 +1,6 @@
 require "test_helper"
 
 class SettingsControllerTest < ActionDispatch::IntegrationTest
-  def headers_for(user)
-    { "HTTP_REMOTE_USER" => user.username }
-  end
-
   setup { @user = users(:admin) }
 
   test "show renders the settings form for a signed-in user" do
