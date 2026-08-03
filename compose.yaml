@@ -33,7 +33,6 @@ services:
       # AUTHELIA_LOGOUT_URL: "https://auth.example.com/logout"   # where "Sign out" redirects
       # SHELFMARK_URL: "https://shelfmark.example.com"           # enables "Find via Shelfmark" links
 
-# Prefer to keep secrets out of this file? Set SECRET_KEY_BASE /
-# HARDCOVER_APP_API_TOKEN via Docker secrets, or mount a directory at
-# /rails/config/secrets containing your own master.key + credentials.yml.enc
-# (the app auto-detects it and reads the Hardcover token from credentials).
+# Prefer to keep secrets out of this file? Supply SECRET_KEY_BASE /
+# HARDCOVER_APP_API_TOKEN via Docker secrets, or use Rails' encrypted
+# credentials (set RAILS_MASTER_KEY and ship a config/credentials.yml.enc).
