@@ -42,7 +42,7 @@ Tsundoku expects to live behind a reverse proxy that handles authentication and 
 2. Configure your reverse proxy (NPM, Caddy, Traefik) to authenticate the host and forward the `Remote-*` headers. With Authelia, forward-auth via the proxy is the typical setup.
 3. `docker compose up -d`.
 
-Secrets are read from the environment: **`SECRET_KEY_BASE`** (required) and **`HARDCOVER_APP_API_TOKEN`** (optional — enables Hardcover enrichment). If you'd rather not keep them in the compose file, provide them via Docker secrets, or mount a `config/secrets/` directory containing your own `master.key` + `credentials.yml.enc` (the app auto-detects it). Background jobs run inside the web container via Solid Queue, so there's no separate worker to deploy.
+Secrets are read from the environment: **`SECRET_KEY_BASE`** (required) and **`HARDCOVER_APP_API_TOKEN`** (optional — enables Hardcover enrichment). If you'd rather not keep them in the compose file, provide them via Docker secrets, or use Rails' encrypted credentials (set `RAILS_MASTER_KEY` and ship a `config/credentials.yml.enc`). Background jobs run inside the web container via Solid Queue, so there's no separate worker to deploy.
 
 The image is built by GitHub Actions and published to `ghcr.io/mm53bar/tsundoku:latest` (and `:<short-sha>` for pinning). If you're running a fork, point the `image:` line in `compose.yaml` at your own registry.
 
@@ -89,3 +89,5 @@ Rails 8.1 · Ruby 3.4 · SQLite (WAL) · Tailwind v4 · Hotwire (Turbo + Stimulu
   - [`20260530-shelfmark-url-handoff.md`](docs/adr/20260530-shelfmark-url-handoff.md) — link to Shelfmark with pre-filled search, defer server-side API
   - [`20260530-enrichment-no-isbn-fallback.md`](docs/adr/20260530-enrichment-no-isbn-fallback.md) — fall back to title+author search when the ingested book has no ISBN
   - [`20260531-star-shelf-model.md`](docs/adr/20260531-star-shelf-model.md) — drop `Reading.sync_to_device`; every book reaches the Kobo via shelf membership; introduce the per-user Starred default shelf
+  - [`20260628-settings-in-database.md`](docs/adr/20260628-settings-in-database.md) — operator settings (Shelfmark/Authelia URLs) in a `Setting` row, editable in-app
+  - [`20260803-secrets-from-env.md`](docs/adr/20260803-secrets-from-env.md) — secrets come from ENV; drop the `config/secrets/` mount
