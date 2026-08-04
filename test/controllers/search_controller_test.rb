@@ -1,12 +1,6 @@
 require "test_helper"
 
 class SearchControllerTest < ActionDispatch::IntegrationTest
-  # Proxy auth: the controller stack expects Remote-User to identify the
-  # signed-in user. Tests authenticate by injecting that header.
-  def headers_for(user)
-    { "HTTP_REMOTE_USER" => user.username }
-  end
-
   setup do
     @user = users(:reader)
     Book.destroy_all  # start with a clean library
