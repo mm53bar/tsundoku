@@ -39,7 +39,7 @@ gem "thruster", require: false
 # Read EPUB metadata. EPUBs are ZIP archives containing an OPF
 # (Dublin Core) metadata file; rubyzip is the minimal way to crack
 # them open during ingest.
-gem "rubyzip", "~> 3.5"
+gem "rubyzip", "~> 3.6"
 
 # Authentication is forward-auth: nginx-proxy-manager + Authelia gate the
 # request and inject Remote-User / Remote-Email / Remote-Groups headers. The
