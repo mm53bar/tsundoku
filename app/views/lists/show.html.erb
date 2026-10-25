@@ -58,6 +58,14 @@
       <li class="group flex items-center gap-3 px-3 py-2 rounded-md <%= entry.matched? ? "bg-emerald-50/40" : "" %>">
         <span class="shrink-0 w-6 text-right text-xs text-stone-400 font-mono"><%= index + 1 %></span>
 
+        <div class="w-8 h-12 shrink-0 bg-stone-100 rounded overflow-hidden ring-1 ring-stone-200/60">
+          <% if entry.matched? && entry.book.assets.cover_available? %>
+            <%= image_tag cover_book_path(entry.book, v: entry.book.updated_at.to_i), alt: "", loading: "lazy", class: "w-full h-full object-cover" %>
+          <% elsif entry.cover_url.present? %>
+            <img src="<%= entry.cover_url %>" alt="" loading="lazy" referrerpolicy="no-referrer" class="w-full h-full object-cover">
+          <% end %>
+        </div>
+
         <div class="flex-1 min-w-0">
           <% if entry.matched? %>
             <%= link_to entry.book, class: "block group/link" do %>
@@ -67,10 +75,29 @@
               <% end %>
             <% end %>
           <% else %>
-            <p class="text-sm text-stone-700 truncate"><%= entry.title %></p>
-            <% if entry.author_name.present? %>
-              <p class="text-xs text-stone-500 truncate"><%= entry.author_name %></p>
+            <p class="text-sm text-stone-700 truncate"><%= entry.display_title %></p>
+            <% if entry.display_author.present? || entry.release_year %>
+              <p class="text-xs text-stone-500 truncate">
+                <%= entry.display_author %><%= " · #{entry.release_year}" if entry.release_year %>
+              </p>
             <% end %>
+          <% end %>
+
+          <% if entry.ambiguous? && current_user&.can_edit_list?(@list) %>
+            <div class="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
+              <span class="text-stone-500">Which one?</span>
+              <% entry.candidates.each do |candidate| %>
+                <%= button_to choose_list_list_entry_path(@list, entry),
+                      method: :patch,
+                      params: { hardcover_book_id: candidate.id },
+                      class: "inline-flex items-center px-2 py-0.5 rounded border border-stone-300 bg-white text-stone-700 hover:border-amber-600 hover:text-amber-800 cursor-pointer" do %>
+                  <%= candidate.title %><%= " — #{candidate.author}" if candidate.author %><%= " (#{candidate.release_year})" if candidate.release_year %>
+                <% end %>
+              <% end %>
+              <%= button_to "None of these", choose_list_list_entry_path(@list, entry),
+                    method: :patch,
+                    class: "px-2 py-0.5 text-stone-500 hover:text-stone-800 cursor-pointer" %>
+            </div>
           <% end %>
         </div>
 
@@ -82,7 +109,7 @@
             In library
           </span>
         <% else %>
-          <% if (shelfmark = shelfmark_search_url(title: entry.title, author: entry.author_name)) %>
+          <% if (shelfmark = shelfmark_search_url(title: entry.display_title, author: entry.display_author)) %>
             <%= link_to shelfmark, target: "_blank", rel: "noopener",
                   class: "shrink-0 inline-flex items-center gap-1 text-xs text-amber-700 hover:text-amber-900 font-medium" do %>
               Find on Shelfmark
@@ -113,17 +140,25 @@
 
   <% if current_user&.can_edit_list?(@list) %>
     <div class="mt-4 pt-4 border-t border-stone-100">
-      <%= form_with url: list_list_entries_path(@list), method: :post, local: true, class: "flex flex-col sm:flex-row gap-2" do %>
-        <%= text_field_tag "list_entry[title]", nil,
-              placeholder: "Title",
-              required: true,
-              class: "flex-1 rounded-md border border-stone-300 px-3 py-2 text-sm shadow-sm focus:border-amber-600 focus:ring-amber-600 focus:outline-none" %>
-        <%= text_field_tag "list_entry[author_name]", nil,
-              placeholder: "Author (optional)",
-              class: "flex-1 rounded-md border border-stone-300 px-3 py-2 text-sm shadow-sm focus:border-amber-600 focus:ring-amber-600 focus:outline-none" %>
-        <%= submit_tag "Add entry",
-              class: "shrink-0 inline-flex items-center justify-center px-4 py-2 bg-stone-900 text-white text-sm font-medium rounded-md hover:bg-stone-700 transition cursor-pointer" %>
-      <% end %>
+      <div class="relative"
+           data-controller="search-dropdown"
+           data-search-dropdown-url-value="<%= search_list_list_entries_path(@list) %>">
+        <%= form_with url: list_list_entries_path(@list), method: :post, local: true do %>
+          <%= text_field_tag "list_entry[query]", nil,
+                placeholder: "Add a book: search by title or author",
+                required: true,
+                autocomplete: "off",
+                data: { search_dropdown_target: "input", action: "input->search-dropdown#query focus->search-dropdown#focus keydown->search-dropdown#keydown" },
+                class: "w-full rounded-md border border-stone-300 px-3 py-2 text-sm shadow-sm focus:border-amber-600 focus:ring-amber-600 focus:outline-none" %>
+        <% end %>
+        <%# Kept outside the form above: each result is its own button_to form. %>
+        <div data-search-dropdown-target="dropdown"
+             hidden
+             class="absolute top-full left-0 right-0 mt-1 bg-white border border-stone-200 rounded-md shadow-lg z-50 max-h-96 overflow-y-auto">
+          <turbo-frame id="list-entry-search-results" data-search-dropdown-target="frame"></turbo-frame>
+        </div>
+      </div>
+      <p class="mt-1 text-xs text-stone-500">Pick a result, or press Enter to add it as typed (&ldquo;Title by Author&rdquo; works).</p>
     </div>
   <% end %>
 </div>

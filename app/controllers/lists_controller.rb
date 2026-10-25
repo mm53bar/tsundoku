@@ -37,6 +37,7 @@ class ListsController < ApplicationController
         )
       end
     end
+    ResolveListEntriesJob.perform_later(@list)
 
     matched = @list.matched_count
     total = @list.total_count
@@ -110,23 +111,28 @@ class ListsController < ApplicationController
 
   # Rebuild this list's entries from a parsed array. Deletes existing
   # entries and recreates them in the order of the parsed input, running
-  # BookMatcher on each to attempt local-library matching. Simpler than
-  # preserving entries across the re-import — there's no per-entry data
-  # worth saving today (no notes, no manual overrides). If we ever add
-  # local edits per entry, switch to update-in-place.
+  # BookMatcher on each to attempt local-library matching. Resolved
+  # entries whose typed (title, author) is unchanged keep their
+  # resolution, including books the user picked by hand; everything else
+  # is looked up again.
   def apply_reimport!(parsed)
     List.transaction do
+      resolved = @list.list_entries.select(&:resolved?).index_by(&:matching_key)
       @list.list_entries.destroy_all
       parsed.each_with_index do |entry, i|
-        book = BookMatcher.match(title: entry[:title], author: entry[:author])
+        previous = resolved[ListEntry.matching_key(entry[:title], entry[:author])]
+        resolution = previous ? previous.attributes.slice(*ListEntry::RESOLUTION_ATTRIBUTES) : {}
+        book = BookMatcher.match(entry.merge(resolution.symbolize_keys))
         @list.list_entries.create!(
           position: i,
           title: entry[:title],
           author_name: entry[:author],
-          book: book
+          book: book,
+          **resolution.symbolize_keys
         )
       end
       @list.touch
     end
+    ResolveListEntriesJob.perform_later(@list)
   end
 end

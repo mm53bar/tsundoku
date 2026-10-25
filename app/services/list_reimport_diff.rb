@@ -57,6 +57,6 @@ class ListReimportDiff
   end
 
   def key(title, author)
-    [ title.to_s.downcase.strip, author.to_s.downcase.strip ].join("|")
+    ListEntry.matching_key(title, author)
   end
 end

@@ -58,6 +58,14 @@ class Book < ApplicationRecord
 
   scope :by_title, -> { order(Arel.sql("COALESCE(NULLIF(sort_title, ''), title) COLLATE NOCASE ASC")) }
   scope :recently_added, -> { order(added_at: :desc) }
+  # Every word must appear in the title or an author's name, so
+  # "martian weir" finds The Martian by Andy Weir.
+  scope :matching, ->(query) {
+    words = query.to_s.downcase.split
+    words.inject(left_joins(:authors)) { |scope, word|
+      scope.where("LOWER(books.title) LIKE :q OR LOWER(authors.name) LIKE :q", q: "%#{sanitize_sql_like(word)}%")
+    }.includes(:authors).distinct.by_title
+  }
 
   def author_names
     authors.map(&:name).join(", ")

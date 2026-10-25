@@ -55,7 +55,10 @@ Rails.application.routes.draw do
       get  :reimport
       post :reimport
     end
-    resources :list_entries, only: [ :create, :destroy ], path: "entries"
+    resources :list_entries, only: [ :create, :destroy ], path: "entries" do
+      get   :search, on: :collection
+      patch :choose, on: :member
+    end
   end
 
   get  "/ingest",      to: "ingest#index", as: :ingest_index

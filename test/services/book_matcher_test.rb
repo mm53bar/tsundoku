@@ -132,6 +132,18 @@ class BookMatcherTest < ActiveSupport::TestCase
     assert_equal @same_title_b, result
   end
 
+  # Resolved entries: Hardcover id first, then the resolved title/author.
+
+  test "a stored hardcover_book identifier wins over the typed title" do
+    @abaddon.book_identifiers.create!(kind: "hardcover_book", value: "777")
+    assert_equal @abaddon, BookMatcher.match(title: "Leviathan Wakes", hardcover_book_id: 777)
+  end
+
+  test "falls back to the resolved title when the typed one doesn't match" do
+    entry = { title: "Expanse book one", author: nil, resolved_title: "Leviathan Wakes", resolved_author: "James S.A. Corey" }
+    assert_equal @leviathan, BookMatcher.match(entry)
+  end
+
   private
 
   def make_book(title, authors)

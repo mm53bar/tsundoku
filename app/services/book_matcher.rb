@@ -4,17 +4,28 @@ require "cgi"
 # Used by Lists when building entries from a pasted source.
 #
 # Matching strategy (first hit wins):
+#   0. Stored `hardcover_book` identifier, when the entry carries one
 #   1. Exact title (case-insensitive) + exact normalized author match
 #   2. Exact title (case-insensitive) — single candidate only (no ambiguity)
 #   3. Subtitle-tolerant title prefix + normalized author
-#   4. nil (no match — list entry stays "not in library")
+#   4. Steps 1–3 again with the entry's resolved title/author, if any
+#   5. nil (no match — list entry stays "not in library")
 #
 # Author normalization uses Author.normalize_name so the same
 # "James S.A. Corey" ↔ "James S. A. Corey" tolerance applies as in
 # enrichment slug-stamping.
 class BookMatcher
   def self.match(entry)
-    new(entry).match
+    by_hardcover_id(entry[:hardcover_book_id]) ||
+      new(entry).match ||
+      (new(title: entry[:resolved_title], author: entry[:resolved_author]).match if entry[:resolved_title].present?)
+  end
+
+  def self.by_hardcover_id(hardcover_book_id)
+    return nil if hardcover_book_id.blank?
+
+    Book.joins(:book_identifiers)
+        .find_by(book_identifiers: { kind: "hardcover_book", value: hardcover_book_id.to_s })
   end
 
   def initialize(entry)

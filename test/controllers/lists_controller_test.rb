@@ -1,6 +1,7 @@
 require "test_helper"
 
 class ListsControllerTest < ActionDispatch::IntegrationTest
+  include ActiveJob::TestHelper
   setup do
     @owner = users(:admin)
     @other = users(:reader)
@@ -88,5 +89,35 @@ class ListsControllerTest < ActionDispatch::IntegrationTest
           params:  { list: { shared: "1" } },
           headers: headers_for(@owner)
     assert @private_list.reload.shared?
+  end
+
+  # Resolution — entries are looked up on Hardcover in the background.
+
+  test "creating a list queues a lookup of its entries" do
+    assert_enqueued_with(job: ResolveListEntriesJob) do
+      post lists_path,
+           params:  { list: { name: "Queued list", entries_text: "Dune\nThe Road" } },
+           headers: headers_for(@owner)
+    end
+  end
+
+  test "re-import keeps the resolution of unchanged entries and re-queues the rest" do
+    @private_list.list_entries.create!(title: "Dune", position: 0, resolution_status: "resolved",
+                                       hardcover_book_id: 7, resolved_title: "Dune", resolved_author: "Frank Herbert")
+    @private_list.list_entries.create!(title: "The Road", position: 1, resolution_status: "unresolved")
+
+    assert_enqueued_with(job: ResolveListEntriesJob) do
+      post reimport_list_path(@private_list),
+           params:  { confirm: "1", list: { entries_text: "The Road\nDune\nNew Book" } },
+           headers: headers_for(@owner)
+    end
+
+    entries = @private_list.list_entries.reload
+    assert_equal [ "The Road", "Dune", "New Book" ], entries.map(&:title)
+    dune = entries.find { |e| e.title == "Dune" }
+    assert dune.resolved?
+    assert_equal 7, dune.hardcover_book_id
+    assert_equal "Frank Herbert", dune.resolved_author
+    assert_nil entries.find { |e| e.title == "The Road" }.resolution_status
   end
 end
