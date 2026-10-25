@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Debounced autocomplete for the navbar search input. On each keystroke
+// Debounced autocomplete for a search input (navbar, list entry search). On each keystroke
 // we wait `debounce` ms, then load `urlValue?q=<input>` into the dropdown's
 // turbo-frame. The server returns a fragment of <turbo-frame id="..."> and
 // Turbo swaps it in. Clicking a result navigates _top out of the dropdown.

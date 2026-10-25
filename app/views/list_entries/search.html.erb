@@ -1,0 +1,61 @@
+<%# Fragment loaded into the list page's add-entry dropdown on each debounced
+    keystroke. Rendered without a layout (see ListEntriesController#search).
+    Every row is a one-click add; forms target _top so the list re-renders. %>
+<turbo-frame id="list-entry-search-results">
+  <% if @query.length >= ListEntriesController::MIN_QUERY_LEN %>
+    <ul class="py-1">
+      <% @books.each do |book| %>
+        <li>
+          <%= button_to list_list_entries_path(@list),
+                params: { list_entry: { book_id: book.id } },
+                form: { data: { turbo_frame: "_top" } },
+                class: "w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-stone-50 transition-colors cursor-pointer" do %>
+            <div class="w-8 h-12 flex-shrink-0 bg-stone-200 rounded overflow-hidden ring-1 ring-stone-200/60">
+              <% if book.assets.cover_available? %>
+                <%= image_tag cover_book_path(book, v: book.updated_at.to_i), alt: "", class: "w-full h-full object-cover" %>
+              <% end %>
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-medium text-stone-900 truncate"><%= book.title %></p>
+              <p class="text-xs text-stone-500 truncate"><%= book.author_names %></p>
+            </div>
+            <span class="shrink-0 text-xs text-emerald-700 font-medium">In library</span>
+          <% end %>
+        </li>
+      <% end %>
+
+      <% @hits.each do |hit| %>
+        <li>
+          <%= button_to list_list_entries_path(@list),
+                params: { list_entry: {
+                  hardcover_book_id: hit.id, title: hit.title, author_name: hit.author,
+                  release_year: hit.release_year, cover_url: hit.cover_url
+                } },
+                form: { data: { turbo_frame: "_top" } },
+                class: "w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-stone-50 transition-colors cursor-pointer" do %>
+            <div class="w-8 h-12 flex-shrink-0 bg-stone-200 rounded overflow-hidden ring-1 ring-stone-200/60">
+              <% if hit.cover_url %>
+                <img src="<%= hit.cover_url %>" alt="" loading="lazy" referrerpolicy="no-referrer" class="w-full h-full object-cover">
+              <% end %>
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-medium text-stone-900 truncate"><%= hit.title %></p>
+              <p class="text-xs text-stone-500 truncate">
+                <%= hit.author %><%= " · #{hit.release_year}" if hit.release_year %>
+              </p>
+            </div>
+          <% end %>
+        </li>
+      <% end %>
+
+      <li class="border-t border-stone-100">
+        <%= button_to list_list_entries_path(@list),
+              params: { list_entry: { query: @query } },
+              form: { data: { turbo_frame: "_top" } },
+              class: "w-full px-3 py-2 text-left text-sm text-stone-600 hover:bg-stone-50 transition-colors cursor-pointer" do %>
+          Add &ldquo;<%= @query %>&rdquo; as typed
+        <% end %>
+      </li>
+    </ul>
+  <% end %>
+</turbo-frame>

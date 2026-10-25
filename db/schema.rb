@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_28_212932) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_25_194500) do
   create_table "authors", force: :cascade do |t|
     t.integer "calibre_id"
     t.datetime "created_at", null: false
@@ -123,9 +123,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_28_212932) do
   create_table "list_entries", force: :cascade do |t|
     t.string "author_name"
     t.integer "book_id"
+    t.string "cover_url"
     t.datetime "created_at", null: false
+    t.integer "hardcover_book_id"
     t.integer "list_id", null: false
     t.integer "position", default: 0, null: false
+    t.integer "release_year"
+    t.json "resolution_candidates"
+    t.string "resolution_status"
+    t.string "resolved_author"
+    t.string "resolved_title"
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.index ["book_id"], name: "index_list_entries_on_book_id"
